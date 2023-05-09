@@ -1,0 +1,5 @@
+<pattern xmlns="http://purl.oclc.org/dsdl/schematron">
+  <rule context='*'>
+    <assert test='true()'/>
+  </rule>
+</pattern>
