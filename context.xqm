@@ -52,7 +52,7 @@ as map(*)
 
 (:NAMESPACE DECLARATIONS:)
 
-declare %private function c:make-ns-decls($nss as element(sch:ns)*)
+declare function c:make-ns-decls($nss as element(sch:ns)*)
 as xs:string?
 {
   $nss ! c:make-ns-decl(.) => string-join()
@@ -122,7 +122,7 @@ as element(sch:pattern)+
   ]  
 };
 
-(: (:~ Determines the global variables declared, i.e. with the current schema or 
+(:~ Determines the global variables declared, i.e. with the current schema or 
  : active phase.
  : Note that this <emph>excludes</emph> pattern variables from the global scope:
  : "It is an error to reference a variable that has not been defined in the 
@@ -132,14 +132,14 @@ as element(sch:pattern)+
  : @param the active phase
  : @return global variable declarations
  :)
-declare %private function c:get-global-variables(
+declare function c:get-global-variables(
   $schema as element(sch:schema),
   $active-phase as element(sch:phase)?  
 )
 as element(sch:let)*
 {
   ($schema,$active-phase)/sch:let
-}; :)
+};
 
 (:~ Evaluates global variables against the instance document root.
  : @see ISO2020, 5.4.6: "If the let element is the child of a rule element, the
@@ -170,7 +170,7 @@ as map(*)
     
     (: let $_ := trace('[1]$prolog='||serialize($prolog)) :)
     (: let $_ := trace('[2]$bindings='||serialize($bindings, map{'method':'adaptive'})) :)
-    (: let $_ := trace('[3]evaluating GLOBAL variable $'||$var/@name) :)
+    let $_ := trace('[3]evaluating GLOBAL variable $'||$var/@name)
     
     let $binding := c:evaluate-global-variable(
       $var,
