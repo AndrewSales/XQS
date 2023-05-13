@@ -7,6 +7,13 @@ import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
+declare variable $compile:INSTANCE_PARAM := '$Q{"http://www.andrewsales.com/ns/xqs"}doc';
+
+(:~ Compile a schema.
+ : @param schema the schema to compile
+ : @param phase the active phase, if any
+ : @return the compiled schema
+ :)
 declare function compile:schema($schema as element(sch:schema), $phase as xs:string?)
 {
   let $active-phase := context:get-active-phase($schema, $phase)
@@ -14,12 +21,15 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
   return
   (
     compile:prolog($schema, $active-phase),
+    'declare variable ' || $compile:INSTANCE_PARAM || ' as xs:anyURI external;',
     $active-patterns ! compile:pattern(.),
+    'declare function local:schema($doc){' ||
     string-join(
       for $pattern in $active-patterns 
-      return 'local:pattern-'||$pattern/@id||'()',
+      return 'local:pattern-'|| compile:function-id($pattern) ||'()',
       ','
-    )
+    ) ||
+    '}; local:schema(' || $compile:INSTANCE_PARAM || ')'
   )
 };
 
@@ -32,22 +42,26 @@ declare function compile:prolog($schema as element(sch:schema), $phase)
 
 declare function compile:pattern($pattern as element(sch:pattern))
 {
-  'declare function local:pattern-' || $pattern/@id || '(){' ||
-  string-join(compile:pattern-variable($pattern/sch:let), ' ') ||
-    (if($pattern/sch:let) then 'return' else ()) ||
+  let $function-id := compile:function-id($pattern)
+  return
+  ('declare function local:pattern-' || $function-id || '(){' ||
+  string-join(compile:pattern-variables($pattern/sch:let), ' ') ||
+    (if($pattern/sch:let) then ' return ' else ()) ||
     serialize(<svrl:active-pattern>
     {$pattern/(@id, @documents, @name, @role)}
     </svrl:active-pattern>),
     (for $rule in $pattern/sch:rule 
-    return ', local:pattern-' || $pattern/@id || '-rule-' || $rule/@id || '()') ||
+    return ', local:pattern-' || $function-id || '-rule-' || 
+    compile:function-id($rule) || '()') ||
   '};
-',
+'),
   $pattern/sch:rule ! compile:rule(.)
 };
 
 declare function compile:rule($rule as element(sch:rule))
 {
-  'declare function local:pattern-' || $rule/../@id || '-rule-' || $rule/@id || '(){' ||
+  'declare function local:pattern-' || compile:function-id($rule/..) || 
+  '-rule-' || compile:function-id($rule) || '(){' ||
   string-join(util:local-variable-decls($rule/sch:let), ' ') ||
     (if($rule/sch:let) then ' return ' else ()) ||
     string-join($rule/(sch:assert|sch:report) ! compile:assertion(.), ',') ||
@@ -75,8 +89,17 @@ declare function compile:report($report as element())
   serialize(<svrl:successful-report></svrl:successful-report>) || 'else()'
 };
 
-declare %private function compile:pattern-variable($var as element(sch:let))
+declare %private function compile:pattern-variables($variables as element(sch:let)*)
 {
-  'let $' || $var/@name || ' := ' || 
+  for $var in $variables 
+  return 'let $' || $var/@name || ' := ' || 
   (if($var/@value) then '/(' || $var/@value || ')' else serialize($var/*))
+};
+
+declare %private function compile:function-id($element as element())
+{
+  if($element/@id) then $element/@id 
+  else count(
+    $element/preceding-sibling::sch:*[local-name() eq $element/local-name()]
+  ) + 1
 };
