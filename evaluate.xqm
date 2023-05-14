@@ -117,7 +117,7 @@ as element()*
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
   let $rule-context := xquery:eval(
-    $query,
+    $query => replace('&amp;', '&amp;amp;'),
     map:merge((map{'':$context?instance}, $context?globals)),
     map{'pass':'true'}	(:report exception details:)
   )
@@ -173,7 +173,7 @@ declare function eval:assertion(
 )
 {
   let $result := xquery:eval(
-    $prolog || $assertion/@test,
+    $prolog || $assertion/@test => replace('&amp;', '&amp;amp;'),
     map:merge((map{'':$rule-context}, $context?globals)),
     map{'pass':'true'}
   )
