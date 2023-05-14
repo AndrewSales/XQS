@@ -172,7 +172,7 @@ declare function eval:assertion(
 )
 {
   let $result := xquery:eval(
-    $prolog || $assertion/@test => replace('&amp;', '&amp;amp;'),
+    $prolog || $assertion/@test => util:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
     map{'pass':'true'}
   )
