@@ -983,24 +983,76 @@ declare %unit:test function _:test-rule-variable-with-nss()
 };
 
 (:~ entities, re https://mailman.uni-konstanz.de/pipermail/basex-talk/2023-May/017962.html :)
-declare %unit:test function _:built-in-entities()
+declare %unit:test function _:built-in-entities-rule-assert()
 {
   let $result := eval:schema(
-    document{<foo>&lt;&amp;&gt;</foo>},
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
     <sch:schema>
       <sch:ns prefix='x' uri='y'/>
       <sch:pattern>
         <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
-          <sch:assert test="contains(., '&amp;')"/>
-          <sch:assert test="contains(., '&lt;')"/>
-          <sch:assert test="contains(., '&gt;')"/>
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
     ''
   )
   return (
-    unit:assert(true())
+    unit:assert(count($result/svrl:successful-report) = 5)
+  )
+};
+
+declare %unit:test function _:built-in-entities-global-variable()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y'/>
+      <sch:let name='foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
+  )
+};
+
+declare %unit:test function _:built-in-entities-namespaces()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y&amp;z'/>
+      <sch:let name='x:foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$x:foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
   )
 };
 

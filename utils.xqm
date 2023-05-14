@@ -80,3 +80,12 @@ as xs:QName
     $name
   )
 };
+
+(:~ Escape ampersands in dynamically-evaluated queries.
+ : @param query the string of the query to escape
+ :)
+declare function util:escape($query as xs:string)
+as xs:string
+{
+  replace($query, '&amp;', '&amp;amp;')
+};

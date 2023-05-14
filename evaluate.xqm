@@ -38,7 +38,6 @@ declare function eval:schema(
 };
 
 (:~ Evaluates a pattern.
- : N.B. this implementation evaluates *all* pattern variables as global variables.
  : @param pattern the pattern to evaluate
  : @param context the validation context
  :)
@@ -47,7 +46,7 @@ declare function eval:pattern(
   $context as map(*)
 )
 {
-  let $prolog := util:make-query-prolog($context)
+  let $prolog := util:make-query-prolog($context) => util:escape()
     
   (:evaluate pattern variables against global context:)
   let $globals as map(*) := context:evaluate-pattern-variables(
@@ -69,7 +68,7 @@ declare function eval:pattern(
     </svrl:active-pattern>, 
     eval:rules(
       $pattern/sch:rule, 
-      util:make-query-prolog($context), 
+      util:make-query-prolog($context) => util:escape(), 
       $context
     )
   )
@@ -117,7 +116,7 @@ as element()*
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
   let $rule-context := xquery:eval(
-    $query => replace('&amp;', '&amp;amp;'),
+    $query => util:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
     map{'pass':'true'}	(:report exception details:)
   )
