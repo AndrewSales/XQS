@@ -257,7 +257,7 @@ as map(*)
   (: let $_ := trace('>>>QUERY='||$query) :)
   let $value as item()* := if($variable/@value) 
     then xquery:eval(
-      $query, 
+      $query => util:escape(), 
       map:merge(($bindings, map{'':$instance})),
       map{'pass':'true'}
     )

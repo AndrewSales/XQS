@@ -317,6 +317,7 @@ declare %unit:test function _:test-process-report-with-global-variable-element-n
       <sch:pattern>
         <sch:rule context='*' id='a' name='b' role='c' flag='d'>
         <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed</sch:report>
+        <sch:report test='$allowed/self::allowed'></sch:report>
       </sch:rule>
       </sch:pattern>
     </sch:schema>,
@@ -327,7 +328,59 @@ declare %unit:test function _:test-process-report-with-global-variable-element-n
     $result/svrl:successful-report,
     (
       <svrl:successful-report 
-      test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
+      test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>,
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text></svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ global variable reference in value-of :)
+declare %unit:test function _:global-variable-in-value-of()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+    <sch:let name='allowed'><allowed>bar</allowed></sch:let>
+      <sch:pattern>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+        <sch:report test='$allowed/self::allowed'><sch:value-of select='$allowed/name()'/></sch:report>
+      </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report,
+    (
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ global variable reference in name :)
+declare %unit:test function _:global-variable-in-name()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+    <sch:let name='allowed'><allowed>bar</allowed></sch:let>
+      <sch:pattern>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+        <sch:report test='$allowed/self::allowed'><sch:name path='$allowed/name()'/></sch:report>
+      </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report,
+    (
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
     )
   )
 };
@@ -929,6 +982,80 @@ declare %unit:test function _:test-rule-variable-with-nss()
   )
 };
 
+(:~ entities, re https://mailman.uni-konstanz.de/pipermail/basex-talk/2023-May/017962.html :)
+declare %unit:test function _:built-in-entities-rule-assert()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y'/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 5)
+  )
+};
+
+declare %unit:test function _:built-in-entities-global-variable()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y'/>
+      <sch:let name='foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
+  )
+};
+
+declare %unit:test function _:built-in-entities-namespaces()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y&amp;z'/>
+      <sch:let name='x:foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$x:foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
+  )
+};
+
 (:TODO
-- 
+- conformance suite: https://github.com/Schematron/schematron-conformance/tree/master/src/main/resources/tests
 :)
