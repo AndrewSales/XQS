@@ -11,6 +11,8 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
 declare variable $compile:INSTANCE_PARAM := '$Q{"http://www.andrewsales.com/ns/xqs"}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{"http://www.andrewsales.com/ns/xqs"}doc';
+declare variable $compile:RULE_CONTEXT := '$Q{"http://www.andrewsales.com/ns/xqs"}context';
+declare variable $compile:RESULT := '$Q{"http://www.andrewsales.com/ns/xqs"}result';
 
 (:~ Compile a schema.
  : @param schema the schema to compile
@@ -74,14 +76,23 @@ declare function compile:pattern($pattern as element(sch:pattern))
 
 declare function compile:rule($rule as element(sch:rule))
 {
-  'declare function local:pattern-' || compile:function-id($rule/..) || 
-  '-rule-' || compile:function-id($rule) || '(){' ||
+  let $function-name := 'local:pattern-' || compile:function-id($rule/..) || 
+  '-rule-' || compile:function-id($rule)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return
+  'declare function ' || $function-name || '(){' ||
   string-join(util:local-variable-decls($rule/sch:let), ' ') ||
     (if($rule/sch:let) then ' return ' else ()) ||
-    'let $Q{"http://www.andrewsales.com/ns/xqs"}context := 
-$Q{"http://www.andrewsales.com/ns/xqs"}doc/(' || $rule/@context || ') return if($Q{"http://www.andrewsales.com/ns/xqs"}context) then ' || 
-  serialize(<svrl:fired-rule/>) || ' else ()};' ||
-  $rule/(sch:assert|sch:report) ! compile:assertion(.)
+    'let ' || $compile:RULE_CONTEXT || ':= ' ||
+    $compile:INSTANCE_DOC || '/(' || $rule/@context || 
+') return if(' || $compile:RULE_CONTEXT || ') then (' || 
+  serialize(<svrl:fired-rule/>) || ', ' ||
+  string-join(
+    for $assertion in $assertions
+    return $function-name || '-' || local-name($assertion) || '-' || 
+    compile:function-id($assertion) || '(' || $compile:RULE_CONTEXT || ')', 
+    ','
+  ) || ') else ()};' || $assertions ! compile:assertion(.)
 };
 
 declare function compile:assertion($assertion as element())
@@ -96,21 +107,23 @@ declare function compile:assert($assert as element())
 {
   'declare function local:pattern-' || compile:function-id($assert/../..) || 
   '-rule-' || compile:function-id($assert/..) || '-assert-' 
-  || compile:function-id($assert) || '($Q{"http://www.andrewsales.com/ns/xqs"}context){' ||
+  || compile:function-id($assert) || '(' || $compile:RULE_CONTEXT || '){' ||
   string-join(util:local-variable-decls($assert/../sch:let), ' ') ||
-  'let $Q{"http://www.andrewsales.com/ns/xqs"}result := $Q{"http://www.andrewsales.com/ns/xqs"}context/(' || $assert/@test || ') return
-  if($Q{"http://www.andrewsales.com/ns/xqs"}result) then () else ' ||
+  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
+  '/(' || $assert/@test || ') return
+  if(' || $compile:RESULT || ') then () else ' ||
   serialize(<svrl:failed-assert></svrl:failed-assert>) || '};'
 };
 
 declare function compile:report($report as element())
 {
   'declare function local:pattern-' || compile:function-id($report/../..) || 
-  '-rule-' || compile:function-id($report/..) || '-assert-' 
-  || compile:function-id($report) || '($Q{"http://www.andrewsales.com/ns/xqs"}context){' ||
+  '-rule-' || compile:function-id($report/..) || '-report-' 
+  || compile:function-id($report) || '($compile:RULE_CONTEXT){' ||
   string-join(util:local-variable-decls($report/../sch:let), ' ') ||
-  'let $Q{"http://www.andrewsales.com/ns/xqs"}result := $Q{"http://www.andrewsales.com/ns/xqs"}context/(' || $report/@test || ') return
-  if($Q{"http://www.andrewsales.com/ns/xqs"}result) then ' ||
+  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
+  '/(' || $report/@test || ') return
+  if(' || $compile:RESULT || ' then ' ||
   serialize(<svrl:successful-report></svrl:successful-report>) || ' else ()};'
 };
 
