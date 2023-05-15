@@ -38,7 +38,7 @@ as xs:string
       {output:namespace-decls-as-svrl($schema/sch:ns)}
     {'{' || string-join(
       for $pattern in $active-patterns 
-      return 'local:pattern-'|| compile:function-id($pattern) ||'()',
+      return compile:function-name($pattern) ||'()',
       ','
     ) || '}'} </svrl:schematron-output>) ||
     '}; local:schema()'
@@ -56,19 +56,17 @@ declare function compile:pattern($pattern as element(sch:pattern))
 {
   let $function-id := compile:function-id($pattern)
   return
-  ('declare function local:pattern-' || $function-id || '(){' ||
+  ('declare function ' || compile:function-name($pattern) || '(){' ||
   string-join(compile:pattern-variables($pattern/sch:let), ' ') ||
     (if($pattern/sch:let) then ' return ' else ()) ||
     serialize(<svrl:active-pattern>
     {$pattern/(@id, @documents, @name, @role)}
     </svrl:active-pattern>) || ',',
     if(count($pattern/sch:rule) = 1)
-    then ' local:pattern-' || $function-id || '-rule-' || 
-      compile:function-id($pattern/sch:rule) || '()'
+    then ' ' || compile:function-name($pattern/sch:rule) || '()'
     else
     string-join(for $rule in $pattern/sch:rule 
-    return ' local:pattern-' || $function-id || '-rule-' || 
-    compile:function-id($rule) || '()', ','),
+    return ' ' || compile:function-name($rule) || '()', ','),
   '};
 '),
   $pattern/sch:rule ! compile:rule(.)
@@ -76,8 +74,7 @@ declare function compile:pattern($pattern as element(sch:pattern))
 
 declare function compile:rule($rule as element(sch:rule))
 {
-  let $function-name := 'local:pattern-' || compile:function-id($rule/..) || 
-  '-rule-' || compile:function-id($rule)
+  let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return
   'declare function ' || $function-name || '(){' ||
@@ -86,11 +83,12 @@ declare function compile:rule($rule as element(sch:rule))
     'let ' || $compile:RULE_CONTEXT || ':= ' ||
     $compile:INSTANCE_DOC || '/(' || $rule/@context || 
 ') return if(' || $compile:RULE_CONTEXT || ') then (' || 
-  serialize(<svrl:fired-rule>{attribute{'context'}{$rule/@context}}</svrl:fired-rule>) || ', ' || $compile:RULE_CONTEXT || '!' ||
+  serialize(
+    <svrl:fired-rule>{attribute{'context'}{$rule/@context}}</svrl:fired-rule>
+  ) || ', ' || $compile:RULE_CONTEXT || '!' ||
   string-join(
     for $assertion in $assertions
-    return $function-name || '-' || local-name($assertion) || '-' || 
-    compile:function-id($assertion) || '(.)', 
+    return compile:function-name($assertion) || '(.)', 
     ','
   ) || ') else ()};' || $assertions ! compile:assertion(.)
 };
@@ -100,10 +98,8 @@ declare function compile:assertion($assertion as element())
   if(not($assertion/(self::sch:assert|self::sch:report)))
   then error()	(:shouldn't happen if schema is valid:)
   else
-  'declare function local:pattern-' || compile:function-id($assertion/../..) || 
-  '-rule-' || compile:function-id($assertion/..) || '-' || local-name($assertion)
-  || '-' 
-  || compile:function-id($assertion) || '(' || $compile:RULE_CONTEXT || '){' ||
+  'declare function ' || compile:function-name($assertion) ||
+  '(' || $compile:RULE_CONTEXT || '){' ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') ||
   'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
   '/(' || $assertion/@test || ') return if(' || $compile:RESULT || ') then ' ||
@@ -134,6 +130,15 @@ declare %private function compile:pattern-variables($variables as element(sch:le
   return 'let $' || $var/@name || ' := ' || 
   (if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value || ')' 
   else serialize($var/*))
+};
+
+declare %private function compile:function-name($element as element())
+as xs:string
+{
+  'local:' ||
+  $element/ancestor-or-self::*[ancestor-or-self::sch:pattern] ! 
+  (local-name(.) || compile:function-id(.))
+  => string-join('-')
 };
 
 declare %private function compile:function-id($element as element())
