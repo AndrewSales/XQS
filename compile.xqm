@@ -86,11 +86,11 @@ declare function compile:rule($rule as element(sch:rule))
     'let ' || $compile:RULE_CONTEXT || ':= ' ||
     $compile:INSTANCE_DOC || '/(' || $rule/@context || 
 ') return if(' || $compile:RULE_CONTEXT || ') then (' || 
-  serialize(<svrl:fired-rule/>) || ', ' ||
+  serialize(<svrl:fired-rule>{attribute{'context'}{$rule/@context}}</svrl:fired-rule>) || ', ' || $compile:RULE_CONTEXT || '!' ||
   string-join(
     for $assertion in $assertions
     return $function-name || '-' || local-name($assertion) || '-' || 
-    compile:function-id($assertion) || '(' || $compile:RULE_CONTEXT || ')', 
+    compile:function-id($assertion) || '(.)', 
     ','
   ) || ') else ()};' || $assertions ! compile:assertion(.)
 };
