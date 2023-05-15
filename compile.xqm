@@ -97,39 +97,35 @@ declare function compile:rule($rule as element(sch:rule))
 
 declare function compile:assertion($assertion as element())
 {
-  typeswitch($assertion)
-    case element(sch:assert) return compile:assert($assertion)
-    case element(sch:report) return compile:report($assertion)
-    default return error()
+  if(not($assertion/(self::sch:assert|self::sch:report)))
+  then error()	(:shouldn't happen if schema is valid:)
+  else
+  'declare function local:pattern-' || compile:function-id($assertion/../..) || 
+  '-rule-' || compile:function-id($assertion/..) || '-' || local-name($assertion)
+  || '-' 
+  || compile:function-id($assertion) || '(' || $compile:RULE_CONTEXT || '){' ||
+  string-join(util:local-variable-decls($assertion/../sch:let), ' ') ||
+  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
+  '/(' || $assertion/@test || ') return if(' || $compile:RESULT || ') then ' ||
+  (
+    if($assertion/self::sch:assert) 
+    then '() else ' || compile:assertion-message($assertion) => serialize()
+    else compile:assertion-message($assertion) => serialize() || ' else ()'
+  )
+  || '};'
 };
 
-declare function compile:assert($assert as element())
+declare %private function compile:assertion-message($assertion as element())
+as element()
 {
-  'declare function local:pattern-' || compile:function-id($assert/../..) || 
-  '-rule-' || compile:function-id($assert/..) || '-assert-' 
-  || compile:function-id($assert) || '(' || $compile:RULE_CONTEXT || '){' ||
-  string-join(util:local-variable-decls($assert/../sch:let), ' ') ||
-  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
-  '/(' || $assert/@test || ') return
-  if(' || $compile:RESULT || ') then () else ' ||
-  serialize(<svrl:failed-assert>
-    {attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'}}
-    {$assert/(@id, @role, @flag, @test)}</svrl:failed-assert>) || '};'
-};
-
-declare function compile:report($report as element())
-{
-  'declare function local:pattern-' || compile:function-id($report/../..) || 
-  '-rule-' || compile:function-id($report/..) || '-report-' 
-  || compile:function-id($report) || '($compile:RULE_CONTEXT){' ||
-  string-join(util:local-variable-decls($report/../sch:let), ' ') ||
-  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
-  '/(' || $report/@test || ') return
-  if(' || $compile:RESULT || ' then ' ||
-  serialize(<svrl:successful-report>
-  {attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'}}
-    {$report/(@id, @role, @flag, @test)}
-  </svrl:successful-report>) || ' else ()};'
+  element{
+    QName("http://purl.oclc.org/dsdl/svrl", 
+    if($assertion/self::sch:assert) then 'failed-assert' else 'successful-report')
+  }
+  {
+    attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
+    $assertion/(@id, @role, @flag, @test)
+  }  
 };
 
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
