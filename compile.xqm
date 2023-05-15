@@ -9,10 +9,10 @@ import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
-declare variable $compile:INSTANCE_PARAM := '$Q{"http://www.andrewsales.com/ns/xqs"}uri';
-declare variable $compile:INSTANCE_DOC := '$Q{"http://www.andrewsales.com/ns/xqs"}doc';
-declare variable $compile:RULE_CONTEXT := '$Q{"http://www.andrewsales.com/ns/xqs"}context';
-declare variable $compile:RESULT := '$Q{"http://www.andrewsales.com/ns/xqs"}result';
+declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
+declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
+declare variable $compile:RULE_CONTEXT := '$Q{http://www.andrewsales.com/ns/xqs}context';
+declare variable $compile:RESULT := '$Q{http://www.andrewsales.com/ns/xqs}result';
 
 (:~ Compile a schema.
  : @param schema the schema to compile
@@ -112,7 +112,9 @@ declare function compile:assert($assert as element())
   'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
   '/(' || $assert/@test || ') return
   if(' || $compile:RESULT || ') then () else ' ||
-  serialize(<svrl:failed-assert></svrl:failed-assert>) || '};'
+  serialize(<svrl:failed-assert>
+    {attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'}}
+    {$assert/(@id, @role, @flag, @test)}</svrl:failed-assert>) || '};'
 };
 
 declare function compile:report($report as element())
@@ -124,7 +126,10 @@ declare function compile:report($report as element())
   'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
   '/(' || $report/@test || ') return
   if(' || $compile:RESULT || ' then ' ||
-  serialize(<svrl:successful-report></svrl:successful-report>) || ' else ()};'
+  serialize(<svrl:successful-report>
+  {attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'}}
+    {$report/(@id, @role, @flag, @test)}
+  </svrl:successful-report>) || ' else ()};'
 };
 
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
