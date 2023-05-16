@@ -41,7 +41,20 @@ as xs:string
       return compile:function-name($pattern) ||'()',
       ','
     ) || '}'} </svrl:schematron-output>) ||
-    '}; local:schema()'
+    '}; 
+    
+declare function local:rules($rules as function(*)+)
+as element()*
+{
+if(empty($rules))
+  then ()
+  else
+    let $result := head($rules)()
+    return if($result)
+    then $result
+    else local:rules(tail($rules))    
+  };      
+    local:schema()'
   ))
 };
 
@@ -62,11 +75,9 @@ declare function compile:pattern($pattern as element(sch:pattern))
     serialize(<svrl:active-pattern>
     {$pattern/(@id, @documents, @name, @role)}
     </svrl:active-pattern>) || ',',
-    if(count($pattern/sch:rule) = 1)
-    then ' ' || compile:function-name($pattern/sch:rule) || '()'
-    else
+    'local:rules((' ||
     string-join(for $rule in $pattern/sch:rule 
-    return ' ' || compile:function-name($rule) || '()', ','),
+    return ' ' || compile:function-name($rule) || '#0', ',') || '))',
   '};
 '),
   $pattern/sch:rule ! compile:rule(.)
@@ -84,7 +95,9 @@ declare function compile:rule($rule as element(sch:rule))
     $compile:INSTANCE_DOC || '/(' || $rule/@context || 
 ') return if(' || $compile:RULE_CONTEXT || ') then (' || 
   serialize(
-    <svrl:fired-rule>{attribute{'context'}{$rule/@context}}</svrl:fired-rule>
+    <svrl:fired-rule>
+  {$rule/(@id, @name, @context, @role, @flag, @document)}
+    </svrl:fired-rule>
   ) || ', ' || $compile:RULE_CONTEXT || '!' ||
   string-join(
     for $assertion in $assertions
@@ -120,8 +133,9 @@ as element()
   }
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
-    $assertion/(@id, @role, @flag, @test)
-  }  
+    $assertion/(@id, @role, @flag, @test),
+    '{}'
+  }
 };
 
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
