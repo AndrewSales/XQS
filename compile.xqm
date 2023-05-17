@@ -11,8 +11,58 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
+declare variable $compile:RULE := '$Q{http://www.andrewsales.com/ns/xqs}rule';
 declare variable $compile:RULE_CONTEXT := '$Q{http://www.andrewsales.com/ns/xqs}context';
+declare variable $compile:ASSERTION := '$Q{http://www.andrewsales.com/ns/xqs}assertion';
 declare variable $compile:RESULT := '$Q{http://www.andrewsales.com/ns/xqs}result';
+declare variable $compile:RULES_FUNCTION := 'declare function local:rules($rules as function(*)+)
+as element()*
+{
+if(empty($rules))
+  then ()
+  else
+    let $result := head($rules)()
+    return if($result)
+    then $result
+    else local:rules(tail($rules))    
+  }; ';
+declare variable $compile:ASSERTION_MESSAGE_FUNCTION := 'declare function local:assertion-message-content(
+  $content as node()*,
+  $rule-context as node()
+)
+{
+  element{Q{http://purl.oclc.org/dsdl/svrl}text}{(:TODO attributes:)
+  for $node in $content
+    return
+    typeswitch($node)
+      case element(Q{http://purl.oclc.org/dsdl/schematron}name)
+        return if($node/@path) 
+          then xquery:eval(
+            $prolog || $node/@path, 
+            map:merge((map{'':$rule-context}, $context?globals))
+          ) 
+          else name($rule-context)
+      case element(Q{http://purl.oclc.org/dsdl/schematron}value-of)
+        return xquery:eval(
+          $prolog || $node/@select, 
+          map:merge((map{'':$rule-context}, $context?globals))
+        ) 
+        => string()
+      case element(Q{http://purl.oclc.org/dsdl/schematron}emph)
+        return local:assertion-child-elements($node)
+      case element(Q{http://purl.oclc.org/dsdl/schematron}dir)
+        return local:assertion-child-elements($node)
+      case element(Q{http://purl.oclc.org/dsdl/schematron}span)
+        return local:assertion-child-elements($node)      
+    default return $node
+  }
+};';
+declare variable $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION :=  'declare function local:assertion-child-elements($element as element())
+as element()
+{
+  element{QName("http://purl.oclc.org/dsdl/svrl", local-name($element))}
+  {$element/@*, $element/node()}
+};';
 
 (:~ Compile a schema.
  : @param schema the schema to compile
@@ -41,20 +91,9 @@ as xs:string
       return compile:function-name($pattern) ||'()',
       ','
     ) || '}'} </svrl:schematron-output>) ||
-    '}; 
-    
-declare function local:rules($rules as function(*)+)
-as element()*
-{
-if(empty($rules))
-  then ()
-  else
-    let $result := head($rules)()
-    return if($result)
-    then $result
-    else local:rules(tail($rules))    
-  };      
-    local:schema()'
+    '};' || $compile:RULES_FUNCTION || $compile:ASSERTION_MESSAGE_FUNCTION ||
+    $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION ||     
+    'local:schema()'
   ))
 };
 
@@ -101,7 +140,7 @@ declare function compile:rule($rule as element(sch:rule))
   ) || ', ' || $compile:RULE_CONTEXT || '!' ||
   string-join(
     for $assertion in $assertions
-    return compile:function-name($assertion) || '(.)', 
+    return compile:function-name($assertion) || '(.,' || serialize($assertion) || ')', 
     ','
   ) || ') else ()};' || $assertions ! compile:assertion(.)
 };
@@ -112,7 +151,7 @@ declare function compile:assertion($assertion as element())
   then error()	(:shouldn't happen if schema is valid:)
   else
   'declare function ' || compile:function-name($assertion) ||
-  '(' || $compile:RULE_CONTEXT || '){' ||
+  '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') ||
   'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
   '/(' || $assertion/@test || ') return if(' || $compile:RESULT || ') then ' ||
@@ -134,7 +173,9 @@ as element()
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
     $assertion/(@id, @role, @flag, @test),
-    '{}'
+    '{local:assertion-message-content(
+        $Q{http://www.andrewsales.com/ns/xqs}assertion/node(),
+        $Q{http://www.andrewsales.com/ns/xqs}context)}'
   }
 };
 
