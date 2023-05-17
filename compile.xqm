@@ -142,6 +142,17 @@ as element()
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
     $assertion/(@id, @role, @flag, @test),
+    $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]
+    !
+    <svrl:diagnostic-reference diagnostic='{@id}'>
+    {compile:assertion-message-content(./node())}
+    </svrl:diagnostic-reference>,
+    $assertion/root()//sch:property[@id = tokenize($assertion/@properties)]
+    !
+    <svrl:property-reference property='{@id}'>
+    {@scheme, @role}
+    {compile:assertion-message-content(./node())}
+    </svrl:property-reference>,
     compile:assertion-message-content($assertion/node())
   }
 };

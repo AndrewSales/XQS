@@ -149,3 +149,269 @@ declare %unit:test function _:process-report-with-global-variable-element-node()
     )
   )
 };
+
+(: DIAGNOSTICS :)
+
+(:~ diagnostics reported correctly in SVRL :)
+declare %unit:test function _:diagnostics()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' diagnostics='d1'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:diagnostics>
+        <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'>wrong</sch:diagnostic>
+      </sch:diagnostics>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>root element is foo</svrl:text>
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:diagnostic-reference,
+      (
+        <svrl:diagnostic-reference diagnostic='d1'><svrl:text>wrong</svrl:text></svrl:diagnostic-reference>
+      )
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      (
+        <svrl:failed-assert
+        test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:diagnostic-reference diagnostic='d1'><svrl:text>wrong</svrl:text></svrl:diagnostic-reference><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+      )
+    )
+  )
+};
+
+(:~ children of diagnostic handled in SVRL :)
+declare %unit:test function _:diagnostics-mixed-content()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:let name='root-name' value='name(*)'/>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' diagnostics='d1'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:diagnostics>
+        <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'><foreign/><sch:emph/><sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span>wrong=<sch:value-of select='$root-name'/></sch:diagnostic>
+      </sch:diagnostics>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:failed-assert,
+    (
+      <svrl:failed-assert
+      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:diagnostic-reference diagnostic='d1'><svrl:text><foreign/><svrl:emph/><svrl:dir value='ltr'>dir<foreign/></svrl:dir> and <svrl:span class='blort'>span<foreign/></svrl:span>wrong=foo</svrl:text></svrl:diagnostic-reference><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+    )
+  )
+};
+
+(:~ multiple diagnostic references handled correctly in SVRL :)
+declare %unit:test function _:diagnostics-multiple()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' diagnostics='d1 d2'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:diagnostics>
+        <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'>wrong</sch:diagnostic>
+        <sch:diagnostic id='d2'>more here</sch:diagnostic>
+      </sch:diagnostics>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>root element is foo</svrl:text>
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:diagnostic-reference,
+      (
+        <svrl:diagnostic-reference diagnostic='d1'><svrl:text>wrong</svrl:text></svrl:diagnostic-reference>,
+        <svrl:diagnostic-reference diagnostic='d2'><svrl:text>more here</svrl:text></svrl:diagnostic-reference>
+      )
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      (
+        <svrl:failed-assert
+        test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:diagnostic-reference diagnostic='d1'><svrl:text>wrong</svrl:text></svrl:diagnostic-reference><svrl:diagnostic-reference diagnostic='d2'><svrl:text>more here</svrl:text></svrl:diagnostic-reference><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+      )
+    )
+  )
+};
+
+(: PROPERTIES :)
+
+(:~ property references reported correctly in SVRL :)
+declare %unit:test function _:properties()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:let name='root-name' value='name(*)'/>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' properties='p1'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:properties>
+        <sch:property id='p1' scheme='abc' role='def'>wrong=<sch:value-of select='$root-name'/></sch:property>
+      </sch:properties>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>root element is foo</svrl:text>
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:property-reference,
+      (
+        <svrl:property-reference property='p1' scheme='abc' role='def'><svrl:text>wrong=foo</svrl:text></svrl:property-reference>
+      )
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      (
+        <svrl:failed-assert
+        test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:property-reference property='p1' scheme='abc' role='def'><svrl:text>wrong=foo</svrl:text></svrl:property-reference><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+      )
+    )
+  )
+};
+
+(:~ multiple property references reported correctly in SVRL :)
+declare %unit:test function _:properties-multiple()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' properties='p1 p2'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:properties>
+        <sch:property id='p1' scheme='abc' role='def'>wrong</sch:property>
+        <sch:property id='p2' scheme='ghi' role='jkl'>still wrong</sch:property>
+      </sch:properties>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>root element is foo</svrl:text>
+    ),
+    unit:assert(
+      count($result/svrl:failed-assert/svrl:property-reference) = 2
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:property-reference,
+      (
+        <svrl:property-reference property='p1' scheme='abc' role='def'><svrl:text>wrong</svrl:text></svrl:property-reference>,
+        <svrl:property-reference property='p2' scheme='ghi' role='jkl'><svrl:text>still wrong</svrl:text></svrl:property-reference>
+      )
+    )
+  )
+};
+
+(:~ children of property handled in SVRL :)
+declare %unit:test function _:properties-mixed-content()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' properties='p1'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:properties>
+        <sch:property id='p1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'><sch:name/><foreign/><sch:emph/><sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span>wrong</sch:property>
+      </sch:properties>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert(
+      count($result/svrl:failed-assert/svrl:property-reference) = 1      
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/@property[.='p1']
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text
+    ),
+    unit:assert(
+      starts-with($result/svrl:failed-assert/svrl:property-reference/svrl:text,
+      'foo')
+    ),
+    unit:assert(
+      ends-with($result/svrl:failed-assert/svrl:property-reference/svrl:text,
+      'wrong')
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text/foreign
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text/svrl:emph
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text/svrl:dir[@value='ltr']
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text/svrl:span[@class='blort']
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:property-reference/svrl:text/svrl:span[@class='blort']/foreign
+    ),
+    unit:assert(
+      $result/svrl:failed-assert/svrl:text[.='root element is foo']
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      (
+        <svrl:failed-assert
+        test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:property-reference property='p1' role='warning'><svrl:text>foo<foreign/><svrl:emph/><svrl:dir value='ltr'>dir<foreign/></svrl:dir> and <svrl:span class='blort'>span<foreign/></svrl:span>wrong</svrl:text></svrl:property-reference><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+      )
+    )
+  )
+};

@@ -8,6 +8,7 @@ import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils'
   at 'utils.xqm';    
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
+declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
 
 declare variable $c:DEFAULT_PHASE as xs:string := '#DEFAULT';
 declare variable $c:ALL_PATTERNS as xs:string := '#ALL';

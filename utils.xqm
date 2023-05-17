@@ -4,6 +4,7 @@ module namespace util = 'http://www.andrewsales.com/ns/xqs-utils';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
+declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
 
 (:~ Builds the string of variable declarations in the prolog, for initial
  : evaluation.
