@@ -13,7 +13,7 @@ import module namespace context = 'http://www.andrewsales.com/ns/xqs-context'
   at '../context.xqm';  
 
 (:~ schema title passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-title()
+declare %unit:test function _:eval-schema-title()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -42,7 +42,7 @@ declare %unit:test function _:test-eval-schema-title()
 };
 
 (:~ no schema title present :)
-declare %unit:test function _:test-eval-schema-no-title()
+declare %unit:test function _:eval-schema-no-title()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -70,7 +70,7 @@ declare %unit:test function _:test-eval-schema-no-title()
 };
 
 (:~ phase passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-phase()
+declare %unit:test function _:eval-schema-phase()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -99,7 +99,7 @@ declare %unit:test function _:test-eval-schema-phase()
 };
 
 (:~ no phase present :)
-declare %unit:test function _:test-eval-schema-no-phase()
+declare %unit:test function _:eval-schema-no-phase()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -128,7 +128,7 @@ declare %unit:test function _:test-eval-schema-no-phase()
 };
 
 (:~ namespaces passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-namespaces()
+declare %unit:test function _:eval-schema-namespaces()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -157,7 +157,7 @@ declare %unit:test function _:test-eval-schema-namespaces()
 };
 
 (:~ active pattern processed :)
-declare %unit:test function _:test-process-pattern()
+declare %unit:test function _:process-pattern()
 {
   let $result := eval:pattern(
     <sch:pattern id='e' name='f' role='g'>
@@ -173,7 +173,7 @@ declare %unit:test function _:test-process-pattern()
 };
 
 (:~ rule in active pattern processed :)
-declare %unit:test function _:test-process-rule()
+declare %unit:test function _:process-rule()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'/>,
@@ -187,7 +187,7 @@ declare %unit:test function _:test-process-rule()
 };
 
 (:~ rule in active pattern processed, with local variable :)
-declare %unit:test function _:test-process-rule-local-variable()
+declare %unit:test function _:process-rule-local-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -205,7 +205,7 @@ declare %unit:test function _:test-process-rule-local-variable()
 (:~ Can only happen if schema is invalid. :)
 declare 
 %unit:test('expected', 'eval:invalid-assertion-element') 
-function _:test-invalid-assertion-element()
+function _:invalid-assertion-element()
 {
   eval:assertion(
     <sch:invalid-assertion-element test='.'/>,
@@ -216,7 +216,7 @@ function _:test-invalid-assertion-element()
 };
 
 (:~ assert processed, with local variable :)
-declare %unit:test function _:test-process-assert-with-variable()
+declare %unit:test function _:process-assert-with-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -237,7 +237,7 @@ declare %unit:test function _:test-process-assert-with-variable()
 };
 
 (:~ report processed, with local variable :)
-declare %unit:test function _:test-process-report-with-variable()
+declare %unit:test function _:process-report-with-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -259,7 +259,7 @@ declare %unit:test function _:test-process-report-with-variable()
 };
 
 (:~ report processed, with global variable :)
-declare %unit:test function _:test-process-report-with-global-variable()
+declare %unit:test function _:process-report-with-global-variable()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -284,7 +284,7 @@ declare %unit:test function _:test-process-report-with-global-variable()
 };
 
 (:~ report processed, with pattern variable :)
-declare %unit:test function _:test-process-report-with-pattern-variable()
+declare %unit:test function _:process-report-with-pattern-variable()
 {
   let $result := eval:schema(
     document{<foo allowed='bar'/>},
@@ -308,7 +308,7 @@ declare %unit:test function _:test-process-report-with-pattern-variable()
 };
 
 (:~ report processed, with global variable element node :)
-declare %unit:test function _:test-process-report-with-global-variable-element-node()
+declare %unit:test function _:process-report-with-global-variable-element-node()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -386,7 +386,7 @@ declare %unit:test function _:global-variable-in-name()
 };
 
 (:~ report processed, with local variable as element node :)
-declare %unit:test function _:test-process-report-with-variable-element-node()
+declare %unit:test function _:process-report-with-variable-element-node()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -408,7 +408,7 @@ declare %unit:test function _:test-process-report-with-variable-element-node()
 };
 
 (:~ value-of and name handled in assertion message :)
-declare %unit:test function _:test-value-of()
+declare %unit:test function _:value-of()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -430,7 +430,7 @@ declare %unit:test function _:test-value-of()
 };
 
 (:~ name/@path handled in assertion message :)
-declare %unit:test function _:test-name-path()
+declare %unit:test function _:name-path()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -451,7 +451,7 @@ declare %unit:test function _:test-name-path()
 };
 
 (:~ elements in assertion message handled correctly :)
-declare %unit:test function _:test-assertion-message-elements()
+declare %unit:test function _:assertion-message-elements()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -474,7 +474,7 @@ declare %unit:test function _:test-assertion-message-elements()
 };
 
 (:~ multiple assertion matches reported correctly :)
-declare %unit:test function _:test-multiple-results()
+declare %unit:test function _:multiple-results()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -500,7 +500,7 @@ declare %unit:test function _:test-multiple-results()
  : "A rule element acts as an if-then-else statement within each pattern." 
  : @see ISO2020, 6.5
  :)
-declare %unit:test function _:test-rule-halt-on-match()
+declare %unit:test function _:rule-halt-on-match()
 {
   let $result := eval:pattern(
     <sch:pattern>
@@ -529,7 +529,7 @@ declare %unit:test function _:test-rule-halt-on-match()
  : "A rule element acts as an if-then-else statement within each pattern." 
  : @see ISO2020, 6.5
  :)
-declare %unit:test function _:test-rule-continue-on-no-match()
+declare %unit:test function _:rule-continue-on-no-match()
 {
   let $result := eval:pattern(
     <sch:pattern>
@@ -560,7 +560,7 @@ declare %unit:test function _:test-rule-continue-on-no-match()
 (: DIAGNOSTICS :)
 
 (:~ diagnostics reported correctly in SVRL :)
-declare %unit:test function _:test-diagnostics()
+declare %unit:test function _:diagnostics()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -598,7 +598,7 @@ declare %unit:test function _:test-diagnostics()
 };
 
 (:~ children of diagnostic handled in SVRL :)
-declare %unit:test function _:test-diagnostics-mixed-content()
+declare %unit:test function _:diagnostics-mixed-content()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -626,7 +626,7 @@ declare %unit:test function _:test-diagnostics-mixed-content()
 };
 
 (:~ multiple diagnostic references handled correctly in SVRL :)
-declare %unit:test function _:test-diagnostics-multiple()
+declare %unit:test function _:diagnostics-multiple()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -668,7 +668,7 @@ declare %unit:test function _:test-diagnostics-multiple()
 (: PROPERTIES :)
 
 (:~ property references reported correctly in SVRL :)
-declare %unit:test function _:test-properties()
+declare %unit:test function _:properties()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -707,7 +707,7 @@ declare %unit:test function _:test-properties()
 };
 
 (:~ multiple property references reported correctly in SVRL :)
-declare %unit:test function _:test-properties-multiple()
+declare %unit:test function _:properties-multiple()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -743,7 +743,7 @@ declare %unit:test function _:test-properties-multiple()
 };
 
 (:~ children of property handled in SVRL :)
-declare %unit:test function _:test-properties-mixed-content()
+declare %unit:test function _:properties-mixed-content()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -832,7 +832,7 @@ declare %unit:test function _:global-variable-bindings()
 };
 
 (:~ global variable evaluated in context of lexically previous one :)
-declare %unit:test function _:test-global-variable-relies-on-previous()
+declare %unit:test function _:global-variable-relies-on-previous()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -860,7 +860,7 @@ declare %unit:test function _:test-global-variable-relies-on-previous()
 (:~ pattern variable is scoped to pattern
  : @see https://github.com/Schematron/schematron-conformance/blob/master/src/main/resources/tests/core/let-scope-pattern-01.xml
  :)
-declare %unit:test function _:test-pattern-variable-scope()
+declare %unit:test function _:pattern-variable-scope()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -891,7 +891,7 @@ declare %unit:test function _:test-pattern-variable-scope()
 };
 
 (:~ scope of rule variable :)
-declare %unit:test function _:test-rule-variable-scope()
+declare %unit:test function _:rule-variable-scope()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -925,7 +925,7 @@ declare %unit:test function _:test-rule-variable-scope()
 (:~ (prefixed~) pattern variable is scoped to pattern
  : @see https://github.com/Schematron/schematron-conformance/blob/master/src/main/resources/tests/core/let-scope-pattern-01.xml
  :)
-declare %unit:test function _:test-pattern-variable-scope-with-nss()
+declare %unit:test function _:pattern-variable-scope-with-nss()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -957,7 +957,7 @@ declare %unit:test function _:test-pattern-variable-scope-with-nss()
 };
 
 (:~ local variable with namespace prefix :)
-declare %unit:test function _:test-rule-variable-with-nss()
+declare %unit:test function _:rule-variable-with-nss()
 {
   let $result := eval:schema(
     document{<foo/>},

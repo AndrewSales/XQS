@@ -13,6 +13,9 @@ import module namespace context = 'http://www.andrewsales.com/ns/xqs-context'
   at '../context.xqm';  
 import module namespace compile = 'http://www.andrewsales.com/ns/xqs-compile' 
   at '../compile.xqm';    
+  
+declare variable $_:URI_PARAM := 'Q{http://www.andrewsales.com/ns/xqs}uri';  
+declare variable $_:DOC_PARAM := 'Q{http://www.andrewsales.com/ns/xqs}doc';  
 
 (:~ Only first rule in first pattern should fire.
  : No failed asserts.
@@ -41,7 +44,7 @@ declare %unit:test function _:compile-schema()
   let $compiled := compile:schema($schema, '')
   let $result := xquery:eval(
     $compiled,
-    map{'':$schema, 'Q{http://www.andrewsales.com/ns/xqs}uri':'foo.xml'}
+    map{$_:URI_PARAM:'foo.xml'}
   )
     
   return (
@@ -56,6 +59,37 @@ declare %unit:test function _:compile-schema()
     unit:assert-equals(
       $result/svrl:fired-rule/@id/data(),
       ('rule-1', 'rule-3')
+    )
+  )
+};
+
+(:~ elements in assertion message handled correctly :)
+declare %unit:test function _:assertion-message-elements()
+{
+  let $schema := <sch:schema>
+    <sch:pattern>
+      <sch:rule context='//bar'>
+        <sch:report test='.'>bar found <foreign>hello</foreign>: <sch:emph>emph</sch:emph>,
+      <sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span></sch:report>
+    </sch:rule></sch:pattern>
+    </sch:schema>
+    
+  let $compiled := compile:schema($schema, '')
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo><bar/></foo>}}
+  )
+  return
+  unit:assert-equals(
+    $result,
+    (
+      <svrl:schematron-output>
+      <svrl:active-pattern/>
+      <svrl:fired-rule context='//bar'/>
+      <svrl:successful-report 
+      test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found <foreign>hello</foreign>: <svrl:emph>emph</svrl:emph>,
+      <svrl:dir value='ltr'>dir<foreign/></svrl:dir> and <svrl:span class='blort'>span<foreign/></svrl:span></svrl:text></svrl:successful-report>
+      </svrl:schematron-output>
     )
   )
 };

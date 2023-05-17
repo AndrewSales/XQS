@@ -28,12 +28,6 @@ if(empty($rules))
     then $result
     else local:rules(tail($rules))    
   }; ';
-declare variable $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION :=  'declare function local:assertion-child-elements($element as element())
-as element()
-{
-  element{QName("http://purl.oclc.org/dsdl/svrl", local-name($element))}
-  {$element/@*, $element/node()}
-};';
 
 (:~ Compile a schema.
  : @param schema the schema to compile
@@ -48,8 +42,8 @@ as xs:string
   return string-join(
   (
     compile:prolog($schema, $active-phase),
-    'declare variable ' || $compile:INSTANCE_PARAM || ' as xs:anyURI external;
-    declare variable ' || $compile:INSTANCE_DOC || ' := doc(' || $compile:INSTANCE_PARAM || ');',
+    'declare variable ' || $compile:INSTANCE_PARAM || ' external;
+    declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');',
     $active-patterns ! compile:pattern(.),
     'declare function local:schema(){' ||
     serialize(<svrl:schematron-output>
@@ -63,7 +57,6 @@ as xs:string
       ','
     ) || '}'} </svrl:schematron-output>) ||
     '};' || $compile:RULES_FUNCTION || 
-    $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION ||     
     'local:schema()'
   ))
 };
@@ -201,11 +194,11 @@ declare function compile:assertion-message-content($content as node()*)
       case element(sch:value-of)
         return ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '}')
       case element(sch:emph)
-        return ()(: local:assertion-child-elements($node) :)
+        return output:assertion-child-elements($node)
       case element(sch:dir)
-        return ()(: local:assertion-child-elements($node) :)
+        return output:assertion-child-elements($node)
       case element(sch:span)
-        return ()(: local:assertion-child-elements($node) :)      
+        return output:assertion-child-elements($node)
     default return $node
   }
 };

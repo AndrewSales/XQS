@@ -170,7 +170,7 @@ as map(*)
     
     (: let $_ := trace('[1]$prolog='||serialize($prolog)) :)
     (: let $_ := trace('[2]$bindings='||serialize($bindings, map{'method':'adaptive'})) :)
-    let $_ := trace('[3]evaluating GLOBAL variable $'||$var/@name)
+    (: let $_ := trace('[3]evaluating GLOBAL variable $'||$var/@name) :)
     
     let $binding := c:evaluate-global-variable(
       $var,
