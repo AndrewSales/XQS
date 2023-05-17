@@ -14,7 +14,7 @@ as xs:string?
 {
   string-join(
     for $var in $globals
-    return 'declare variable $' || $var/@name || ':=' || $var/@value  || ';'
+    return 'declare variable $' || $var/@name || ':=' || util:variable-value($var)  || ';'
   )
 };
 
@@ -37,7 +37,7 @@ as xs:string
 {
   string-join(
     for $var in $locals
-    return 'let $' || $var/@name || ' := ' || util:local-variable-value($var),
+    return util:declare-variable($var/@name, util:variable-value($var)),
     ' '
   )
 };
@@ -48,7 +48,7 @@ as xs:string
  : current context. If no value attribute is specified, the value of the 
  : attribute is the element content of the let element."
  :)
-declare %private function util:local-variable-value($var as element(sch:let))
+declare %private function util:variable-value($var as element(sch:let))
 as xs:string
 {
   if($var/@value) then $var/@value/data() else serialize($var/*)
@@ -88,4 +88,13 @@ declare function util:escape($query as xs:string)
 as xs:string
 {
   replace($query, '&amp;', '&amp;amp;')
+};
+
+declare function util:declare-variable(
+  $name as xs:string,
+  $value as item()+
+)
+as xs:string
+{
+  'let $' || $name || ':=' || $value
 };

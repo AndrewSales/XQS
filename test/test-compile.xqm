@@ -93,3 +93,59 @@ declare %unit:test function _:assertion-message-elements()
     )
   )
 };
+
+(:~ report processed, with pattern variable :)
+declare %unit:test function _:process-report-with-pattern-variable()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:let name='allowed' value='foo/@allowed'/>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+          <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed: <sch:value-of select='$allowed'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '')
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo allowed='bar'/>}}
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report/string(),
+    (
+      'name foo is not allowed: bar'
+    )
+  )
+};
+
+(:~ report processed, with global variable element node :)
+declare %unit:test function _:process-report-with-global-variable-element-node()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+    <sch:let name='allowed'><allowed>bar</allowed></sch:let>
+      <sch:pattern>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+          <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed</sch:report>
+          <sch:report test='$allowed/self::allowed'></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '')
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report,
+    (
+      <svrl:successful-report 
+      test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>,
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text></svrl:text></svrl:successful-report>
+    )
+  )
+};

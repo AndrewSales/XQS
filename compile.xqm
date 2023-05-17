@@ -92,7 +92,7 @@ declare function compile:rule($rule as element(sch:rule))
   'declare function ' || $function-name || '(){' ||
   string-join(util:local-variable-decls($rule/sch:let), ' ') ||
     (if($rule/sch:let) then ' return ' else ()) ||
-    compile:declare-variable(
+    util:declare-variable(
       $compile:RULE_CONTEXT_NAME,
       $compile:INSTANCE_DOC || '/(' || $rule/@context || ')'
     ) ||
@@ -101,12 +101,13 @@ declare function compile:rule($rule as element(sch:rule))
     <svrl:fired-rule>
   {$rule/(@id, @name, @context, @role, @flag, @document)}
     </svrl:fired-rule>
-  ) || ', ' || $compile:RULE_CONTEXT || '!' ||
+  ) || ', ' || $compile:RULE_CONTEXT || '! (' ||
   string-join(
     for $assertion in $assertions
     return compile:function-name($assertion) || '(.,' || serialize($assertion) || ')', 
     ','
-  ) || ') else ()};' || $assertions ! compile:assertion(.)
+  ) 
+  || ')) else ()};' || string-join($assertions ! compile:assertion(.))
 };
 
 declare function compile:assertion($assertion as element())
@@ -118,7 +119,7 @@ declare function compile:assertion($assertion as element())
   '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
   string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
-  compile:declare-variable(
+  util:declare-variable(
     $compile:RESULT_NAME,
     $compile:RULE_CONTEXT || '/(' || $assertion/@test || ')'
   ) ||
@@ -145,19 +146,10 @@ as element()
   }
 };
 
-declare %private function compile:declare-variable(
-  $name as xs:string,
-  $value as item()+
-)
-as xs:string
-{
-  'let $' || $name || ':=' || $value
-};
-
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
 {
   for $var in $variables 
-  return compile:declare-variable(
+  return util:declare-variable(
     $var/@name,
     if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value || ')' 
     else serialize($var/*)
@@ -192,7 +184,7 @@ declare function compile:assertion-message-content($content as node()*)
           then ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@path || '}') 
           else '{name(' || $compile:RULE_CONTEXT || ')}'
       case element(sch:value-of)
-        return ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '}')
+        return ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '/data()}')
       case element(sch:emph)
         return output:assertion-child-elements($node)
       case element(sch:dir)
