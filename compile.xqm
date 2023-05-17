@@ -125,7 +125,12 @@ declare function compile:assertion($assertion as element())
   else
   'declare function ' || compile:function-name($assertion) ||
   '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
-  string-join(util:local-variable-decls($assertion/../sch:let), ' ') ||
+  string-join(
+    util:local-variable-decls(
+      ($assertion/../../sch:let, $assertion/../sch:let)	(:FIXME evaluate pattern variables against instance document root:)
+    ), 
+    ' '
+  ) || ' ' ||
   compile:declare-variable(
     $compile:RESULT_NAME,
     $compile:RULE_CONTEXT || '/(' || $assertion/@test || ')'
