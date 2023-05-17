@@ -12,9 +12,11 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
 declare variable $compile:RULE := '$Q{http://www.andrewsales.com/ns/xqs}rule';
-declare variable $compile:RULE_CONTEXT := '$Q{http://www.andrewsales.com/ns/xqs}context';
+declare variable $compile:RULE_CONTEXT_NAME := 'Q{http://www.andrewsales.com/ns/xqs}context';
+declare variable $compile:RULE_CONTEXT := '$' || $compile:RULE_CONTEXT_NAME;
 declare variable $compile:ASSERTION := '$Q{http://www.andrewsales.com/ns/xqs}assertion';
-declare variable $compile:RESULT := '$Q{http://www.andrewsales.com/ns/xqs}result';
+declare variable $compile:RESULT_NAME := 'Q{http://www.andrewsales.com/ns/xqs}result';
+declare variable $compile:RESULT := '$' || $compile:RESULT_NAME;
 declare variable $compile:RULES_FUNCTION := 'declare function local:rules($rules as function(*)+)
 as element()*
 {
@@ -26,37 +28,6 @@ if(empty($rules))
     then $result
     else local:rules(tail($rules))    
   }; ';
-declare variable $compile:ASSERTION_MESSAGE_FUNCTION := 'declare function local:assertion-message-content(
-  $content as node()*,
-  $rule-context as node()
-)
-{
-  element{Q{http://purl.oclc.org/dsdl/svrl}text}{(:TODO attributes:)
-  for $node in $content
-    return
-    typeswitch($node)
-      case element(Q{http://purl.oclc.org/dsdl/schematron}name)
-        return if($node/@path) 
-          then xquery:eval(
-            $prolog || $node/@path, 
-            map:merge((map{'':$rule-context}, $context?globals))
-          ) 
-          else name($rule-context)
-      case element(Q{http://purl.oclc.org/dsdl/schematron}value-of)
-        return xquery:eval(
-          $prolog || $node/@select, 
-          map:merge((map{'':$rule-context}, $context?globals))
-        ) 
-        => string()
-      case element(Q{http://purl.oclc.org/dsdl/schematron}emph)
-        return local:assertion-child-elements($node)
-      case element(Q{http://purl.oclc.org/dsdl/schematron}dir)
-        return local:assertion-child-elements($node)
-      case element(Q{http://purl.oclc.org/dsdl/schematron}span)
-        return local:assertion-child-elements($node)      
-    default return $node
-  }
-};';
 declare variable $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION :=  'declare function local:assertion-child-elements($element as element())
 as element()
 {
@@ -91,7 +62,7 @@ as xs:string
       return compile:function-name($pattern) ||'()',
       ','
     ) || '}'} </svrl:schematron-output>) ||
-    '};' || $compile:RULES_FUNCTION || $compile:ASSERTION_MESSAGE_FUNCTION ||
+    '};' || $compile:RULES_FUNCTION || 
     $compile:ASSERTION_CHILD_ELEMENTS_FUNCTION ||     
     'local:schema()'
   ))
@@ -130,9 +101,11 @@ declare function compile:rule($rule as element(sch:rule))
   'declare function ' || $function-name || '(){' ||
   string-join(util:local-variable-decls($rule/sch:let), ' ') ||
     (if($rule/sch:let) then ' return ' else ()) ||
-    'let ' || $compile:RULE_CONTEXT || ':= ' ||
-    $compile:INSTANCE_DOC || '/(' || $rule/@context || 
-') return if(' || $compile:RULE_CONTEXT || ') then (' || 
+    compile:declare-variable(
+      $compile:RULE_CONTEXT_NAME,
+      $compile:INSTANCE_DOC || '/(' || $rule/@context || ')'
+    ) ||
+  ' return if(' || $compile:RULE_CONTEXT || ') then (' || 
   serialize(
     <svrl:fired-rule>
   {$rule/(@id, @name, @context, @role, @flag, @document)}
@@ -153,8 +126,11 @@ declare function compile:assertion($assertion as element())
   'declare function ' || compile:function-name($assertion) ||
   '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') ||
-  'let ' || $compile:RESULT || ':= ' || $compile:RULE_CONTEXT || 
-  '/(' || $assertion/@test || ') return if(' || $compile:RESULT || ') then ' ||
+  compile:declare-variable(
+    $compile:RESULT_NAME,
+    $compile:RULE_CONTEXT || '/(' || $assertion/@test || ')'
+  ) ||
+  ' return if(' || $compile:RESULT || ') then ' ||
   (
     if($assertion/self::sch:assert) 
     then '() else ' || compile:assertion-message($assertion) => serialize()
@@ -173,18 +149,27 @@ as element()
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
     $assertion/(@id, @role, @flag, @test),
-    '{local:assertion-message-content(
-        $Q{http://www.andrewsales.com/ns/xqs}assertion/node(),
-        $Q{http://www.andrewsales.com/ns/xqs}context)}'
+    compile:assertion-message-content($assertion/node())
   }
+};
+
+declare %private function compile:declare-variable(
+  $name as xs:string,
+  $value as item()+
+)
+as xs:string
+{
+  'let $' || $name || ':=' || $value
 };
 
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
 {
   for $var in $variables 
-  return 'let $' || $var/@name || ' := ' || 
-  (if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value || ')' 
-  else serialize($var/*))
+  return compile:declare-variable(
+    $var/@name,
+    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value || ')' 
+    else serialize($var/*)
+  )
 };
 
 declare %private function compile:function-name($element as element())
@@ -202,4 +187,26 @@ declare %private function compile:function-id($element as element())
   else count(
     $element/preceding-sibling::sch:*[local-name() eq $element/local-name()]
   ) + 1
+};
+
+declare function compile:assertion-message-content($content as node()*)
+{
+  element{QName("http://purl.oclc.org/dsdl/svrl", "text")}{(:TODO attributes:)
+  for $node in $content
+    return
+    typeswitch($node)
+      case element(sch:name)
+        return if($node/@path) 
+          then ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@path || '}') 
+          else '{name(' || $compile:RULE_CONTEXT || ')}'
+      case element(sch:value-of)
+        return ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '}')
+      case element(sch:emph)
+        return ()(: local:assertion-child-elements($node) :)
+      case element(sch:dir)
+        return ()(: local:assertion-child-elements($node) :)
+      case element(sch:span)
+        return ()(: local:assertion-child-elements($node) :)      
+    default return $node
+  }
 };
