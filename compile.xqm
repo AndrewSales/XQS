@@ -80,8 +80,6 @@ declare function compile:pattern($pattern as element(sch:pattern))
   let $function-id := compile:function-id($pattern)
   return
   ('declare function ' || compile:function-name($pattern) || '(){' ||
-  string-join(compile:pattern-variables($pattern/sch:let), ' ') ||
-    (if($pattern/sch:let) then ' return ' else ()) ||
     serialize(<svrl:active-pattern>
     {$pattern/(@id, @documents, @name, @role)}
     </svrl:active-pattern>) || ',',
@@ -125,12 +123,8 @@ declare function compile:assertion($assertion as element())
   else
   'declare function ' || compile:function-name($assertion) ||
   '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
-  string-join(
-    util:local-variable-decls(
-      ($assertion/../../sch:let, $assertion/../sch:let)	(:FIXME evaluate pattern variables against instance document root:)
-    ), 
-    ' '
-  ) || ' ' ||
+  string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
+  string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
   compile:declare-variable(
     $compile:RESULT_NAME,
     $compile:RULE_CONTEXT || '/(' || $assertion/@test || ')'
