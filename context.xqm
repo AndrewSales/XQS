@@ -272,3 +272,31 @@ as map(*)
   (: let $_ := trace('[4]$bindings='||serialize($bindings, map{'method':'adaptive'})) :)
   return $bindings
 };
+
+(:~ Evaluate the pattern/@documents, updating the context map with the documents
+ : at the resulting locations. (The map is returned unchanged if no such attribute
+ : exists.)
+ : @see ISO2020, 5.4.10: "The optional documents attribute provides IRIs of the
+ : subordinate documents the rule contexts are relative to. If the expression 
+ : evaluates to more than one IRI, then the pattern is sought in each of the 
+ : documents. The documents attribute is evaluated in the context of the 
+ : original instance document root."
+ : @param documents the documents attribute
+ : @param context the validation context
+ :)
+declare function c:pattern-documents(
+  $documents as attribute(documents)?,
+  $context as map(*)
+)
+as map(*)
+{
+  if($documents) 
+  then 
+    let $uris as xs:anyURI* := xquery:eval(
+      util:make-query-prolog($context) || $documents => util:escape(),
+      map{'':$context?instance},
+      map{'pass':'true'}	(:report exception details:)
+    )
+    return ()
+  else $context
+};

@@ -62,10 +62,12 @@ as xs:string
 };
 
 declare function compile:prolog($schema as element(sch:schema), $phase)
+as xs:string*
 {
-  $schema/sch:ns ! context:make-ns-decls(.) ||
-  context:get-global-variables($schema, $phase)
-  => util:global-variable-decls()
+  string-join($schema/sch:ns ! context:make-ns-decls(.)) => util:escape() ||
+  string-join(
+    context:get-global-variables($schema, $phase) => util:global-variable-decls()
+  )
 };
 
 declare function compile:pattern($pattern as element(sch:pattern))
@@ -94,7 +96,7 @@ declare function compile:rule($rule as element(sch:rule))
     (if($rule/sch:let) then ' return ' else ()) ||
     util:declare-variable(
       $compile:RULE_CONTEXT_NAME,
-      $compile:INSTANCE_DOC || '/(' || $rule/@context || ')'
+      $compile:INSTANCE_DOC || '/(' || $rule/@context => util:escape() || ')'
     ) ||
   ' return if(' || $compile:RULE_CONTEXT || ') then (' || 
   serialize(
@@ -121,7 +123,7 @@ declare function compile:assertion($assertion as element())
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
   util:declare-variable(
     $compile:RESULT_NAME,
-    $compile:RULE_CONTEXT || '/(' || $assertion/@test || ')'
+    $compile:RULE_CONTEXT || '/(' || $assertion/@test => util:escape() || ')'
   ) ||
   ' return if(' || $compile:RESULT || ') then ' ||
   (
@@ -162,7 +164,7 @@ declare %private function compile:pattern-variables($variables as element(sch:le
   for $var in $variables 
   return util:declare-variable(
     $var/@name,
-    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value || ')' 
+    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value => util:escape() || ')' 
     else serialize($var/*)
   )
 };

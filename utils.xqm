@@ -52,7 +52,7 @@ as xs:string
 declare %private function util:variable-value($var as element(sch:let))
 as xs:string
 {
-  if($var/@value) then $var/@value/data() else serialize($var/*)
+  if($var/@value) then $var/@value/data() => util:escape() else serialize($var/*)
 };
 
 (:~ Assembles the query prolog of namespace and variable declarations.
@@ -61,7 +61,8 @@ as xs:string
 declare function util:make-query-prolog($context as map(*))
 as xs:string?
 {
-  $context?ns-decls || util:global-variable-external-decls($context?globals)
+  ($context?ns-decls || util:global-variable-external-decls($context?globals))
+  => util:escape()
 };
 
 (:~ Creates a QName from a prefixed variable name, looking up any URI from the

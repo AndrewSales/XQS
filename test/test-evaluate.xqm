@@ -1056,6 +1056,29 @@ declare %unit:test function _:built-in-entities-namespaces()
   )
 };
 
+declare %unit:test function _:pattern-documents()
+{
+  let $result := eval:schema(
+    document{<element secondary="document-02.xml"/>},
+    <sch:schema>
+      <sch:pattern documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
+
+
 (:TODO
 - conformance suite: https://github.com/Schematron/schematron-conformance/tree/master/src/main/resources/tests
 :)
