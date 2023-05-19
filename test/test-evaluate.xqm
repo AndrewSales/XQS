@@ -1059,7 +1059,7 @@ declare %unit:test function _:built-in-entities-namespaces()
 declare %unit:test function _:pattern-documents()
 {
   let $result := eval:schema(
-    document{<element secondary="document-02.xml"/>},
+    doc('document-01.xml'),
     <sch:schema>
       <sch:pattern documents="/element/@secondary">
         <sch:rule context="/">

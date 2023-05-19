@@ -59,7 +59,7 @@ declare function eval:pattern(
   
   (:update context in light of @documents - N.B. doing it here means pattern
    variables are in scope when @documents is evaluated:)
-  let $context := context:pattern-documents($pattern/@documents, $context)
+  let $context := context:evaluate-pattern-documents($pattern/@documents, $context)
   
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)

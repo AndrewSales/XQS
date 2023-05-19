@@ -274,8 +274,8 @@ as map(*)
 };
 
 (:~ Evaluate the pattern/@documents, updating the context map with the documents
- : at the resulting locations. (The map is returned unchanged if no such attribute
- : exists.)
+ : at the resulting locations. The map is returned unchanged if no such attribute
+ : exists.
  : @see ISO2020, 5.4.10: "The optional documents attribute provides IRIs of the
  : subordinate documents the rule contexts are relative to. If the expression 
  : evaluates to more than one IRI, then the pattern is sought in each of the 
@@ -284,7 +284,7 @@ as map(*)
  : @param documents the documents attribute
  : @param context the validation context
  :)
-declare function c:pattern-documents(
+declare function c:evaluate-pattern-documents(
   $documents as attribute(documents)?,
   $context as map(*)
 )
@@ -292,11 +292,17 @@ as map(*)
 {
   if($documents) 
   then 
-    let $uris as xs:anyURI* := xquery:eval(
+    let $uris := xquery:eval(
       util:make-query-prolog($context) || $documents => util:escape(),
       map{'':$context?instance},
       map{'pass':'true'}	(:report exception details:)
     )
-    return ()
+    return map:put(
+      $context, 
+      'instance', 
+      $uris ! doc(
+        resolve-uri(., $context?instance/base-uri())
+      )
+    )
   else $context
 };
