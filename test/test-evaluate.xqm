@@ -1070,9 +1070,44 @@ declare %unit:test function _:pattern-documents()
     ''
   )
   return (
+    unit:assert($result/svrl:active-pattern/@documents),
     unit:assert-equals(
       count($result/svrl:successful-report),
       1
+    )
+  )
+};
+
+declare %unit:test function _:pattern-documents-multiple()
+{
+  let $result := eval:schema(
+    doc('document-03.xml'),
+    <sch:schema>
+      <sch:pattern documents="/foo/subordinate">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:active-pattern/@documents),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[1]/@document/data(),
+      resolve-uri('document-04.xml', static-base-uri())
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[2]/@document/data(),
+      resolve-uri('document-05.xml', static-base-uri())
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[3]/@document/data(),
+      resolve-uri('document-06.xml', static-base-uri())
     )
   )
 };

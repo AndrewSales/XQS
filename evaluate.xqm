@@ -59,19 +59,22 @@ declare function eval:pattern(
   
   (:update context in light of @documents - N.B. doing it here means pattern
    variables are in scope when @documents is evaluated:)
-  let $context := context:evaluate-pattern-documents($pattern/@documents, $context)
+  let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
+  
+  (: let $_ := trace('instance='||$context?instance=>serialize()|| ' (' || count($context?instance) || ')') :)
   
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
-    
-  return (
+
+  return	(:TODO active-pattern/@name:)(
     <svrl:active-pattern>
-    {$pattern/(@id, @documents, @name, @role)}
+    {$pattern/(@id, @name, @role), 
+    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)}}
     </svrl:active-pattern>, 
-    eval:rules(
+    $context?instance ! eval:rules(
       $pattern/sch:rule, 
       util:make-query-prolog($context), 
-      $context
+      map:put($context, 'instance', .)
     )
   )
 };
@@ -125,7 +128,10 @@ as element()*
   return 
   if($rule-context)
   then(
-    <svrl:fired-rule>{$rule/(@id, @name, @context, @role, @flag, @document)}</svrl:fired-rule>,
+    <svrl:fired-rule>
+    {$rule/(@id, @name, @context, @role, @flag),
+    if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
+    </svrl:fired-rule>,
     eval:assertions($rule, $prolog, $rule-context, $context)
   )
   else ()
