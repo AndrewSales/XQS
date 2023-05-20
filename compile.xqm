@@ -197,7 +197,8 @@ declare function compile:assertion-message-content($content as node()*)
           then ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@path || '}') 
           else '{name(' || $compile:RULE_CONTEXT || ')}'
       case element(sch:value-of)
-        return ('{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '/data()}')
+        return ('{let $result := (' || $compile:RULE_CONTEXT || ')/' || $node/@select
+           || ' return if($result instance of node()) then $result/data() else $result}')
       case element(sch:emph)
         return output:assertion-child-elements($node)
       case element(sch:dir)
@@ -222,7 +223,7 @@ as xs:string?
       if($var/@value instance of xs:anyAtomicType+)
       then $var/@value/data() => util:escape()
       else 
-      $compile:INSTANCE_DOC || '/(' || $var/@value => util:escape() || ')'
+      $compile:INSTANCE_DOC || '/(' || util:variable-value($var) || ')'
     )
     || ';'
   )

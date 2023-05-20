@@ -49,7 +49,7 @@ as xs:string
  : current context. If no value attribute is specified, the value of the 
  : attribute is the element content of the let element."
  :)
-declare %private function util:variable-value($var as element(sch:let))
+declare function util:variable-value($var as element(sch:let))
 as xs:string
 {
   if($var/@value) then $var/@value/data() => util:escape() else serialize($var/*)

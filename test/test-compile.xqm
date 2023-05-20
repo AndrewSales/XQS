@@ -288,7 +288,8 @@ declare %unit:test function _:properties()
   )
   let $result := xquery:eval(
     $compiled,
-    map{$_:DOC_PARAM:document{<foo/>}}
+    map{$_:DOC_PARAM:document{<foo/>}},
+    map{'pass':'true'}
   )
   return (
     unit:assert-equals(
