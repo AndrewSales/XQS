@@ -17,7 +17,7 @@ declare variable $compile:RULE_CONTEXT := '$' || $compile:RULE_CONTEXT_NAME;
 declare variable $compile:ASSERTION := '$Q{http://www.andrewsales.com/ns/xqs}assertion';
 declare variable $compile:RESULT_NAME := 'Q{http://www.andrewsales.com/ns/xqs}result';
 declare variable $compile:RESULT := '$' || $compile:RESULT_NAME;
-declare variable $compile:RULES_FUNCTION := 'declare function local:rules($rules as function(*)+)
+declare variable $compile:RULES_FUNCTION := 'declare function local:rules($rules as function(*)*)
 as element()*
 {
 if(empty($rules))
@@ -28,6 +28,8 @@ if(empty($rules))
     then $result
     else local:rules(tail($rules))    
   }; ';
+declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
+    declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
 (:~ Compile a schema.
  : @param schema the schema to compile
@@ -35,38 +37,35 @@ if(empty($rules))
  : @return the compiled schema
  :)
 declare function compile:schema($schema as element(sch:schema), $phase as xs:string?)
-as xs:string
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
-  return string-join(
+  return
   (
     compile:prolog($schema, $active-phase),
-    'declare variable ' || $compile:INSTANCE_PARAM || ' external;
-    declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');',
     $active-patterns ! compile:pattern(.),
-    'declare function local:schema(){' ||
-    serialize(<svrl:schematron-output>
+    'declare function local:schema(){',
+    <svrl:schematron-output>
       {output:schema-title($schema/sch:title)}
       {$schema/@schemaVersion}
       {if($phase) then attribute{'phase'}{$phase/@id}}
       {output:namespace-decls-as-svrl($schema/sch:ns)}
-    {'{' || string-join(
+    {'{', string-join(
       for $pattern in $active-patterns 
       return compile:function-name($pattern) ||'()',
       ','
-    ) || '}'} </svrl:schematron-output>) ||
-    '};' || $compile:RULES_FUNCTION || 
-    'local:schema()'
-  ))
+    ), '}'} </svrl:schematron-output>,
+    '};' || $compile:RULES_FUNCTION || 'local:schema()'
+  ) => serialize(map{'method':'basex'})
 };
 
 declare function compile:prolog($schema as element(sch:schema), $phase)
 as xs:string*
 {
   string-join($schema/sch:ns ! context:make-ns-decls(.)) => util:escape() ||
+  $compile:EXTERNAL_VARIABLES ||
   string-join(
-    context:get-global-variables($schema, $phase) => util:global-variable-decls()
+    context:get-global-variables($schema, $phase) => compile:global-variable-decls()
   )
 };
 
@@ -187,6 +186,7 @@ declare %private function compile:function-id($element as element())
 };
 
 declare function compile:assertion-message-content($content as node()*)
+(: as element(svrl:text) :)
 {
   element{QName("http://purl.oclc.org/dsdl/svrl", "text")}{(:TODO attributes:)
   for $node in $content
@@ -206,4 +206,24 @@ declare function compile:assertion-message-content($content as node()*)
         return output:assertion-child-elements($node)
     default return $node
   }
+};
+
+(:~ Builds the string of variable declarations in the prolog, for initial
+ : evaluation.
+ : @param globals the global variables
+ :)
+declare function compile:global-variable-decls($globals as element(sch:let)*)
+as xs:string?
+{
+  string-join(
+    for $var in $globals
+    return 'declare variable $' || $var/@name || ':=' || 
+    (
+      if($var/@value instance of xs:anyAtomicType+)
+      then $var/@value/data() => util:escape()
+      else 
+      $compile:INSTANCE_DOC || '/(' || $var/@value => util:escape() || ')'
+    )
+    || ';'
+  )
 };

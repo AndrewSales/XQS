@@ -498,3 +498,25 @@ declare %unit:test function _:built-in-entities-namespaces()
     unit:assert(count($result/svrl:successful-report) = 6)
   )
 };
+
+declare %unit:test function _:assertion-message-braces()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*">{{</sch:report>
+          <sch:report test="*">}}</sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};

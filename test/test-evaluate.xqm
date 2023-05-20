@@ -1112,7 +1112,39 @@ declare %unit:test function _:pattern-documents-multiple()
   )
 };
 
-
+declare %unit:test function _:assertion-message-braces()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*">{{</sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern>
+      <sch:rule context="/">
+          <sch:report test="*"><foo>}}</foo></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report[1]/data(),
+      '{'
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report[2]/svrl:text/foo/data(),
+      '}'
+    )
+  )
+};
 
 (:TODO
 - conformance suite: https://github.com/Schematron/schematron-conformance/tree/master/src/main/resources/tests
