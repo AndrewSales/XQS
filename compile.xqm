@@ -12,6 +12,7 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
 declare variable $compile:SUBORDINATE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc';
+declare variable $compile:SUBORDINATE_DOC_URIS := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc-uris';
 declare variable $compile:RULE := '$Q{http://www.andrewsales.com/ns/xqs}rule';
 declare variable $compile:RULE_CONTEXT_NAME := 'Q{http://www.andrewsales.com/ns/xqs}context';
 declare variable $compile:RULE_CONTEXT := '$' || $compile:RULE_CONTEXT_NAME;
@@ -29,6 +30,17 @@ if(empty($rules))
     then $result
     else local:rules(tail($rules))    
   }; ';
+declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $doc as document-node())
+as element()*
+{
+if(empty($rules))
+  then ()
+  else
+    let $result := head($rules)($doc)
+    return if($result)
+    then $result
+    else local:rules(tail($rules), $doc)    
+  }; ';  
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
@@ -56,7 +68,8 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
       return compile:function-name($pattern) ||'()',
       ','
     ), '}'} </svrl:schematron-output>,
-    '};' || $compile:RULES_FUNCTION || 'local:schema()'
+    '};' || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
+    'local:schema()'
   ) => serialize(map{'method':'basex'})
 };
 
@@ -97,13 +110,22 @@ declare function compile:pattern-documents($pattern as element(sch:pattern))
   let $function-id := compile:function-id($pattern)
   return
   ('declare function ' || compile:function-name($pattern) || '(){' ||
-    serialize(<svrl:active-pattern documents='TODO'>
+    'let ' || $compile:SUBORDINATE_DOC_URIS || ':=' || 
+    $compile:INSTANCE_DOC || '/(' || $pattern/@documents => util:escape() || ')' ||
+    'let ' || $compile:SUBORDINATE_DOC || ' as document-node()* :=' ||
+    $compile:SUBORDINATE_DOC_URIS || '!' || 'doc(.) return (' ||
+    serialize(<svrl:active-pattern 
+      documents='{{string-join({$compile:SUBORDINATE_DOC} ! base-uri(.))}}'>
     {$pattern/(@id, @name, @role)}
     </svrl:active-pattern>) || ',',
     'local:rules((' ||
-    string-join(for $rule in $pattern/sch:rule 
-    return ' ' || compile:function-name($rule) || '#1', ',') || '))',
-    '};',
+    string-join(
+      for $rule in $pattern/sch:rule 
+      return 
+        $compile:SUBORDINATE_DOC || '!(' || compile:function-name($rule) || '#1,.)',
+      ','
+    ) || '))',
+    ')};',
     $pattern/sch:rule ! compile:rule-documents(.)
   )
 };
