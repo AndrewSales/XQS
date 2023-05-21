@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://docbook.org/xml/5.1/rng/docbook.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<?xml-model href="http://docbook.org/xml/5.1/sch/docbook.sch" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<article xmlns="http://docbook.org/ns/docbook"
+    xmlns:xlink="http://www.w3.org/1999/xlink" version="5.1">
+    <info>
+        <title>XQS: a native XQuery Schematron implementation</title>
+        <author>
+            <personname><firstname>Andrew</firstname><surname>Sales</surname></personname>
+        </author>
+        <abstract><para>[adapt from submission]</para></abstract>
+    </info>
+    <section>
+        <title>Background</title>
+        <para>The existence of a Schematron validator implemented in XQuery has been a periodic enquiry in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
+        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come be regarded in this way.</para>
+        <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, they are not defined in the normative annexes.</para>
+        <para>For the purposes of updating the standard in this way, the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database.</para>
+        <para>This paper will examine three main areas arising from the work:</para>
+        <itemizedlist>
+            <listitem>
+                <para>design choices made</para>
+            </listitem>
+            <listitem>
+                <para>[...]</para>
+            </listitem>
+            <listitem>
+                <para>how these may influence the next edition of ISO Schematron.</para>
+            </listitem>
+        </itemizedlist>
+    </section>
+    <section>
+        <title>Rationale</title>
+        <para>Why do this? no ISO obligation for a "reference" impl, but good to have a toy available during standards dev work</para>
+        <para>have nagged community for some time - put money where mouth is</para>
+        <para>Can you have too many implementations?</para>
+        <para>The prospect of invoking validation directly - without any so-called schema "compilation" - was attractive, based on previous work[XMLProbe's processing model]. lLkewise the possibility of writing this tool in such a way that validation could be run directly, or using the schema compiled as XQuery, in an engine-neutral way, i.e. that the code should be portable as far as possible.</para>
+        <para>The lessons learned in these attempts will be expanded on below, and remaining work identified.</para>
+    </section>
+    <section>
+        <title>Limitations</title>
+        <para>no expand or include support (yet)</para>
+        <para>written in BaseX dialect of XQuery: "direct evaluation" of schema relies on that, but generated XQuery ("compiled schema") uses no engine-specific functions, so also runs under e.g. Saxon.</para>
+    </section>
+    
+    <section>
+        <title>Testing</title>
+        <para>BaseX unit module. Compile tests essentially come for free \o/</para>
+    </section>
+</article>
