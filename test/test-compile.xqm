@@ -516,10 +516,36 @@ declare %unit:test function _:assertion-message-braces()
   )
   let $result := xquery:eval(
     $compiled,
-    map{$_:DOC_PARAM:document{<foo/>}}
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
   )
   return (
     unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};
+
+declare %unit:test function _:test-message-braces()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/*">
+          <sch:report test="contains(., '{{')"></sch:report>
+          <sch:report test="contains(., '}}')"></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert($result/svrl:successful-report),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    )
   )
 };
 

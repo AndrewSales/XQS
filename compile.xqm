@@ -91,11 +91,10 @@ declare function compile:pattern($pattern as element(sch:pattern))
   else
     let $function-id := compile:function-id($pattern)
     return
-    ('declare function ' || compile:function-name($pattern) || '(){' ||
-      serialize(<svrl:active-pattern>
+    ('declare function ' || compile:function-name($pattern) || '(){',
+      <svrl:active-pattern>
       {$pattern/(@id, @name, @role)}
-      </svrl:active-pattern>) || ',',
-      'local:rules((' ||
+      </svrl:active-pattern>, ', local:rules((' ||
       string-join(for $rule in $pattern/sch:rule 
       return ' ' || compile:function-name($rule) || '#0', ',') || '))',
       '};',
@@ -114,12 +113,11 @@ declare function compile:pattern-documents($pattern as element(sch:pattern))
     'let ' || $compile:SUBORDINATE_DOC_URIS || ':=' || 
     $compile:INSTANCE_DOC || '/(' || $pattern/@documents => util:escape() || ')' ||
     'let ' || $compile:SUBORDINATE_DOC || ' as document-node()* :=' ||
-    $compile:SUBORDINATE_DOC_URIS || '!' || 'doc(.) return (' ||
-    serialize(<svrl:active-pattern 
+    $compile:SUBORDINATE_DOC_URIS || '!' || 'doc(.) return (',
+    <svrl:active-pattern 
       documents='{{string-join({$compile:SUBORDINATE_DOC} ! base-uri(.))}}'>
     {$pattern/(@id, @name, @role)}
-    </svrl:active-pattern>) || ',',
-    'local:rules((' ||
+    </svrl:active-pattern>, ', local:rules((' ||
     string-join(
       for $rule in $pattern/sch:rule 
       return compile:function-name($rule) || '#1',
@@ -135,53 +133,53 @@ declare function compile:rule-documents($rule as element(sch:rule))
 {
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
-  return
-  'declare function ' || $function-name || '(' || $compile:SUBORDINATE_DOC || 
-  ' as document-node()){' ||
-  string-join(util:local-variable-decls($rule/sch:let), ' ') ||
-    (if($rule/sch:let) then ' return ' else ()) ||
-    util:declare-variable(
-      $compile:RULE_CONTEXT_NAME,
-      $compile:SUBORDINATE_DOC || '/(' || $rule/@context => util:escape() || ')'
-    ) ||
-  ' return if(' || $compile:RULE_CONTEXT || ') then (' || 
-  serialize(
-    <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOC})}}'>
-  {$rule/(@id, @name, @context, @role, @flag)}
-    </svrl:fired-rule>
-  ) || ', ' || $compile:RULE_CONTEXT || '! (' ||
-  string-join(
-    for $assertion in $assertions
-    return compile:function-name($assertion, true()) || '(.,' || serialize($assertion) || ')', 
-    ','
-  ) 
-  || ')) else ()};' || string-join($assertions ! compile:assertion(., true()))
+  return (
+    'declare function ' || $function-name || '(' || $compile:SUBORDINATE_DOC || 
+    ' as document-node()){' ||
+    string-join(util:local-variable-decls($rule/sch:let), ' ') ||
+      (if($rule/sch:let) then ' return ' else ()) ||
+      util:declare-variable(
+        $compile:RULE_CONTEXT_NAME,
+        $compile:SUBORDINATE_DOC || '/(' || $rule/@context => util:escape() || ')'
+      ) ||
+    ' return if(' || $compile:RULE_CONTEXT || ') then (',
+      <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOC})}}'>
+      {$rule/(@id, @name, @context, @role, @flag)}
+      </svrl:fired-rule>,
+    ', ' || $compile:RULE_CONTEXT || '! (',
+    string-join(
+      for $assertion in $assertions
+      return compile:function-name($assertion, true()) || '(.)', 
+      ','
+    ) 
+    || ')) else ()};' || string-join($assertions ! compile:assertion(., true()))
+  )
 };
 
 declare function compile:rule($rule as element(sch:rule))
 {
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
-  return
-  'declare function ' || $function-name || '(){' ||
-  string-join(util:local-variable-decls($rule/sch:let), ' ') ||
-    (if($rule/sch:let) then ' return ' else ()) ||
-    util:declare-variable(
-      $compile:RULE_CONTEXT_NAME,
-      $compile:INSTANCE_DOC || '/(' || $rule/@context => util:escape() || ')'
-    ) ||
-  ' return if(' || $compile:RULE_CONTEXT || ') then (' || 
-  serialize(
+  return (
+    'declare function ' || $function-name || '(){' ||
+    string-join(util:local-variable-decls($rule/sch:let), ' ') ||
+      (if($rule/sch:let) then ' return ' else ()) ||
+      util:declare-variable(
+        $compile:RULE_CONTEXT_NAME,
+        $compile:INSTANCE_DOC || '/(' || $rule/@context => util:escape() || ')'
+      ) ||
+    ' return if(' || $compile:RULE_CONTEXT || ') then (',
     <svrl:fired-rule>
-  {$rule/(@id, @name, @context, @role, @flag, @document)}
-    </svrl:fired-rule>
-  ) || ', ' || $compile:RULE_CONTEXT || '! (' ||
-  string-join(
-    for $assertion in $assertions
-    return compile:function-name($assertion) || '(.,' || serialize($assertion) || ')', 
-    ','
-  ) 
-  || ')) else ()};' || string-join($assertions ! compile:assertion(., false()))
+    {$rule/(@id, @name, @context, @role, @flag)}
+    </svrl:fired-rule>,
+    ', ' || $compile:RULE_CONTEXT || '! (' ||
+    string-join(
+      for $assertion in $assertions
+      return compile:function-name($assertion) || '(.)', 
+      ','
+    ) 
+    || ')) else ()};' || string-join($assertions ! compile:assertion(., false()))
+  )
 };
 
 declare function compile:assertion(
@@ -193,7 +191,7 @@ declare function compile:assertion(
   then error()	(:shouldn't happen if schema is valid:)
   else
   'declare function ' || compile:function-name($assertion, $distinct-name) ||
-  '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
+  '(' || $compile:RULE_CONTEXT || '){' ||
   string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
   util:declare-variable(
@@ -218,7 +216,8 @@ as element()
   }
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
-    $assertion/(@id, @role, @flag, @test),
+    $assertion/(@id, @role, @flag),
+    attribute{'test'}{$assertion/@test => replace('\{', '{{') => replace('\}', '}}')},
     $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]
     !
     <svrl:diagnostic-reference diagnostic='{@id}'>
@@ -274,9 +273,9 @@ declare %private function compile:function-id($element as element())
 };
 
 declare function compile:assertion-message-content($content as node()*)
-(: as element(svrl:text) :)
+as element(svrl:text)
 {
-  element{QName("http://purl.oclc.org/dsdl/svrl", "text")}{(:TODO attributes:)
+  <svrl:text>{(:TODO attributes:)
   for $node in $content
     return
     typeswitch($node)
@@ -294,7 +293,7 @@ declare function compile:assertion-message-content($content as node()*)
       case element(sch:span)
         return output:assertion-child-elements($node)
     default return $node
-  }
+  }</svrl:text>
 };
 
 (:~ Builds the string of variable declarations in the prolog, for initial

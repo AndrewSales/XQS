@@ -83,13 +83,15 @@ as xs:QName
   )
 };
 
-(:~ Escape ampersands in dynamically-evaluated queries.
+(:~ Escape ampersands and braces in dynamically-evaluated queries.
  : @param query the string of the query to escape
  :)
 declare function util:escape($query as xs:string)
 as xs:string
 {
-  replace($query, '&amp;', '&amp;amp;')
+  replace($query, '&amp;', '&amp;amp;') 
+  => replace('\{', '&amp;#x7B;') 
+  => replace('\}', '&amp;#x7D;')
 };
 
 declare function util:declare-variable(
