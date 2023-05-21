@@ -30,16 +30,17 @@ if(empty($rules))
     then $result
     else local:rules(tail($rules))    
   }; ';
-declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $doc as document-node())
+declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $doc as document-node()*)
 as element()*
 {
+  $doc ! (
 if(empty($rules))
   then ()
   else
-    let $result := head($rules)($doc)
+    let $result := head($rules)(.)
     return if($result)
     then $result
-    else local:rules(tail($rules), $doc)    
+    else local:rules(tail($rules), $doc))
   }; ';  
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
@@ -121,10 +122,9 @@ declare function compile:pattern-documents($pattern as element(sch:pattern))
     'local:rules((' ||
     string-join(
       for $rule in $pattern/sch:rule 
-      return 
-        $compile:SUBORDINATE_DOC || '!(' || compile:function-name($rule) || '#1,.)',
+      return compile:function-name($rule) || '#1',
       ','
-    ) || '))',
+    ) || '), ' || $compile:SUBORDINATE_DOC || ')',
     ')};',
     $pattern/sch:rule ! compile:rule-documents(.)
   )
