@@ -11,6 +11,7 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
+declare variable $compile:SUBORDINATE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc';
 declare variable $compile:RULE := '$Q{http://www.andrewsales.com/ns/xqs}rule';
 declare variable $compile:RULE_CONTEXT_NAME := 'Q{http://www.andrewsales.com/ns/xqs}context';
 declare variable $compile:RULE_CONTEXT := '$' || $compile:RULE_CONTEXT_NAME;
@@ -71,18 +72,68 @@ as xs:string*
 
 declare function compile:pattern($pattern as element(sch:pattern))
 {
+  if($pattern/@documents)
+  then compile:pattern-documents($pattern)
+  else
+    let $function-id := compile:function-id($pattern)
+    return
+    ('declare function ' || compile:function-name($pattern) || '(){' ||
+      serialize(<svrl:active-pattern>
+      {$pattern/(@id, @name, @role)}
+      </svrl:active-pattern>) || ',',
+      'local:rules((' ||
+      string-join(for $rule in $pattern/sch:rule 
+      return ' ' || compile:function-name($rule) || '#0', ',') || '))',
+      '};',
+      $pattern/sch:rule ! compile:rule(.)
+    )
+};
+
+(:~ Creates a function to process a pattern which specifies subordinate 
+ : documents. 
+ :)
+declare function compile:pattern-documents($pattern as element(sch:pattern))
+{
   let $function-id := compile:function-id($pattern)
   return
   ('declare function ' || compile:function-name($pattern) || '(){' ||
-    serialize(<svrl:active-pattern>
-    {$pattern/(@id, @documents, @name, @role)}
+    serialize(<svrl:active-pattern documents='TODO'>
+    {$pattern/(@id, @name, @role)}
     </svrl:active-pattern>) || ',',
     'local:rules((' ||
     string-join(for $rule in $pattern/sch:rule 
-    return ' ' || compile:function-name($rule) || '#0', ',') || '))',
-  '};
-'),
-  $pattern/sch:rule ! compile:rule(.)
+    return ' ' || compile:function-name($rule) || '#1', ',') || '))',
+    '};',
+    $pattern/sch:rule ! compile:rule-documents(.)
+  )
+};
+
+(:~ Creates a function for a rule to process a subordinate document. :)
+declare function compile:rule-documents($rule as element(sch:rule))
+{
+  let $function-name := compile:function-name($rule)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return
+  'declare function ' || $function-name || '(' || $compile:SUBORDINATE_DOC || 
+  ' as document-node()){' ||
+  string-join(util:local-variable-decls($rule/sch:let), ' ') ||
+    (if($rule/sch:let) then ' return ' else ()) ||
+    util:declare-variable(
+      $compile:RULE_CONTEXT_NAME,
+      $compile:SUBORDINATE_DOC || '/(' || $rule/@context => util:escape() || ')'
+    ) ||
+  ' return if(' || $compile:RULE_CONTEXT || ') then (' || 
+  serialize(
+    <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOC})}}'>
+  {$rule/(@id, @name, @context, @role, @flag)}
+    </svrl:fired-rule>
+  ) || ', ' || $compile:RULE_CONTEXT || '! (' ||
+  string-join(
+    for $assertion in $assertions
+    return compile:function-name($assertion, true()) || '(.,' || serialize($assertion) || ')', 
+    ','
+  ) 
+  || ')) else ()};' || string-join($assertions ! compile:assertion(., true()))
 };
 
 declare function compile:rule($rule as element(sch:rule))
@@ -108,15 +159,18 @@ declare function compile:rule($rule as element(sch:rule))
     return compile:function-name($assertion) || '(.,' || serialize($assertion) || ')', 
     ','
   ) 
-  || ')) else ()};' || string-join($assertions ! compile:assertion(.))
+  || ')) else ()};' || string-join($assertions ! compile:assertion(., false()))
 };
 
-declare function compile:assertion($assertion as element())
+declare function compile:assertion(
+  $assertion as element(),
+  $distinct-name as xs:boolean
+)
 {
   if(not($assertion/(self::sch:assert|self::sch:report)))
   then error()	(:shouldn't happen if schema is valid:)
   else
-  'declare function ' || compile:function-name($assertion) ||
+  'declare function ' || compile:function-name($assertion, $distinct-name) ||
   '(' || string-join(($compile:RULE_CONTEXT, $compile:ASSERTION), ',') || '){' ||
   string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
   string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
@@ -175,6 +229,18 @@ as xs:string
   $element/ancestor-or-self::*[ancestor-or-self::sch:pattern] ! 
   (local-name(.) || compile:function-id(.))
   => string-join('-')
+};
+
+declare %private function compile:function-name(
+  $element as element(),
+  $distinct as xs:boolean
+)
+as xs:string
+{
+  let $name := compile:function-name($element)
+  return
+  if($distinct eq true()) then $name || generate-id($element)
+  else $name
 };
 
 declare %private function compile:function-id($element as element())

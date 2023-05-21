@@ -1056,6 +1056,8 @@ declare %unit:test function _:built-in-entities-namespaces()
   )
 };
 
+(:DOCUMENTS ATTRIBUTE:)
+
 declare %unit:test function _:pattern-documents()
 {
   let $result := eval:schema(
@@ -1112,6 +1114,7 @@ declare %unit:test function _:pattern-documents-multiple()
   )
 };
 
+(:~ see https://github.com/AndrewSales/XQS/issues/10 :)
 declare %unit:test function _:assertion-message-braces()
 {
   let $result := eval:schema(
