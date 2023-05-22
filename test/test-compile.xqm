@@ -625,7 +625,7 @@ declare %unit:test function _:user-defined-function()
       </function>
       <sch:pattern>
         <sch:rule context="/">
-          <sch:report test="root"><sch:value-of select='name(root)'/></sch:report>
+          <sch:report test="root"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
