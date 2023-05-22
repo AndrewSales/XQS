@@ -8,6 +8,7 @@ import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
+declare namespace xqy = 'http://www.w3.org/2012/xquery';
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
@@ -57,6 +58,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
   return
   (
     compile:prolog($schema, $active-phase),
+    compile:user-defined-functions($schema/xqy:function),
     $active-patterns ! compile:pattern(.),
     'declare function local:schema(){',
     <svrl:schematron-output>
@@ -212,7 +214,7 @@ as element()
 {
   element{
     QName("http://purl.oclc.org/dsdl/svrl", 
-    if($assertion/self::sch:assert) then 'failed-assert' else 'successful-report')
+    if($assertion/self::sch:assert) then 'svrl:failed-assert' else 'svrl:successful-report')
   }
   {
     attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
@@ -314,4 +316,11 @@ as xs:string?
     )
     || ';'
   )
+};
+
+(:~ Adds user-defined functions declared in the schema. :)
+declare function compile:user-defined-functions($functions as element(xqy:function)*)
+as xs:string*
+{
+  $functions ! string(.)
 };

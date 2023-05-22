@@ -612,3 +612,37 @@ declare %unit:test function _:pattern-documents-multiple()
     )
   )
 };
+
+(: USER-DEFINED FUNCTIONS :)
+
+declare %unit:test function _:user-defined-function()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:ns prefix='myfunc' uri='xyz'/>
+      <function xmlns='http://www.w3.org/2012/xquery'>
+      declare function myfunc:test($arg as xs:string) as xs:string{{$arg}};
+      </function>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="root"><sch:value-of select='name(root)'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
