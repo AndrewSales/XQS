@@ -646,3 +646,25 @@ declare %unit:test function _:user-defined-function()
     )
   )
 };
+
+declare %unit:test function _:user-defined-function-from-file()
+{
+  let $compiled := compile:schema(
+    doc('user-defined-function.xml')/*,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
