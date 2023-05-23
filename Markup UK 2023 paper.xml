@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-model href="http://docbook.org/xml/5.1/rng/docbook.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
 <?xml-model href="http://docbook.org/xml/5.1/sch/docbook.sch" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?>
+<!--
+    WHO - me
+    WHAT - new impl in XQuery, details around BaseX, compiled schemas, any caveats/limitations, interoperability
+    WHERE - GitHub
+    WHEN - now, but not production-ready - early release
+    HOW - BaseX + unit testing and eval/compile approaches; details on impl and gremlins encountered
+    WHY - ???
+    -->
 <article xmlns="http://docbook.org/ns/docbook"
     xmlns:xlink="http://www.w3.org/1999/xlink" version="5.1">
     <info>
@@ -12,9 +20,9 @@
     </info>
     <section>
         <title>Background</title>
-        <para>The existence of a Schematron validator implemented in XQuery has been a periodic enquiry in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
-        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come be regarded in this way.</para>
-        <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, they are not defined in the normative annexes.</para>
+        <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiries in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
+        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of their success that those implementations have come to be regarded in this way.</para>
+        <para>There may however be advantages to pursuing a native XQuery implementation. The Schematron standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, they are not given any special meaning in the normative annexes.</para>
         <para>For the purposes of updating the standard in this way, the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database.</para>
         <para>This paper will examine three main areas arising from the work:</para>
         <itemizedlist>
@@ -28,21 +36,31 @@
                 <para>how these may influence the next edition of ISO Schematron.</para>
             </listitem>
         </itemizedlist>
-    </section>
-    <section>
-        <title>Rationale</title>
-        <para>Why do this? no ISO obligation for a "reference" impl, but good to have a toy available during standards dev work</para>
-        <para>have nagged community for some time - put money where mouth is</para>
-        <para>Can you have too many implementations?</para>
-        <para>The prospect of invoking validation directly - without any so-called schema "compilation" - was attractive, based on previous work[XMLProbe's processing model]. lLkewise the possibility of writing this tool in such a way that validation could be run directly, or using the schema compiled as XQuery, in an engine-neutral way, i.e. that the code should be portable as far as possible.</para>
         <para>The lessons learned in these attempts will be expanded on below, and remaining work identified.</para>
     </section>
     <section>
-        <title>Limitations</title>
-        <para>no expand or include support (yet)</para>
-        <para>written in BaseX dialect of XQuery: "direct evaluation" of schema relies on that, but generated XQuery ("compiled schema") uses no engine-specific functions, so also runs under e.g. Saxon.</para>
+        <title>Rationale</title>
+        <para>Unlike some other bodies, ISO[CITE] does not require any "reference" implementation to be developed in support of a standard it publishes. The so-called skeleton implementation was mothballed as no longer maintained in [XXXX], and the main XSLT implementation at present is SchXslt. Once ISO approved the work for a new edition of the standard, it seemed useful to have another implementation, in a query language not as yet defined by the standard, to support and inform this work. The author has also been a keen advocate of further Schematron implementations at previous community meetups[CITE], and a further implementation of course introduces more choice and options for the schema author and end user alike.</para>
+        <section>
+            <title>Dynamic evaluation</title>
+            <para>The prospect of invoking validation directly - without any so-called schema "compilation" - was also attractive, based on the author's previous work on XMLProbe and Probatron, which were coded in Java and used an XPath engine[CITE Jaxen] to evaluate patterns expressed in the schema without any intermediate steps. Admittedly, when using a setup such as the validation scenarios configurable in an IDE such as oXygen, the user is unaware of the three-step process of resolving includes, instantiating abstract rules and patterns, and producing a compiled schema in the form of an XSLT transform.</para>
+        </section>
+        <section>
+            <title>Portability</title>
+            <para>Likewise the possibility of writing this tool in such a way that validation could be run directly, or using the schema compiled as XQuery, in an engine-neutral way, i.e. that the code should be portable as far as possible.</para>
+        </section>
     </section>
-    
+    <section>
+        <title>Caveats</title>
+        <para>This section sets out [...]</para>
+        <section>
+            <title>Expansion and inclusion</title>
+            <para>The dynamic evaluation portion of the code was written first, to establish proof of concept. The next step was intended to be resolution of includes and expansion of abstract constructs, before turning to schema compilation. The view was taken that the greater challenge, and arguably more interesting feature of the work, lay in compiling to XQuery, so expansion and inclusion are deferred for now[CITE github issue]. In the meantime, users should rely on other tools (such as SchXslt) to perform these pre-processing steps if needed.</para>
+        </section>
+        <section>
+            <title>BaseX</title>
+            <para>BaseX[CITE] was chosen as the development platform, so the code uses its dialect of XQuery. This means that dynamic validation relies on that, but a generated XQuery ("compiled schema") uses no engine-specific functions, so also runs under e.g. Saxon[FOOTNOTE ABOUT differing opinions on escaping of braces].</para></section>
+    </section>
     <section>
         <title>Testing</title>
         <para>BaseX unit module. Compile tests essentially come for free \o/</para>
