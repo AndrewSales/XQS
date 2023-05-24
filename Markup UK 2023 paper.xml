@@ -16,14 +16,14 @@
         <author>
             <personname><firstname>Andrew</firstname><surname>Sales</surname></personname>
         </author>
-        <abstract><para>[adapt from submission]</para></abstract>
+        <abstract><para>This paper will cover XQuery for Schematron (XQS)[CITE link to github], a Schematron processor being implemented in native - and naïve - XQuery. To the author's knowledge, there are no other such implementations available at this time. The purpose of the work is at least two-fold: to demonstrate the utility of an XQuery query language binding for arguably the primary quality assurance technology applicable to XML, and to provide a second "reference" implementation while work on the latest revision of the ISO standard proceeds. (There is no formal requirement for any implementation under ISO regulations, but it clearly helps to be able to answer the question standards authors should consider when new features present themselves: How would you implement that?).</para></abstract>
     </info>
     <section>
         <title>Background</title>
-        <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiries in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
-        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of their success that those implementations have come to be regarded in this way.</para>
-        <para>There may however be advantages to pursuing a native XQuery implementation. The Schematron standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, they are not given any special meaning in the normative annexes.</para>
-        <para>For the purposes of updating the standard in this way, the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database.</para>
+        <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiry in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
+        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come to be regarded in this way.</para>
+        <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value[FOOTNOTE which, with link to github SEP issue]. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, these are not defined in the normative annexes.</para>
+        <para>For the purposes of updating the standard,[FOOTNOTE that ISO approved the new work in Sep '22] the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database.</para>
         <para>This paper will examine three main areas arising from the work:</para>
         <itemizedlist>
             <listitem>
@@ -64,5 +64,10 @@
     <section>
         <title>Testing</title>
         <para>BaseX unit module. Compile tests essentially come for free \o/</para>
+    </section>
+    
+    <section>
+        <title>Status of the work</title>
+        <para>early release - bug reports welcome - not production ready</para>
     </section>
 </article>
