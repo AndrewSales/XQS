@@ -45,7 +45,7 @@
         <title>Design goals</title>
         <para>The high-level brief was to produce an implementation conforming to ISO/IEC 19757-3:2020[CITE], written in XQuery alone. Conformance is defined in Clause 7 of the standard. What it terms <emphasis>Simple conformance</emphasis> amounts to reporting whether an XML document is valid to a given Schematron schema: a simple pass/fail, with SVRL[FOOTNOTE] output not required. <emphasis>Full conformance</emphasis> is also defined, but does not expand much on that, adding as criteria correct attribute values and a proscription on duplicate variable names; SVRL is not mandated here either.[FOOTNOTE - technically speaking, it could not be mandated, as it is defined only in an informative annex + CITE]. To meet perhaps most users' expectations, align with SchXslt, as well as provide the means to compare outputs with that tool's, SVRL was deemed a necessity.</para>
         <para>An additional reason for choosing XQuery was the appeal of relatively rapid development facilitated by its concise and declarative syntax.</para>
-        <section>
+        <section xml:id="conformanceOverPerformance">
             <title>Conformance over performance</title>
             <para>primarily in support of development of standard - not intended to be production-grade</para>
         </section>
@@ -71,13 +71,13 @@
         </section>
         <section>
             <title>"Naïve"?</title>
-            <para></para>
+            <para>This should be taken to mean, in allusion to <xref linkend="conformanceOverPerformance"/> above, that the focus has been on producing a working implementation first and foremost, with little or no attention given at this stage to making it performant.</para>
         </section>
         <section>
             <title>Context is everything</title>
             <para>the context item for validation against a schema: a single document - refer to standard here ("instance document")</para>
             <para>also rule/@context: in contrast to the rule-based processing of XSLT (where rule/@context translates to xsl:template/@match), in XQuery we are pulling nodes we are interested in rather than them being pushed to us. So the decision here was to interpret rule/@context as being evaluated in the context of the instance document root. The obvious but important implication for schema authors targetting XSLT implementations is that e.g. <tag class="element">&lt;:rule context="*"></tag> will only match the root element, as opposed to any element in the document.</para>
-            <para>the other QLBs specify what is allowed in a rule/@context - in line with the XPath and XSLT bindings, expecting this to be any expression returning a <emphasis>node</emphasis>[CHECKME: what XQuery production(s) would this be?].</para>
+            <para>the other QLBs specify what is allowed in a rule/@context - in line with the XPath and XSLT bindings, expecting this to be any expression returning a (sequence of) <emphasis>nodes</emphasis>[CHECKME: what XQuery production(s) would this be?].</para>
         </section>
     </section>
     <section>
@@ -111,6 +111,7 @@
         <section>
             <title>Future work/roadmap</title>
             <para>what's on the cards: see github enhancement issues</para>
+            <para>mention tidying up the compile module with some templating for functions generated?</para>
         </section>
         <section>
             <title>A note on performance</title>
