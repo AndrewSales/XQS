@@ -2,6 +2,7 @@
 
 module namespace util = 'http://www.andrewsales.com/ns/xqs-utils';
 
+declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
@@ -101,4 +102,22 @@ declare function util:declare-variable(
 as xs:string
 {
   'let $' || $name || ':=' || $value
+};
+
+(:VARIABLES:)
+
+(:~ @see ISO2020, 7.2: "A Schematron schema shall have one definition only in 
+ : scope for any global variable name in the global context and any local 
+ : variable name in the local context." 
+ :)
+declare function util:check-duplicate-variable-names($decls as element(sch:let)*)
+{
+  let $names as xs:string* := $decls/@name/string()
+  return
+  if(count($decls) ne count(distinct-values($names)))
+  then error(
+    xs:QName('xqs:multiply-defined-variable'),
+    'duplicate variable name in element ' || local-name(head($decls)/..) || ': '
+    || $names[index-of($names, .)[2]]
+  )
 };

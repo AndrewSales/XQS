@@ -46,6 +46,7 @@ declare function eval:pattern(
   $context as map(*)
 )
 {
+  let $_ := util:check-duplicate-variable-names($pattern/sch:let)
   (:evaluate pattern variables against global context:)
   let $globals as map(*) := context:evaluate-pattern-variables(
         $pattern/sch:let,
@@ -114,6 +115,7 @@ declare function eval:rule(
 )
 as element()*
 {
+  let $_ := util:check-duplicate-variable-names($rule/sch:let)
   let $query := string-join(
       ($prolog, util:local-variable-decls($rule/sch:let), 
       if($rule/sch:let) then 'return ' else '', $rule/@context),

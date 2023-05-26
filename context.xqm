@@ -30,6 +30,8 @@ as map(*)
   let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := ($schema, $active-phase)/sch:let
+  let $_ := (util:check-duplicate-variable-names($schema/sch:let), 
+  util:check-duplicate-variable-names($active-phase/sch:let))
   let $globals as map(*) := if($globals) 
     then c:evaluate-global-variables(
       $globals, 
@@ -63,21 +65,6 @@ declare %private function c:make-ns-decl($ns as element(sch:ns))
 as xs:string
 {
   'declare namespace ' || $ns/@prefix || '="' || $ns/@uri || '";'
-};
-
-(:VARIABLES:)
-
-(:~ @see ISO2020, 7.2: "A Schematron schema shall have one definition only in 
- : scope for any global variable name in the global context and any local 
- : variable name in the local context." 
- :)
-declare %private function c:check-variable-dupes($decls as element(sch:let)*)
-{
-  if(count($decls) ne distinct-values($decls/@name))
-  then error(
-    xs:QName('multiply-defined-variable')
-      (:TODO report duplicates:)
-  )
 };
 
 (:PHASES:)
@@ -242,9 +229,11 @@ as map(*)
 
 (:~ 
  : @return updated map of global variable bindings
- : @param variables global variables
+ : @param variable global variable to evaluate
  : @param instance the document instance
- : @param prolog global variable and namespace declarations
+ : @param query the query to evaluate
+ : @param ns-elems namespace declarations
+ : @param bindings map of global variable bindings
  :)
 declare function c:evaluate-global-variable(
   $variable as element(sch:let),
@@ -294,7 +283,7 @@ as map(*)
   then 
     let $uris := xquery:eval(
       util:make-query-prolog($context) || $documents => util:escape(),
-      map{'':$context?instance},
+      map:merge(($context?globals, map{'':$context?instance})),
       map{'pass':'true'}	(:report exception details:)
     )
     return map:put(
