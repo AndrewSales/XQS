@@ -16,12 +16,12 @@
         <author>
             <personname><firstname>Andrew</firstname><surname>Sales</surname></personname>
         </author>
-        <abstract><para>This paper will cover XQuery for Schematron (XQS)[CITE link to github], a Schematron processor being implemented in native - and naïve - XQuery. To the author's knowledge, there are no other such implementations available at this time. The purpose of the work is at least two-fold: to demonstrate the utility of an XQuery query language binding for arguably the primary quality assurance technology applicable to XML, and to provide a second "reference" implementation while work on the latest revision of the ISO standard proceeds. (There is no formal requirement for any implementation under ISO regulations, but it clearly helps to be able to answer the question standards authors should consider when new features present themselves: How would you implement that?).</para></abstract>
+        <abstract><para>This paper will cover XQuery for Schematron (XQS)[gloss pron. in IPA][FOOTNOTE link to github], a Schematron processor being implemented in native - and naïve - XQuery. To the author's knowledge, there are no other such implementations available at this time.[FOOTNOTE note though the WIP by David Maus + github URL] The purpose of the work is at least two-fold: to demonstrate the utility of an XQuery query language binding for arguably the primary quality assurance technology applicable to XML, and to provide a second "reference" implementation while work on the latest revision of the ISO standard proceeds. (There is no formal requirement for any implementation under ISO regulations, but it clearly helps to be able to answer the question standards authors should consider when new features present themselves: How would you implement that?).</para></abstract>
     </info>
     <section>
         <title>Background</title>
         <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiry in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
-        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come to be regarded in this way.</para>
+        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt[CITE] - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come to be regarded in this way.</para>
         <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value[FOOTNOTE which, with link to github SEP issue]. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, these are not defined in the normative annexes.</para>
         <para>For the purposes of updating the standard,[FOOTNOTE that ISO approved the new work in Sep '22] the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database. Further potential benefits to the XQuery user will be discussed in more detail below.</para>
         <para>This paper will examine three main areas arising from the work:</para>
@@ -42,16 +42,20 @@
         <title>Rationale</title>
         <para>Unlike some other bodies, ISO[CITE] does not require any "reference" implementation to be developed in support of a standard it publishes. The so-called skeleton implementation was mothballed as no longer maintained in [XXXX], and the main XSLT implementation at present is SchXslt. Once ISO approved the work for a new edition of the standard, it seemed useful to have another implementation, in a query language not as yet defined by the standard, to support and inform this work. The author has also been a keen advocate of further Schematron implementations at previous community meetups[CITE], and a further implementation of course introduces more choice and options for the schema author and end user alike.</para></section>
     <section>
-        <title>Goals</title>
-        <para>The high-level design brief was to produce an implementation conforming to ISO/IEC 19757-3:2020, written in XQuery alone. Usefully, Clause 7 of the standard defines conformance. What it terms <emphasis>Simple conformance</emphasis> amounts to reporting whether an XML document is valid to a given Schematron schema: a simple pass/fail, with SVRL output not required. <emphasis>Full conformance</emphasis> does not expand too much on that, adding as criteria correct attribute values and no duplicate variable names; SVRL is not mandated here either.</para>
-        <para>XQuery for rapid dev</para>
+        <title>Design goals</title>
+        <para>The high-level brief was to produce an implementation conforming to ISO/IEC 19757-3:2020[CITE], written in XQuery alone. Conformance is defined in Clause 7 of the standard. What it terms <emphasis>Simple conformance</emphasis> amounts to reporting whether an XML document is valid to a given Schematron schema: a simple pass/fail, with SVRL[FOOTNOTE] output not required. <emphasis>Full conformance</emphasis> is also defined, but does not expand much on that, adding as criteria correct attribute values and a proscription on duplicate variable names; SVRL is not mandated here either.[FOOTNOTE - technically speaking, it could not be mandated, as it is defined only in an informative annex + CITE]. To meet perhaps most users' expectations, align with SchXslt, as well as provide the means to compare outputs with that tool's, SVRL was deemed a necessity.</para>
+        <para>An additional reason for choosing XQuery was the appeal of relatively rapid development facilitated by its concise and declarative syntax.</para>
+        <section>
+            <title>Conformance over performance</title>
+            <para>primarily in support of development of standard - not intended to be production-grade</para>
+        </section>
         <section>
             <title>Dynamic evaluation</title>
-            <para>The prospect of invoking validation directly - without any so-called schema "compilation" - was also attractive, based on the author's previous work on XMLProbe and Probatron, which were coded in Java and used an XPath engine[CITE Jaxen] to evaluate patterns expressed in the schema without any intermediate steps. Admittedly, when using a setup such as the validation scenarios configurable in an IDE such as oXygen, the user is unaware of the three-step process of resolving includes, instantiating abstract rules and patterns, and producing a compiled schema in the form of an XSLT transform.</para>
+            <para>The prospect of invoking validation directly - without any so-called schema "compilation" step - was also attractive, based on the author's previous work on XMLProbe and Probatron, which were coded in Java and used an XPath engine[CITE Jaxen] to evaluate patterns expressed in the schema without any intermediate steps. Admittedly, when using a setup such as the validation scenarios configurable in an IDE like oXygen[FOOTNOTE], the user is unaware of the three-step process of resolving includes, instantiating abstract rules and patterns, and producing a compiled schema in the form of an XSLT transform, but it would be an interesting exercise nonetheless.</para>
         </section>
         <section>
             <title>Portability</title>
-            <para>Likewise the possibility of writing this tool in such a way that validation could be run directly, or using the schema compiled as XQuery, in an engine-neutral way, i.e. that the code should be portable as far as possible.</para>
+            <para>Likewise the possibility of writing this tool in such a way that validation could be run directly, or using the schema compiled as XQuery, in an engine-agnostic way, i.e. that the code should be portable as far as possible.</para>
         </section>
     </section>
     <section>
@@ -59,19 +63,65 @@
         <para>This section sets out [...]</para>
         <section>
             <title>Expansion and inclusion</title>
-            <para>The dynamic evaluation portion of the code was written first, to establish proof of concept. The next step was intended to be resolution of includes and expansion of abstract constructs, before turning to schema compilation. The view was taken that the greater challenge, and arguably more interesting feature of the work, lay in compiling to XQuery, so expansion and inclusion are deferred for now[CITE github issue]. In the meantime, users should rely on other tools (such as SchXslt) to perform these pre-processing steps if needed.</para>
+            <para>The dynamic evaluation portion of the code was written first, to establish proof of concept. The next step was intended to be resolution of includes and expansion of abstract constructs, before turning to schema compilation. The view was taken that the greater challenge, and arguably more interesting feature of the work, lay in compiling to XQuery, so expansion and inclusion have been deferred for now[FOOTNOTE citing github issue]. In the meantime, users should rely on other tools (such as SchXslt) to perform these pre-processing steps if needed.</para>
         </section>
         <section>
-            <title>BaseX</title>
-            <para>BaseX[CITE] was chosen as the development platform, so the code uses its dialect of XQuery. This means that dynamic validation relies on that, but a generated XQuery ("compiled schema") uses no engine-specific functions, so also runs under e.g. Saxon[FOOTNOTE ABOUT differing opinions on escaping of braces].</para></section>
+            <title>"Native"?</title>
+            <para>For reasons of familiarity in the main, BaseX[CITE] was chosen as the development platform, so the code uses its dialect of XQuery. This means that dynamic validation relies on that, but a generated XQuery ("compiled schema") uses no engine-specific functions, so also runs under e.g. Saxon[FOOTNOTE ABOUT differing opinions on escaping of braces]. The plan is to develop the dynamic part so that it can be run under other engines as well.</para>
+        </section>
+        <section>
+            <title>"Naïve"?</title>
+            <para></para>
+        </section>
+        <section>
+            <title>Context is everything</title>
+            <para>the context item for validation against a schema: a single document - refer to standard here ("instance document")</para>
+            <para>also rule/@context: in contrast to the rule-based processing of XSLT (where rule/@context translates to xsl:template/@match), in XQuery we are pulling nodes we are interested in rather than them being pushed to us. So the decision here was to interpret rule/@context as being evaluated in the context of the instance document root. The obvious but important implication for schema authors targetting XSLT implementations is that e.g. <tag class="element">&lt;:rule context="*"></tag> will only match the root element, as opposed to any element in the document.</para>
+            <para>the other QLBs specify what is allowed in a rule/@context - in line with the XPath and XSLT bindings, expecting this to be any expression returning a <emphasis>node</emphasis>[CHECKME: what XQuery production(s) would this be?].</para>
+        </section>
+    </section>
+    <section>
+        <title>Evaluated schema</title>
+        <para>details of impl, any notable points:</para>
+        <para>- use of map to establish and maintain validation context (namespaces, variables, functions)</para>
+        <para>analogous to interpreted language (such as Python), where syntax errors can lurk in a branch of code that is not reached, for example rules or assertions can have incorrect syntax in their @context|@test - remedy is to do some static analysis beforehand, by parsing these expressions (using BaseX's xquery:parse()). CHECKME: can't the same also be true of *compiled* schemas?</para>
+    </section>
+    <section>
+        <title>Compiled schema</title>
+        <para>details of impl, any notable points</para>
+    </section>
+    <section>
+        <title>Other features</title>
+        <para>user-defined functions supported, via &lt;function xmlns='http://www.w3.org/2012/xquery'></para>
+        <para>impl of pattern variables, cf. SchXslt[CITE issues + conformance suite failure]</para>
+        <para>pattern/@documents?</para>
     </section>
     <section>
         <title>Testing</title>
         <para>BaseX unit module. Compile tests essentially come for free \o/</para>
     </section>
-    
     <section>
         <title>Status of the work</title>
         <para>early release - bug reports welcome - not production ready</para>
+        <section>
+            <title>Conformance</title>
+            <para>refer back to minimal/full definitions above for assessment</para>
+            <para>David's conformance suite</para>
+        </section>
+        <section>
+            <title>Future work/roadmap</title>
+            <para>what's on the cards: see github enhancement issues</para>
+        </section>
+        <section>
+            <title>A note on performance</title>
+            <para>the BP DocBook example?</para>
+            <para>underline that no attempt to optimize either approach (evaluation or compilation) has been attempted</para>
+            <para>there's obvious scope for this, perhaps e.g. caching result of evaluating commonly-occurring rule/@context? - but more rigorous benchmarking needed to direct efforts most effectively</para>
+        </section>
+    </section>
+    <section>
+        <title>Lessons learnt</title>
+        <para>doing the compilation part first would have made life a bit easier</para>
+        <para></para>
     </section>
 </article>
