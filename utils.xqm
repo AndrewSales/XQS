@@ -2,6 +2,7 @@
 
 module namespace util = 'http://www.andrewsales.com/ns/xqs-utils';
 
+declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
@@ -43,8 +44,8 @@ as xs:string
   )
 };
 
-(:~ Adds the value to a local variable declaration. 
- : @param var the local variable
+(:~ Adds the value to a variable declaration. 
+ : @param var the variable
  : @see ISO2020, 5.4.6: "The value attribute is an expression evaluated in the 
  : current context. If no value attribute is specified, the value of the 
  : attribute is the element content of the let element."
@@ -52,6 +53,9 @@ as xs:string
 declare function util:variable-value($var as element(sch:let))
 as xs:string
 {
+  if($var/@as => normalize-space() => matches('^map\([^\)]+\)')) 
+  then $var/@value/data()
+  else
   if($var/@value) then $var/@value/data() => util:escape() else serialize($var/*)
 };
 
@@ -62,7 +66,7 @@ declare function util:make-query-prolog($context as map(*))
 as xs:string?
 {
   ($context?ns-decls || util:global-variable-external-decls($context?globals))
-  => util:escape()
+  => util:escape() || $context?functions ! string(.)
 };
 
 (:~ Creates a QName from a prefixed variable name, looking up any URI from the
@@ -83,15 +87,15 @@ as xs:QName
   )
 };
 
-(:~ Escape ampersands and braces in dynamically-evaluated queries.
+(:~ Escape ampersands in dynamically-evaluated queries.
  : @param query the string of the query to escape
  :)
 declare function util:escape($query as xs:string)
 as xs:string
 {
   replace($query, '&amp;', '&amp;amp;') 
-  => replace('\{', '&amp;#x7B;') 
-  => replace('\}', '&amp;#x7D;')
+  (: => replace('\{', '&amp;#x7B;') 
+  => replace('\}', '&amp;#x7D;') :)
 };
 
 declare function util:declare-variable(
@@ -101,4 +105,22 @@ declare function util:declare-variable(
 as xs:string
 {
   'let $' || $name || ':=' || $value
+};
+
+(:VARIABLES:)
+
+(:~ @see ISO2020, 7.2: "A Schematron schema shall have one definition only in 
+ : scope for any global variable name in the global context and any local 
+ : variable name in the local context." 
+ :)
+declare function util:check-duplicate-variable-names($decls as element(sch:let)*)
+{
+  let $names as xs:string* := $decls/@name/string()
+  return
+  if(count($decls) ne count(distinct-values($names)))
+  then error(
+    xs:QName('xqs:multiply-defined-variable'),
+    'duplicate variable name in element ' || local-name(head($decls)/..) || ': '
+    || $names[index-of($names, .)[2]]
+  )
 };
