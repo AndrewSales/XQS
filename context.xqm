@@ -9,6 +9,7 @@ import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils'
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
+declare namespace xqy = 'http://www.w3.org/2012/xquery';
 
 declare variable $c:DEFAULT_PHASE as xs:string := '#DEFAULT';
 declare variable $c:ALL_PATTERNS as xs:string := '#ALL';
@@ -49,7 +50,8 @@ as map(*)
     'globals' : $globals,
     'instance' : $instance,
     'diagnostics' : $schema/sch:diagnostics/sch:diagnostic,
-    'properties' : $schema/sch:properties/sch:property
+    'properties' : $schema/sch:properties/sch:property,
+    'functions' : $schema/xqy:function
   }
 };
 

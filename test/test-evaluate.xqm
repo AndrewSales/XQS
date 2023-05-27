@@ -1183,18 +1183,8 @@ declare %unit:test function _:user-defined-function()
 declare %unit:test function _:user-defined-function-from-file()
 {
   let $result := eval:schema(
-    doc('user-defined-function.xml'),
-    <sch:schema>
-      <sch:ns prefix='myfunc' uri='xyz'/>
-      <function xmlns='http://www.w3.org/2012/xquery'>
-      declare function myfunc:test($arg as xs:string) as xs:string{{$arg}};
-      </function>
-      <sch:pattern>
-        <sch:rule context="/">
-          <sch:report test="root"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
-        </sch:rule>
-      </sch:pattern>
-    </sch:schema>,
+    document{<root/>},
+    doc('user-defined-function.xml')/*,
     ''
   )
   return (

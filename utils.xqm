@@ -66,7 +66,7 @@ declare function util:make-query-prolog($context as map(*))
 as xs:string?
 {
   ($context?ns-decls || util:global-variable-external-decls($context?globals))
-  => util:escape()
+  => util:escape() || $context?functions ! string(.)
 };
 
 (:~ Creates a QName from a prefixed variable name, looking up any URI from the
@@ -87,15 +87,15 @@ as xs:QName
   )
 };
 
-(:~ Escape ampersands and braces in dynamically-evaluated queries.
+(:~ Escape ampersands in dynamically-evaluated queries.
  : @param query the string of the query to escape
  :)
 declare function util:escape($query as xs:string)
 as xs:string
 {
   replace($query, '&amp;', '&amp;amp;') 
-  => replace('\{', '&amp;#x7B;') 
-  => replace('\}', '&amp;#x7D;')
+  (: => replace('\{', '&amp;#x7B;') 
+  => replace('\}', '&amp;#x7D;') :)
 };
 
 declare function util:declare-variable(
