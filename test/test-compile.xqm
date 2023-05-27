@@ -612,3 +612,133 @@ declare %unit:test function _:pattern-documents-multiple()
     )
   )
 };
+
+(: USER-DEFINED FUNCTIONS :)
+
+declare %unit:test function _:user-defined-function()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:ns prefix='myfunc' uri='xyz'/>
+      <function xmlns='http://www.w3.org/2012/xquery'>
+      declare function myfunc:test($arg as xs:string) as xs:string{{$arg}};
+      </function>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="root"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
+
+declare %unit:test function _:user-defined-function-from-file()
+{
+  let $compiled := compile:schema(
+    doc('user-defined-function.xml')/*,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
+
+(: MAPS :)
+
+declare %unit:test function _:map-global-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-pattern-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-rule-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
