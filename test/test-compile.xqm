@@ -668,3 +668,77 @@ declare %unit:test function _:user-defined-function-from-file()
     )
   )
 };
+
+(: MAPS :)
+
+declare %unit:test function _:map-global-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-pattern-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-rule-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};

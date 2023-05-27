@@ -44,8 +44,8 @@ as xs:string
   )
 };
 
-(:~ Adds the value to a local variable declaration. 
- : @param var the local variable
+(:~ Adds the value to a variable declaration. 
+ : @param var the variable
  : @see ISO2020, 5.4.6: "The value attribute is an expression evaluated in the 
  : current context. If no value attribute is specified, the value of the 
  : attribute is the element content of the let element."
@@ -53,6 +53,9 @@ as xs:string
 declare function util:variable-value($var as element(sch:let))
 as xs:string
 {
+  if($var/@as => normalize-space() => matches('^map\([^\)]+\)')) 
+  then $var/@value/data()
+  else
   if($var/@value) then $var/@value/data() => util:escape() else serialize($var/*)
 };
 

@@ -307,11 +307,12 @@ as xs:string?
 {
   string-join(
     for $var in $globals
-    return 'declare variable $' || $var/@name || ':=' || 
+    return 'declare variable $' || $var/@name || 
+    (if($var/@as) then ' as ' || $var/@as else '') || ':=' || 
     (
-      if($var/@value instance of xs:anyAtomicType+)
+      (: if($var/@value instance of xs:anyAtomicType+)
       then $var/@value/data() => util:escape()
-      else 
+      else :) 
       $compile:INSTANCE_DOC || '/(' || util:variable-value($var) || ')'
     )
     || ';'
