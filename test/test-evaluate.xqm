@@ -1199,6 +1199,27 @@ declare %unit:test function _:user-defined-function-from-file()
   )
 };
 
+declare %unit:test function _:undetected-syntax-error()
+{
+  let $result := eval:schema(
+    document{<root/>},
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/..">
+          <sch:report test="?????"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      0
+    )
+  )
+};
+
 (:TODO
 - conformance suite: https://github.com/Schematron/schematron-conformance/tree/master/src/main/resources/tests
 :)
