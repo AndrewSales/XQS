@@ -9,21 +9,24 @@
     HOW - BaseX + unit testing and eval/compile approaches; details on impl and gremlins encountered
     WHY - ???
     -->
+<!DOCTYPE article [
+<!ENTITY endash "&#x2013;">
+]>
 <article xmlns="http://docbook.org/ns/docbook"
     xmlns:xlink="http://www.w3.org/1999/xlink" version="5.1">
     <info>
-        <title>XQS: a native XQuery Schematron implementation</title>
+        <title>XQS: A Native XQuery Schematron Implementation</title>
         <author>
             <personname><firstname>Andrew</firstname><surname>Sales</surname></personname>
         </author>
-        <abstract><para>This paper will cover XQuery for Schematron (XQS)[gloss pron. in IPA][FOOTNOTE link to github], a Schematron processor being implemented in native - and naïve - XQuery. To the author's knowledge, there are no other such implementations available at this time.[FOOTNOTE note though the WIP by David Maus + github URL] The purpose of the work is at least two-fold: to demonstrate the utility of an XQuery query language binding for arguably the primary quality assurance technology applicable to XML, and to provide a second "reference" implementation while work on the latest revision of the ISO standard proceeds. (There is no formal requirement for any implementation under ISO regulations, but it clearly helps to be able to answer the question standards authors should consider when new features present themselves: How would you implement that?).</para></abstract>
+        <abstract><para>This paper will cover XQuery for Schematron (XQS) (pron. /ɛksˈkjuz/),<footnote><para><link xlink:href="https://github.com/AndrewSales/XQS">https://github.com/AndrewSales/XQS</link></para></footnote> a Schematron processor being implemented in native &endash; and naïve &endash; XQuery. To the author's knowledge, there are no complete implementations publicly available at this time.<footnote><para>Though note the experimental work in this area by David Maus: <link xlink:href="https://github.com/dmj/schematron-xquery">https://github.com/dmj/schematron-xquery</link>.</para></footnote> The purpose of the work is at least two-fold: to demonstrate the utility of an XQuery query language binding for arguably the primary quality assurance technology applicable to XML, and to provide a second "reference" implementation while work on the latest revision of the ISO standard proceeds. Although not required by the standardization process, it clearly helps to be able to answer the question standards authors should consider when new features present themselves: How would you implement that?</para></abstract>
     </info>
     <section>
         <title>Background</title>
-        <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiry in the community[CITE]. Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases[CITE].</para>
-        <para>While Schematron has been implemented in a range of other languages[CITE?], apparently the only member of the XML technology stack to fulfil this role so far has been XSLT[CITE xmlprobe/probatron and  phax?]. Indeed, to many Schematron users, the XSLT implementation - either the retired "skeleton" implementation, by Rick Jelliffe and others[CITE] or David Maus' more recent SchXslt[CITE] - <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come to be regarded in this way.</para>
-        <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)[CITE], some of which are moribund or of questionable longer-term value[FOOTNOTE which, with link to github SEP issue]. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, these are not defined in the normative annexes.</para>
-        <para>For the purposes of updating the standard,[FOOTNOTE that ISO approved the new work in Sep '22] the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the seamless integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database. Further potential benefits to the XQuery user will be discussed in more detail below.</para>
+        <para>The existence of a Schematron validator implemented in XQuery has been the subject of periodic enquiry in the community.<footnote><para>See e.g. <link xlink:href="http://x-query.com/pipermail/talk/2011-November/003704.html">http://x-query.com/pipermail/talk/2011-November/003704.html</link></para></footnote> Respondents on mailing lists typically indicate the existing and highly serviceable XQuery wrappers around an XSLT implementation, such as are available for the main XML databases.<biblioref linkend="schematron-existdb"/><biblioref linkend="schematron-basex"/><biblioref linkend="schematron-ML"/></para>
+        <para>While Schematron has been implemented in a range of other languages,[CITE] apparently the only members of the XML technology stack to fulfil this role so far have been XPath, such as ph-schematron<biblioref linkend="ph-schematron"/> (in its "pure" variant) and the author's defunct XMLProbe, later open-sourced as Probatron.<biblioref linkend="probatron"/><footnote><para>The later updates archived at <link xlink:href="https://code.google.com/archive/p/probatron4j/">https://code.google.com/archive/p/probatron4j/</link> and <link xlink:href="https://code.google.com/archive/p/probatrondotnet/">https://code.google.com/archive/p/probatrondotnet/</link> are wrappers around the skeleton implementation.</para></footnote> and XSLT.<biblioref linkend="skeleton"/><biblioref linkend="schxslt"/> Indeed, to many Schematron users, the XSLT implementations <emphasis>are</emphasis> Schematron to all intents and purposes. It is a mark of the success of those implementations that they have come to be regarded in this way.</para>
+        <para>There may however be advantages to pursuing a native XQuery implementation. The standard itself still defines a range of query language bindings (QLBs)<biblioref linkend="iso-qlbs"/>, some of which are moribund or of questionable longer-term value<footnote><para>E.g. STX and EXSLT, as raised in <link xlink:href="https://github.com/Schematron/schematron-enhancement-proposals/issues/26">https://github.com/Schematron/schematron-enhancement-proposals/issues/26</link>.</para></footnote>. There are QLBs for XPath and XSLT in all their current versions defined normatively, and while the values <literal>xquery</literal>, <literal>xquery3</literal> and <literal>xquery31</literal> are all reserved for future use, these are not defined normatively.</para>
+        <para>For the purposes of updating the standard,<footnote><para>ISO/IEC JTC 1/SC 34 approved a new revision of the standard and convened a new working group to carry this out in September 2022.</para></footnote> the present work has obvious benefits in informing what a QLB for XQuery should look like. For the end user, it also gives them options not previously available, most obviously the native integration of a Schematron schema into an XQuery-based validation workflow, e.g. in a native XML database, or, as is the case with ph-schematron<biblioref linkend="ph-schematron"/>, the programmatic assembly of schemas. Further potential benefits to the XQuery user will be discussed in more detail below.</para>
         <para>This paper will examine three main areas arising from the work:</para>
         <itemizedlist>
             <listitem>
@@ -40,10 +43,10 @@
     </section>
     <section>
         <title>Rationale</title>
-        <para>Unlike some other bodies, ISO[CITE] does not require any "reference" implementation to be developed in support of a standard it publishes. The so-called skeleton implementation was mothballed as no longer maintained in [XXXX], and the main XSLT implementation at present is SchXslt. Once ISO approved the work for a new edition of the standard, it seemed useful to have another implementation, in a query language not as yet defined by the standard, to support and inform this work. The author has also been a keen advocate of further Schematron implementations at previous community meetups[CITE], and a further implementation of course introduces more choice and options for the schema author and end user alike.</para></section>
+        <para>Unlike some other bodies, <link xlink:href="https://www.iso.org/home.html">ISO</link> does not require any "reference" implementation to be developed in support of a standard it publishes. The so-called skeleton implementation was mothballed as no longer maintained in late 2020, and the main XSLT implementation at present is <link xlink:href="https://github.com/schxslt/schxslt">SchXslt</link>. Once ISO approved the work for a new edition of the standard, it seemed useful to have another implementation, in a query language not as yet defined by the standard, to support and inform this work. The author has also been a keen advocate of further Schematron implementations at previous community meetups<biblioref linkend="meetups"/>, and a further implementation of course introduces more choice and options for the schema author and end user alike.</para></section>
     <section>
         <title>Design goals</title>
-        <para>The high-level brief was to produce an implementation conforming to ISO/IEC 19757-3:2020[CITE], written in XQuery alone. Conformance is defined in Clause 7 of the standard. What it terms <emphasis>Simple conformance</emphasis> amounts to reporting whether an XML document is valid to a given Schematron schema: a simple pass/fail, with SVRL[FOOTNOTE] output not required. <emphasis>Full conformance</emphasis> is also defined, but does not expand much on that, adding as criteria correct attribute values and a proscription on duplicate variable names; SVRL is not mandated here either.[FOOTNOTE - technically speaking, it could not be mandated, as it is defined only in an informative annex + CITE]. To meet perhaps most users' expectations, align with SchXslt, as well as provide the means to compare outputs with that tool's, SVRL was deemed a necessity.</para>
+        <para>The high-level brief was to produce an implementation conforming to ISO/IEC 19757-3:2020, written in XQuery alone. Conformance is defined in Clause 7 of the standard. What it terms <emphasis>Simple conformance</emphasis> amounts to reporting whether an XML document is valid to a given Schematron schema: a simple pass/fail, with SVRL<footnote><para>Schematron Validation Reporting Language, defined in Annex D (informative).</para></footnote> output not required. <emphasis>Full conformance</emphasis> is also defined, but does not expand much on that, adding as criteria correct attribute values and a proscription on duplicate variable names; SVRL is not mandated here either.<footnote><para>Technically, it could not be, since its definition in the standard is not normative.</para></footnote> To meet perhaps most users' expectations, align with SchXslt, as well as provide the means to compare outputs with that tool's, SVRL was deemed a necessity from the start; text output is also out of scope.</para>
         <para>An additional reason for choosing XQuery was the appeal of relatively rapid development facilitated by its concise and declarative syntax.</para>
         <section xml:id="conformanceOverPerformance">
             <title>Conformance over performance</title>
@@ -93,8 +96,10 @@
     <section>
         <title>Other features</title>
         <para>user-defined functions supported, via &lt;function xmlns='http://www.w3.org/2012/xquery'></para>
+        <para>maps, function items in progress</para>
         <para>impl of pattern variables, cf. SchXslt[CITE issues + conformance suite failure]</para>
         <para>pattern/@documents?</para>
+        <para>refer back to programmatic assembly of schemas and potential use of API for unit testing</para>
     </section>
     <section>
         <title>Testing</title>
@@ -125,4 +130,15 @@
         <para>doing the compilation part first would have made life a bit easier</para>
         <para></para>
     </section>
+    <bibliography>
+        <bibliomixed xml:id="schematron-existdb"><link xlink:href="https://github.com/Schematron/schematron-exist">https://github.com/Schematron/schematron-exist</link></bibliomixed>
+        <bibliomixed xml:id="schematron-basex"><link xlink:href="https://github.com/Schematron/schematron-basex">https://github.com/Schematron/schematron-basex</link></bibliomixed>
+        <bibliomixed xml:id="schematron-ML"><link xlink:href="https://github.com/ndw/ML-Schematron">https://github.com/ndw/ML-Schematron</link></bibliomixed>
+        <bibliomixed xml:id="probatron"><link xlink:href="https://code.google.com/archive/p/probatron/">Probatron</link></bibliomixed>
+        <bibliomixed xml:id="ph-schematron"><link xlink:href="https://phax.github.io/ph-schematron/">ph-schematron</link></bibliomixed>
+        <bibliomixed xml:id="skeleton"><link xlink:href="https://github.com/Schematron/schematron">Skeleton implementation</link>, archived October 2020.</bibliomixed>
+        <bibliomixed xml:id="schxslt"><link xlink:href="https://github.com/schxslt/schxslt">SchXslt</link></bibliomixed>
+        <bibliomixed xml:id="iso-qlbs">ISO/IEC 19757-3:2020, Clause 6.4; Annexes H-M. <link xlink:href="https://www.iso.org/standard/74515.html"></link>.</bibliomixed>
+        <bibliomixed xml:id="meetups">Schematron Users Meetup, at <confgroup><conftitle>XML Prague</conftitle><confdates>2017-20, 2022</confdates></confgroup>, <link xlink:href="https://www.xmlprague.cz/">https://www.xmlprague.cz/</link></bibliomixed>
+    </bibliography>
 </article>
