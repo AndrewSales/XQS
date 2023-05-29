@@ -64,7 +64,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
     <svrl:schematron-output>
       {output:schema-title($schema/sch:title)}
       {$schema/@schemaVersion}
-      {if($phase) then attribute{'phase'}{$phase/@id}}
+      {if($active-phase) then attribute{'phase'}{$active-phase/@id}}
       {output:namespace-decls-as-svrl($schema/sch:ns)}
     {'{', string-join(
       for $pattern in $active-patterns 
