@@ -76,6 +76,10 @@
             <title>"Native"?</title>
             <para>For reasons of familiarity in the main, BaseX<footnote><para><link xlink:href="https://basex.org/">https://basex.org/</link></para></footnote> was chosen as the development platform, so the code uses its dialect of XQuery 3.1. This means that dynamic validation relies on that, but a generated XQuery ("compiled schema") uses no engine-specific functions or syntax, so also runs under e.g. Saxon<footnote><para>See <link xlink:href="https://www.saxonica.com/">https://www.saxonica.com/</link>.</para></footnote><!--[FOOTNOTE ABOUT differing opinions on escaping of braces]-->. See also <xref linkend="futureWork"/>.</para>
         </section>
+        <section>
+            <title>Mandated XQuery QLB</title>
+            <para>Note that an XQuery query language binding is required by XQS and the application terminates with an error if this is not present.</para>
+        </section>
     </section>
     <section>
         <title>Approach</title>
