@@ -37,12 +37,14 @@ as xs:boolean{
 };
 '
 
-let $functions:=for $doc in collection('..\..\schematron-conformance\src\main\resources\tests\core')
+let $functions:=for $doc in collection('..\..\schematron-conformance\src\main\resources\tests\svrl')
 return
 local:make-function($doc)
 
-return
+return $functions => string-join()
+
+(: return
 file:write-text(
   resolve-uri('conformance-suite.xqm', static-base-uri()),
   $prolog || $functions => string-join()
-)
+) :)

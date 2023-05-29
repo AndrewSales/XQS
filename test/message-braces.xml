@@ -1,0 +1,8 @@
+<sch:schema xmlns:sch='http://purl.oclc.org/dsdl/schematron'>
+      <sch:pattern>
+        <sch:rule context="/*">
+          <sch:report test="contains(., '{')"></sch:report>
+          <sch:report test="contains(., '}')"></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>

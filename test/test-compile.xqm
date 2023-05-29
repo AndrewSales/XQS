@@ -523,6 +523,21 @@ declare %unit:test function _:assertion-message-braces()
   )
 };
 
+declare %unit:test function _:assertion-message-braces-from-file()
+{
+  let $compiled := compile:schema(
+    doc('assertion-message-braces.xml')/*,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};
+
 declare %unit:test function _:test-message-braces()
 {
   let $compiled := compile:schema(
@@ -534,6 +549,25 @@ declare %unit:test function _:test-message-braces()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert($result/svrl:successful-report),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    )
+  )
+};
+
+declare %unit:test function _:test-message-braces-from-file()
+{
+  let $compiled := compile:schema(
+    doc('message-braces.xml')/*,
     ''
   )
   let $result := xquery:eval(

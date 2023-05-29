@@ -55,6 +55,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
+  let $_ := util:check-duplicate-variable-names(($schema|$active-phase)/sch:let)
   return
   (
     compile:prolog($schema, $active-phase),
@@ -88,6 +89,8 @@ as xs:string*
 
 declare function compile:pattern($pattern as element(sch:pattern))
 {
+  let $_ := util:check-duplicate-variable-names($pattern/sch:let)
+  return
   if($pattern/@documents)
   then compile:pattern-documents($pattern)
   else
@@ -160,10 +163,12 @@ declare function compile:rule-documents($rule as element(sch:rule))
 
 declare function compile:rule($rule as element(sch:rule))
 {
+  let $_ := util:check-duplicate-variable-names($rule/sch:let)
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
     'declare function ' || $function-name || '(){' ||
+    string-join(compile:pattern-variables($rule/../sch:let), ' ') ||
     string-join(util:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
       util:declare-variable(
