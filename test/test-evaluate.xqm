@@ -1220,6 +1220,65 @@ declare %unit:test function _:undetected-syntax-error()
   )
 };
 
-(:TODO
-- conformance suite: https://github.com/Schematron/schematron-conformance/tree/master/src/main/resources/tests
-:)
+declare %unit:test function _:map-global-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-pattern-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-rule-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
