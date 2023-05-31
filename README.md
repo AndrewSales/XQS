@@ -6,7 +6,7 @@ Tested under [BaseX](https://basex.org/) 10.x.
 
 # Installation
 1. Install [BaseX](https://basex.org/download/) version 10 or later.
-1. XYZ
+1. Download the latest release and navigate to the root directory of the extracted archive (containing `*.xqm` and `*.bxs` files).
 
 # Usage
 XQS provides two methods of validating with a Schematron schema, by either:
@@ -42,12 +42,14 @@ You can also pass an optional phase:
 
     basex -bschema=mySchema.sch -bphase=myPhase compile.bxs
     
-**Note** a current limitation is that schema phase can only be specified during compilation and not at validation-time: see #7.
+**Note** a current limitation is that schema phase can only be specified during compilation and not at validation-time: see [#7](https://github.com/AndrewSales/XQS/issues/7).
 
 The output is an XQuery main module, which contains two external variables allowing the document to validate to be passed in:
 
     $Q{http://www.andrewsales.com/ns/xqs}uri
     $Q{http://www.andrewsales.com/ns/xqs}doc
+    
+`$uri` should be a URI. If you XQuery processor supports it, you can use `$doc` to pass a document node instead. 
 
 ### Validate
 
