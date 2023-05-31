@@ -76,4 +76,8 @@ Please refer to the issues for a list of known bugs and planned enhancements.
 ## Query language binding
 Your schema *must* specify a `queryBinding` value of : `xquery`, `xquery3` or `xquery31`, in any combination of upper or lower case.
 
+## Inclusion and expansion
+
+These are not yet supported: see [#6](https://github.com/AndrewSales/XQS/issues/6). If your schema makes use of these, consider using a tool such as [SchXslt](https://github.com/schxslt/schxslt) to perform these steps in the meantime.
+
 **CAUTION** When compiling, avoid using the XQS namespace (`http://www.andrewsales.com/ns/xqs`) in your schema, which XQS uses for variables internal to the application.
