@@ -63,12 +63,19 @@ The output is again SVRL.
 You can also use the XQuery API contained in `xqs.xqm`, e.g.
 
     import module namespace xqs = 'http://www.andrewsales.com/ns/xqs' at 'path/to/xqs.xqm;
-    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*[, 'myPhase'])
+    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*)
     
 or
 
-    xqs:compile(doc('mySchema.xml)/*[, 'myPhase'])
+    xqs:compile(doc('mySchema.xml)/*)
+    
+If you use phases, you can pass them in like so:
 
+    xqs:compile(doc('mySchema.xml)/*, 'myPhase')
+    
+or
+
+    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
 # Advisory notes
 This is a pre-release and should be treated as such.
 Please refer to the issues for a list of known bugs and planned enhancements.
