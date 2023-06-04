@@ -1,20 +1,30 @@
 module namespace port = 'http://www.andrewsales.com/ns/port';
 
-declare %private variable $port:processor := "existdb"; 
+declare %private variable $port:processor :=
+        if (fn:matches(<a/>/fn:generate-id(), "MD[0-9]+N1"))
+        then
+          "existdb"
+        else if (<a/>/fn:generate-id() eq "d0e0")
+        then
+          "saxon"
+        else
+          "basex"
+        ;
 
 declare %private variable $port:implementation-module-ns :=
-        let $is-existdb := fn:exists(fn:environment-variable("EXIST_HOME"))
-        return
-            switch ($port:processor)
-              case "existdb"
-              return
-                "http://www.andrewsales.com/ns/port/existdb"
-              case "basex"
-              return
-                "http://www.andrewsales.com/ns/port/basex"
-              default
-              return
-                "http://www.andrewsales.com/ns/port/basex"
+          switch ($port:processor)
+            case "existdb"
+            return
+              "http://www.andrewsales.com/ns/port/existdb"
+            case "saxon"
+            return
+              "http://www.andrewsales.com/ns/port/saxon"
+            case "basex"
+            return
+              "http://www.andrewsales.com/ns/port/basex"
+            default
+            return
+              "http://www.andrewsales.com/ns/port/basex"
          ;
 
 declare %private variable $port:implementation-module-location-hint := "port/" || fn:replace($port:implementation-module-ns, ".+/(.+)", "$1") || ".xqm";
