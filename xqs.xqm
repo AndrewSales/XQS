@@ -66,10 +66,16 @@ as xs:string
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)
 declare function xqs:check-query-binding($schema as element(sch:schema))
 {
-  if(lower-case($schema/@queryBinding) = ('xquery', 'xquery3', 'xquery31'))
-  then ()
-  else error(
-    xs:QName('xqs:invalid-query-binding'),
-    'query language binding must be XQuery'
-  )
+  let $query-binding := $schema/@queryBinding
+  return
+    if (exists($query-binding))
+    then
+      if(lower-case($query-binding) = ('xquery', 'xquery3', 'xquery31'))
+      then ()
+      else error(
+        xs:QName('xqs:invalid-query-binding'),
+        'query language binding must be XQuery',
+        $schema/@queryBinding
+      )
+    else()
 };
