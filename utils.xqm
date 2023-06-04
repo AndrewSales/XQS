@@ -122,5 +122,5 @@ declare function util:check-duplicate-variable-names($decls as element(sch:let)*
     xs:QName('xqs:multiply-defined-variable'),
     'duplicate variable name in element ' || local-name(head($decls)/..) || ': '
     || $names[index-of($names, .)[2]]
-  )
+  ) else()
 };

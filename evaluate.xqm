@@ -31,7 +31,7 @@ declare function eval:schema(
   <svrl:schematron-output>
   {output:schema-title($schema/sch:title)}
   {$schema/@schemaVersion}
-  {if($context?phase) then attribute{'phase'}{$context?phase/@id}}
+  {if($context?phase) then attribute{'phase'}{$context?phase/@id} else ()}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
   {$context?patterns ! eval:pattern(., $context)}
   </svrl:schematron-output>
@@ -70,7 +70,7 @@ declare function eval:pattern(
   return	(:TODO active-pattern/@name:)(
     <svrl:active-pattern>
     {$pattern/(@id, @name, @role), 
-    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)}}
+    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
     </svrl:active-pattern>, 
     $context?instance ! eval:rules(
       $pattern/sch:rule, 
