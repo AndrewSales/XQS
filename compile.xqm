@@ -1,7 +1,7 @@
 module namespace compile = 'http://www.andrewsales.com/ns/xqs-compile';
 import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' at
   'context.xqm';
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
   'utils.xqm';  
 import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   'svrl.xqm';    
@@ -55,7 +55,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
-  let $_ := util:check-duplicate-variable-names(($schema|$active-phase)/sch:let)
+  let $_ := utils:check-duplicate-variable-names(($schema|$active-phase)/sch:let)
   return
   (
     compile:prolog($schema, $active-phase),
@@ -80,7 +80,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
 declare function compile:prolog($schema as element(sch:schema), $phase)
 as xs:string*
 {
-  string-join($schema/sch:ns ! context:make-ns-decls(.)) => util:escape() ||
+  string-join($schema/sch:ns ! context:make-ns-decls(.)) => utils:escape() ||
   $compile:EXTERNAL_VARIABLES ||
   string-join(
     context:get-global-variables($schema, $phase) => compile:global-variable-decls()
@@ -89,7 +89,7 @@ as xs:string*
 
 declare function compile:pattern($pattern as element(sch:pattern))
 {
-  let $_ := util:check-duplicate-variable-names($pattern/sch:let)
+  let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
   return
   if($pattern/@documents)
   then compile:pattern-documents($pattern)
@@ -116,7 +116,7 @@ declare function compile:pattern-documents($pattern as element(sch:pattern))
   return
   ('declare function ' || compile:function-name($pattern) || '(){' ||
     'let ' || $compile:SUBORDINATE_DOC_URIS || ':=' || 
-    $compile:INSTANCE_DOC || '/(' || $pattern/@documents => util:escape() || ')' ||
+    $compile:INSTANCE_DOC || '/(' || $pattern/@documents => utils:escape() || ')' ||
     'let ' || $compile:SUBORDINATE_DOC || ' as document-node()* :=' ||
     $compile:SUBORDINATE_DOC_URIS || '!' || 'doc(.) return (',
     <svrl:active-pattern 
@@ -141,11 +141,11 @@ declare function compile:rule-documents($rule as element(sch:rule))
   return (
     'declare function ' || $function-name || '(' || $compile:SUBORDINATE_DOC || 
     ' as document-node()){' ||
-    string-join(util:local-variable-decls($rule/sch:let), ' ') ||
+    string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
-      util:declare-variable(
+      utils:declare-variable(
         $compile:RULE_CONTEXT_NAME,
-        $compile:SUBORDINATE_DOC || '/(' || $rule/@context => util:escape() || ')'
+        $compile:SUBORDINATE_DOC || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
     ' return if(' || $compile:RULE_CONTEXT || ') then (',
       <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOC})}}'>
@@ -163,17 +163,17 @@ declare function compile:rule-documents($rule as element(sch:rule))
 
 declare function compile:rule($rule as element(sch:rule))
 {
-  let $_ := util:check-duplicate-variable-names($rule/sch:let)
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
     'declare function ' || $function-name || '(){' ||
     string-join(compile:pattern-variables($rule/../sch:let), ' ') ||
-    string-join(util:local-variable-decls($rule/sch:let), ' ') ||
+    string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
-      util:declare-variable(
+      utils:declare-variable(
         $compile:RULE_CONTEXT_NAME,
-        $compile:INSTANCE_DOC || '/(' || $rule/@context => util:escape() || ')'
+        $compile:INSTANCE_DOC || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
     ' return if(' || $compile:RULE_CONTEXT || ') then (',
     <svrl:fired-rule>
@@ -200,10 +200,10 @@ declare function compile:assertion(
   'declare function ' || compile:function-name($assertion, $distinct-name) ||
   '(' || $compile:RULE_CONTEXT || '){' ||
   string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
-  string-join(util:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
-  util:declare-variable(
+  string-join(utils:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
+  utils:declare-variable(
     $compile:RESULT_NAME,
-    $compile:RULE_CONTEXT || '/(' || $assertion/@test => util:escape() || ')'
+    $compile:RULE_CONTEXT || '/(' || $assertion/@test => utils:escape() || ')'
   ) ||
   ' return if(' || $compile:RESULT || ') then ' ||
   (
@@ -243,9 +243,9 @@ as element()
 declare %private function compile:pattern-variables($variables as element(sch:let)*)
 {
   for $var in $variables 
-  return util:declare-variable(
+  return utils:declare-variable(
     $var/@name,
-    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value => util:escape() || ')' 
+    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value => utils:escape() || ')'
     else serialize($var/*)
   )
 };
@@ -316,9 +316,9 @@ as xs:string?
     (if($var/@as) then ' as ' || $var/@as else '') || ':=' || 
     (
       (: if($var/@value instance of xs:anyAtomicType+)
-      then $var/@value/data() => util:escape()
+      then $var/@value/data() => utils:escape()
       else :) 
-      $compile:INSTANCE_DOC || '/(' || util:variable-value($var) || ')'
+      $compile:INSTANCE_DOC || '/(' || utils:variable-value($var) || ')'
     )
     || ';'
   )

@@ -6,8 +6,6 @@ import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate' at
   'evaluate.xqm';  
 import module namespace compile = 'http://www.andrewsales.com/ns/xqs-compile' at
   'compile.xqm';    
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
-  'utils.xqm';  
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 

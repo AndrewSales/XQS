@@ -8,7 +8,7 @@ import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' at
   'context.xqm';
 import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   'svrl.xqm';  
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
   'utils.xqm';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
@@ -46,7 +46,7 @@ declare function eval:pattern(
   $context as map(*)
 )
 {
-  let $_ := util:check-duplicate-variable-names($pattern/sch:let)
+  let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
   (:evaluate pattern variables against global context:)
   let $globals as map(*) := context:evaluate-pattern-variables(
         $pattern/sch:let,
@@ -74,7 +74,7 @@ declare function eval:pattern(
     </svrl:active-pattern>, 
     $context?instance ! eval:rules(
       $pattern/sch:rule, 
-      util:make-query-prolog($context), 
+      utils:make-query-prolog($context),
       map:put($context, 'instance', .)
     )
   )
@@ -115,17 +115,17 @@ declare function eval:rule(
 )
 as element()*
 {
-  let $_ := util:check-duplicate-variable-names($rule/sch:let)
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
   let $query := string-join(
-      ($prolog, util:local-variable-decls($rule/sch:let), 
+      ($prolog, utils:local-variable-decls($rule/sch:let),
       if($rule/sch:let) then 'return ' else '', $rule/@context),
       ' '
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
   let $rule-context := xquery:eval(
-    $query => util:escape(),
+    $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true'}	(:report exception details:)
+    map{'pass':'true'} (:report exception details:)
   )
   return 
   if($rule-context)
@@ -153,7 +153,7 @@ declare function eval:assertions(
 )
 as element()*
 {
-  let $prolog := $prolog || util:local-variable-decls($rule/sch:let)
+  let $prolog := $prolog || utils:local-variable-decls($rule/sch:let)
   (: let $_ := trace('[3]ASSERTION prolog='||$prolog) :)
   for $context in $rule-context
     let $prolog := $prolog || (if($rule/sch:let) then ' return ' else '')
@@ -182,7 +182,7 @@ declare function eval:assertion(
 )
 {
   let $result := xquery:eval(
-    $prolog || $assertion/@test => util:escape(),
+    $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
     map{'pass':'true'}
   )
