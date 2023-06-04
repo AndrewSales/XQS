@@ -6,6 +6,8 @@ module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate';
 
 import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' at
   'context.xqm';
+import module namespace port = 'http://www.andrewsales.com/ns/port' at
+  'port.xqm';
 import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   'svrl.xqm';  
 import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
@@ -122,10 +124,10 @@ as element()*
       ' '
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
-  let $rule-context := xquery:eval(
+  let $rule-context := port:eval(
     $query => utils:escape(),
-    map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true'} (:report exception details:)
+    $context?globals,
+    $context?instance
   )
   return 
   if($rule-context)
@@ -181,10 +183,10 @@ declare function eval:assertion(
   $context as map(*)
 )
 {
-  let $result := xquery:eval(
+  let $result := port:eval(
     $prolog || $assertion/@test => utils:escape(),
-    map:merge((map{'':$rule-context}, $context?globals)),
-    map{'pass':'true'}
+    $context?globals,
+    $rule-context
   )
   return
   typeswitch($assertion)

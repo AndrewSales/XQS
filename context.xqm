@@ -4,6 +4,8 @@
 
 module namespace c = 'http://www.andrewsales.com/ns/xqs-context';
 
+import module namespace port = 'http://www.andrewsales.com/ns/port'
+  at 'port.xqm';
 import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils'
   at 'utils.xqm';    
 
@@ -248,10 +250,10 @@ as map(*)
 {
   (: let $_ := trace('>>>QUERY='||$query) :)
   let $value as item()* := if($variable/@value) 
-    then xquery:eval(
+    then port:eval(
       $query => utils:escape(),
-      map:merge(($bindings, map{'':$instance})),
-      map{'pass':'true'}
+      $bindings,
+      $instance
     )
     else $variable/*
   let $bindings := map:merge(
@@ -283,10 +285,10 @@ as map(*)
 {
   if($documents) 
   then 
-    let $uris := xquery:eval(
+    let $uris := port:eval(
       utils:make-query-prolog($context) || $documents => utils:escape(),
-      map:merge(($context?globals, map{'':$context?instance})),
-      map{'pass':'true'}       (:report exception details:)
+      $context?globals,
+      $context?instance
     )
     return map:put(
       $context, 
