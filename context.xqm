@@ -4,7 +4,9 @@
 
 module namespace c = 'http://www.andrewsales.com/ns/xqs-context';
 
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' 
+import module namespace port = 'http://www.andrewsales.com/ns/port'
+  at 'port.xqm';
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils'
   at 'utils.xqm';    
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
@@ -31,8 +33,8 @@ as map(*)
   let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := ($schema, $active-phase)/sch:let
-  let $_ := (util:check-duplicate-variable-names($schema/sch:let), 
-  util:check-duplicate-variable-names($active-phase/sch:let))
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
+  utils:check-duplicate-variable-names($active-phase/sch:let))
   let $globals as map(*) := if($globals) 
     then c:evaluate-global-variables(
       $globals, 
@@ -155,8 +157,8 @@ as map(*)
   else 
     let $var := head($variables)
     let $prolog := $namespaces || 
-      util:global-variable-external-decls($bindings) || 
-      util:global-variable-decls($var)
+      utils:global-variable-external-decls($bindings) ||
+      utils:global-variable-decls($var)
     
     (: let $_ := trace('[1]$prolog='||serialize($prolog)) :)
     (: let $_ := trace('[2]$bindings='||serialize($bindings, map{'method':'adaptive'})) :)
@@ -204,7 +206,7 @@ as map(*)
   else 
     let $var := head($variables)
     let $prolog := $namespaces || 
-      util:global-variable-external-decls($bindings)
+      utils:global-variable-external-decls($bindings)
     
     (: let $_ := trace('[1]$prolog='||serialize($prolog)) :)
     (: let $_ := trace('[2]$bindings='||serialize($bindings, map{'method':'adaptive'})) :)
@@ -213,7 +215,7 @@ as map(*)
     let $binding := c:evaluate-global-variable(
       $var,
       $instance,
-      $prolog ||  util:local-variable-decls($var) || ' return $' || $var/@name,
+      $prolog ||  utils:local-variable-decls($var) || ' return $' || $var/@name,
       $ns-elems,
       $bindings
     )    
@@ -248,15 +250,15 @@ as map(*)
 {
   (: let $_ := trace('>>>QUERY='||$query) :)
   let $value as item()* := if($variable/@value) 
-    then xquery:eval(
-      $query => util:escape(), 
-      map:merge(($bindings, map{'':$instance})),
-      map{'pass':'true'}
+    then port:eval(
+      $query => utils:escape(),
+      $bindings,
+      $instance
     )
     else $variable/*
   let $bindings := map:merge(
     (
-      map{util:variable-name-to-QName($variable/@name, $ns-elems):$value},
+      map{utils:variable-name-to-QName($variable/@name, $ns-elems):$value},
       $bindings
     )
   )
@@ -283,10 +285,10 @@ as map(*)
 {
   if($documents) 
   then 
-    let $uris := xquery:eval(
-      util:make-query-prolog($context) || $documents => util:escape(),
-      map:merge(($context?globals, map{'':$context?instance})),
-      map{'pass':'true'}	(:report exception details:)
+    let $uris := port:eval(
+      utils:make-query-prolog($context) || $documents => utils:escape(),
+      $context?globals,
+      $context?instance
     )
     return map:put(
       $context, 

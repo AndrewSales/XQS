@@ -6,8 +6,6 @@ import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate' at
   'evaluate.xqm';  
 import module namespace compile = 'http://www.andrewsales.com/ns/xqs-compile' at
   'compile.xqm';    
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
-  'utils.xqm';  
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
@@ -68,10 +66,16 @@ as xs:string
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)
 declare function xqs:check-query-binding($schema as element(sch:schema))
 {
-  if(lower-case($schema/@queryBinding) = ('xquery', 'xquery3', 'xquery31'))
-  then ()
-  else error(
-    xs:QName('xqs:invalid-query-binding'),
-    'query language binding must be XQuery'
-  )
+  let $query-binding := $schema/@queryBinding
+  return
+    if (exists($query-binding))
+    then
+      if(lower-case($query-binding) = ('xquery', 'xquery3', 'xquery31'))
+      then ()
+      else error(
+        xs:QName('xqs:invalid-query-binding'),
+        'query language binding must be XQuery',
+        $schema/@queryBinding
+      )
+    else()
 };

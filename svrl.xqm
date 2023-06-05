@@ -6,6 +6,9 @@ module namespace output = 'http://www.andrewsales.com/ns/xqs-output';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
+import module namespace port = 'http://www.andrewsales.com/ns/port'
+  at 'port.xqm';
+
 declare function output:schema-title($title as element(sch:title)?)
 as attribute(title)?
 {
@@ -113,15 +116,17 @@ declare function output:assertion-message-content(
     typeswitch($node)
       case element(sch:name)
         return if($node/@path) 
-          then xquery:eval(
+          then port:eval(
             $prolog || $node/@path, 
-            map:merge((map{'':$rule-context}, $context?globals))
+            $context?globals,
+            $rule-context
           ) 
           else name($rule-context)
       case element(sch:value-of)
-        return xquery:eval(
+        return port:eval(
           $prolog || $node/@select, 
-          map:merge((map{'':$rule-context}, $context?globals))
+          $context?globals,
+          $rule-context
         ) 
         => string()
       case element(sch:emph)
