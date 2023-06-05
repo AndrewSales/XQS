@@ -76,6 +76,15 @@ If you use phases, you can pass them in like so:
 or
 
     xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
+    
+# Running the test suite
+The test suite is found in the `test/ `sub-directory.
+To run all the tests there, at the command line, specify the `-t` option and the path to the `test` directory:
+
+    basex -t path/to/test
+    
+The command returns `0` if all tests pass, otherwise `1`.  
+    
 # Advisory notes
 This is a pre-release and should be treated as such.
 Please refer to the issues for a list of known bugs and planned enhancements.
