@@ -55,12 +55,12 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
-  let $_ := utils:check-duplicate-variable-names(($schema|$active-phase)/sch:let)
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let), utils:check-duplicate-variable-names($active-phase/sch:let))
   return
   (
-    compile:prolog($schema, $active-phase),
+    compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
-    $active-patterns ! compile:pattern(.),
+    $active-patterns ! compile:pattern(., $active-phase),
     'declare function local:schema(){',
     <svrl:schematron-output>
       {output:schema-title($schema/sch:title)}
@@ -77,22 +77,26 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
   ) => serialize(map{'method':'basex'})
 };
 
-declare function compile:prolog($schema as element(sch:schema), $phase)
+declare function compile:prolog($schema as element(sch:schema))
 as xs:string*
 {
   string-join($schema/sch:ns ! context:make-ns-decls(.)) => utils:escape() ||
   $compile:EXTERNAL_VARIABLES ||
   string-join(
-    context:get-global-variables($schema, $phase) => compile:global-variable-decls()
+    $schema/sch:let => compile:global-variable-decls()
   )
 };
 
-declare function compile:pattern($pattern as element(sch:pattern))
+declare function compile:pattern(
+  $pattern as element(sch:pattern),
+  $phase as element(sch:phase)?
+)
 {
-  let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
+  let $_ := (utils:check-duplicate-variable-names($pattern/sch:let),
+    utils:check-duplicate-variable-names($phase/sch:let))
   return
   if($pattern/@documents)
-  then compile:pattern-documents($pattern)
+  then compile:pattern-documents($pattern, $phase)
   else
     let $function-id := compile:function-id($pattern)
     return
@@ -103,14 +107,17 @@ declare function compile:pattern($pattern as element(sch:pattern))
       string-join(for $rule in $pattern/sch:rule 
       return ' ' || compile:function-name($rule) || '#0', ',') || '))',
       '};',
-      $pattern/sch:rule ! compile:rule(.)
+      $pattern/sch:rule ! compile:rule(., $phase)
     )
 };
 
 (:~ Creates a function to process a pattern which specifies subordinate 
  : documents. 
  :)
-declare function compile:pattern-documents($pattern as element(sch:pattern))
+declare function compile:pattern-documents(
+  $pattern as element(sch:pattern),
+  $phase as element(sch:phase)?
+)
 {
   let $function-id := compile:function-id($pattern)
   return
@@ -129,12 +136,15 @@ declare function compile:pattern-documents($pattern as element(sch:pattern))
       ','
     ) || '), ' || $compile:SUBORDINATE_DOC || ')',
     ')};',
-    $pattern/sch:rule ! compile:rule-documents(.)
+    $pattern/sch:rule ! compile:rule-documents(., $phase)
   )
 };
 
 (:~ Creates a function for a rule to process a subordinate document. :)
-declare function compile:rule-documents($rule as element(sch:rule))
+declare function compile:rule-documents(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
 {
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
@@ -157,18 +167,22 @@ declare function compile:rule-documents($rule as element(sch:rule))
       return compile:function-name($assertion, true()) || '(.)', 
       ','
     ) 
-    || ')) else ()};' || string-join($assertions ! compile:assertion(., true()))
+    || ')) else ()};' || string-join($assertions ! compile:assertion(., $phase, true()))
   )
 };
 
-declare function compile:rule($rule as element(sch:rule))
+declare function compile:rule(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
 {
   let $_ := utils:check-duplicate-variable-names($rule/sch:let)
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
     'declare function ' || $function-name || '(){' ||
-    string-join(compile:pattern-variables($rule/../sch:let), ' ') ||
+    string-join(compile:root-context-variables($phase/sch:let), ' ') ||
+    string-join(compile:root-context-variables($rule/../sch:let), ' ') ||
     string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
       utils:declare-variable(
@@ -185,12 +199,13 @@ declare function compile:rule($rule as element(sch:rule))
       return compile:function-name($assertion) || '(.)', 
       ','
     ) 
-    || ')) else ()};' || string-join($assertions ! compile:assertion(., false()))
+    || ')) else ()};' || string-join($assertions ! compile:assertion(., $phase, false()))
   )
 };
 
 declare function compile:assertion(
   $assertion as element(),
+  $phase as element(sch:phase)?,
   $distinct-name as xs:boolean
 )
 {
@@ -199,7 +214,8 @@ declare function compile:assertion(
   else
   'declare function ' || compile:function-name($assertion, $distinct-name) ||
   '(' || $compile:RULE_CONTEXT || '){' ||
-  string-join(compile:pattern-variables($assertion/../../sch:let), ' ') ||
+  string-join(compile:root-context-variables($phase/sch:let), ' ') ||
+  string-join(compile:root-context-variables($assertion/../../sch:let), ' ') ||
   string-join(utils:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
   utils:declare-variable(
     $compile:RESULT_NAME,
@@ -240,7 +256,7 @@ as element()
   }
 };
 
-declare %private function compile:pattern-variables($variables as element(sch:let)*)
+declare %private function compile:root-context-variables($variables as element(sch:let)*)
 {
   for $var in $variables 
   return utils:declare-variable(
