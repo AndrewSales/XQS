@@ -30,7 +30,7 @@ as map(*)
   let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase)
   let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
-  let $globals as element(sch:let)* := ($schema, $active-phase)/sch:let
+  let $globals as element(sch:let)* := $schema/sch:let
   let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
   utils:check-duplicate-variable-names($active-phase/sch:let))
   let $globals as map(*) := if($globals) 
@@ -190,7 +190,7 @@ as map(*)
  : @param instance the document instance
  : @param prolog global variable and namespace declarations
  :)
-declare function c:evaluate-pattern-variables(
+declare function c:evaluate-root-context-variables(
   $variables as element(sch:let)*,
   $instance as node()+,
   $namespaces as xs:string?,
@@ -220,7 +220,7 @@ as map(*)
     
     (: let $_ := trace('[5]$bindings='||serialize($binding, map{'method':'adaptive'})) :)
     
-    return c:evaluate-pattern-variables(
+    return c:evaluate-root-context-variables(
       tail($variables),
       $instance,
       $namespaces,
