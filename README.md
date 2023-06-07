@@ -49,7 +49,7 @@ The output is an XQuery main module, which contains two external variables allow
     $Q{http://www.andrewsales.com/ns/xqs}uri
     $Q{http://www.andrewsales.com/ns/xqs}doc
     
-`$uri` should be a URI. If you XQuery processor supports it, you can use `$doc` to pass a document node instead. 
+`$uri` should be a URI. If your XQuery processor supports it, you can use `$doc` to pass a document node instead. 
 
 ### Validate
 
@@ -63,12 +63,28 @@ The output is again SVRL.
 You can also use the XQuery API contained in `xqs.xqm`, e.g.
 
     import module namespace xqs = 'http://www.andrewsales.com/ns/xqs' at 'path/to/xqs.xqm;
-    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*[, 'myPhase'])
+    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*)
     
 or
 
-    xqs:compile(doc('mySchema.xml)/*[, 'myPhase'])
+    xqs:compile(doc('mySchema.xml)/*)
+    
+If you use phases, you can pass them in like so:
 
+    xqs:compile(doc('mySchema.xml)/*, 'myPhase')
+    
+or
+
+    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
+    
+# Running the test suite
+The test suite is found in the `test/ `sub-directory.
+To run all the tests there, at the command line, specify the `-t` option and the path to the `test` directory:
+
+    basex -t path/to/test
+    
+The command returns `0` if all tests pass, otherwise `1`.  
+    
 # Advisory notes
 This is a pre-release and should be treated as such.
 Please refer to the issues for a list of known bugs and planned enhancements.
