@@ -49,7 +49,7 @@ The output is an XQuery main module, which contains two external variables allow
     $Q{http://www.andrewsales.com/ns/xqs}uri
     $Q{http://www.andrewsales.com/ns/xqs}doc
     
-`$uri` should be a URI. If you XQuery processor supports it, you can use `$doc` to pass a document node instead. 
+`$uri` should be a URI. If your XQuery processor supports it, you can use `$doc` to pass a document node instead. 
 
 ### Validate
 
