@@ -15,7 +15,9 @@ function _:validate-QLB-not-xquery()
 {
   xqs:validate(
     <foo/>,
-    <sch:schema/>
+    <sch:schema queryBinding='xslt'>
+    <sch:pattern><sch:rule context='*'><sch:assert/></sch:rule></sch:pattern>
+    </sch:schema>
   )
 };
 
