@@ -192,7 +192,7 @@ as map(*)
  :)
 declare function c:evaluate-pattern-variables(
   $variables as element(sch:let)*,
-  $instance as node(),
+  $instance as node()+,
   $namespaces as xs:string?,
   $ns-elems as element(sch:ns)*,
   $bindings as map(*)

@@ -1114,6 +1114,23 @@ declare %unit:test function _:pattern-documents-multiple()
   )
 };
 
+(:~ re https://github.com/AndrewSales/XQS/issues/17 :)
+declare %unit:test('expected', 'err:XPST0008') function _:pattern-documents-variable-scope()
+{
+  eval:schema(
+    document{<foo/>},
+    <sch:schema>
+      <sch:pattern documents="/foo/subordinate[$bar]">
+        <sch:let name='bar' value='"blort"'/>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+};
+
 (:~ see https://github.com/AndrewSales/XQS/issues/10 :)
 declare %unit:test function _:assertion-message-braces()
 {
