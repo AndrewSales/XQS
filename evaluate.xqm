@@ -47,6 +47,10 @@ declare function eval:pattern(
 )
 {
   let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
+  
+  (:update context in light of @documents:)
+  let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
+  
   (:evaluate pattern variables against global context:)
   let $globals as map(*) := context:evaluate-pattern-variables(
         $pattern/sch:let,
@@ -57,10 +61,6 @@ declare function eval:pattern(
       )
   (: let $_ := trace('PATTERN $globals='||serialize($globals, map{'method':'adaptive'})) :)
   let $context := map:put($context, 'globals', $globals)
-  
-  (:update context in light of @documents - N.B. doing it here means pattern
-   variables are in scope when @documents is evaluated:)
-  let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
   
   (: let $_ := trace('instance='||$context?instance=>serialize()|| ' (' || count($context?instance) || ')') :)
   
