@@ -33,7 +33,7 @@ declare function eval:schema(
   {$schema/@schemaVersion}
   {if($context?phase) then attribute{'phase'}{$context?phase/@id} else ()}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
-  {$context?patterns ! eval:pattern(., $context)}
+  {eval:phase($context)}
   </svrl:schematron-output>
 };
 
@@ -52,7 +52,7 @@ declare function eval:pattern(
   let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
   
   (:evaluate pattern variables against global context:)
-  let $globals as map(*) := context:evaluate-pattern-variables(
+  let $globals as map(*) := context:evaluate-root-context-variables(
         $pattern/sch:let,
         $context?instance,
         $context?ns-decls,
@@ -199,4 +199,22 @@ declare function eval:assertion(
     xs:QName('eval:invalid-assertion-element'), 
     'invalid assertion element: '||$assertion/name()
   )
+};
+
+declare function eval:phase($context as map(*))
+{
+  let $phase := $context?phase
+  let $_ := utils:check-duplicate-variable-names($phase/sch:let)
+  
+  (:add phase variables to context:)
+  let $globals as map(*) := context:evaluate-root-context-variables(
+        $phase/sch:let,
+        $context?instance,
+        $context?ns-decls,
+        $phase/../sch:ns,
+        $context?globals
+      )
+  let $context := map:put($context, 'globals', $globals)
+  
+  return  $context?patterns ! eval:pattern(., $context)
 };
