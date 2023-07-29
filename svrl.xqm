@@ -35,7 +35,13 @@ declare function output:assertion-message(
     if($assertion/self::sch:assert) then 'failed-assert' else 'successful-report')}
     {
       attribute{'location'}{path($rule-context)},
-      $assertion/(@id, @role, @flag, @test),
+      $assertion/(@id, @flag, @test),
+      if(starts-with($assertion/@role, '$')) 
+      then attribute{'role'}{xquery:eval(
+        $prolog || $assertion/@role,
+        $context?globals
+      )}
+      else $assertion/@role,
       output:diagnostics(
         $context?diagnostics[@id = tokenize($assertion/@diagnostics)],
         $prolog,
