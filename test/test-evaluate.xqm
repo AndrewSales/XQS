@@ -172,6 +172,22 @@ declare %unit:test function _:process-pattern()
   )
 };
 
+(:~ active rule-set processed :)
+declare %unit:test function _:process-rule-set()
+{
+  let $result := eval:rule-set(
+    <sch:rule-set id='e' name='f' role='g'>
+      <sch:rule context='*' id='a' name='b' role='c' flag='d'/>
+    </sch:rule-set>,
+    map{'instance':document{<foo/>}, 'globals':map{}}
+  )
+  return unit:assert-equals(
+    $result,
+    (<svrl:active-rule-set id='e' name='f' role='g'/>,
+    <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>)
+  )
+};
+
 (:~ rule in active pattern processed :)
 declare %unit:test function _:process-rule()
 {
@@ -521,6 +537,37 @@ declare %unit:test function _:rule-halt-on-match()
       <svrl:fired-rule context='*'/>,
       <svrl:failed-assert 
       test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+    )
+  )
+};
+
+(:~ **EXPERIMENTAL** 
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25
+ :)
+declare %unit:test function _:rule-set-continue-on-match()
+{
+  let $result := eval:rule-set(
+    <sch:rule-set>
+      <sch:rule context='*'>
+        <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+      </sch:rule>
+      <sch:rule context='foo'>
+        <sch:report test='.'>should reach here</sch:report>
+      </sch:rule>
+    </sch:rule-set>,
+    map{'instance':document{<foo/>}, 'globals':map{}}
+  )
+  return
+  unit:assert-equals(
+    $result,
+    (
+      <svrl:active-rule-set/>,
+      <svrl:fired-rule context='*'/>,
+      <svrl:failed-assert 
+      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>,
+      <svrl:fired-rule context='foo'/>,
+      <svrl:successful-report 
+      test='.' location='/Q{{}}foo[1]'><svrl:text>should reach here</svrl:text></svrl:successful-report>
     )
   )
 };

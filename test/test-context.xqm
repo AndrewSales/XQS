@@ -358,3 +358,28 @@ declare %unit:test function _:get-context-globals()
     1	(:schema-level only; not phase variables:)
   )
 };
+
+(:~ retrieve active rule-sets from validation context map :)
+declare %unit:test function _:get-context-rule-sets()
+{
+    let $schema := <schema xmlns="http://purl.oclc.org/dsdl/schematron">
+      <phase id='phase1'>
+        <active pattern='foo'/>
+        <active pattern='bar'/>
+      </phase>
+      <rule-set id='foo'><rule/></rule-set>
+      <rule-set id='bar'><rule/></rule-set>
+      <rule-set id='blort'><rule/></rule-set>
+    </schema>
+  
+  let $rule-sets := c:get-context(
+    <foo/>,
+    $schema,
+    'phase1'
+  )?rule-sets
+  
+  return unit:assert-equals(
+    count($rule-sets),
+    2
+  )
+};
