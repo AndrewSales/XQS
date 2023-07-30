@@ -8,17 +8,16 @@ declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
 (:~ Handle includes in the main schema document. :)
 declare function ie:process-includes(
-  $schema as element(sch:schema),
-  $base-uri as xs:anyURI
+  $schema as element(sch:schema)
 )
 {
-  let $_ := trace('base URI=' || $base-uri)
+  let $_ := trace('base URI=' || $schema/base-uri())
   return
   copy $copy := $schema
     modify 
       for $include in $copy//sch:include 
       return
-      replace node $include with ie:process-include($include, $base-uri)
+      replace node $include with ie:process-include($include, $schema/base-uri())
   return $copy    
 };
 
@@ -35,6 +34,6 @@ declare function ie:process-include(
     modify
       for $include in $copy//sch:include 
       return
-      replace node $include with ie:process-include($include, $base-uri)
+      replace node $include with ie:process-include($include, $include/base-uri())
   return $copy    
 };
