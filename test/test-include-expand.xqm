@@ -26,7 +26,8 @@ declare %unit:test function _:process-include-recursive()
   let $schema := ie:process-includes($doc/*, $doc/base-uri())
   return
   (
-    unit:assert(not($schema/sch:include)),
-    unit:assert($schema/sch:pattern)
+    unit:assert(not($schema//sch:include)),
+    unit:assert($schema/sch:pattern),
+    unit:assert-equals(count($schema//sch:rule), 3)
   )
 };
