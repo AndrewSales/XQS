@@ -11,11 +11,11 @@ declare function ie:process-includes(
   $schema as element(sch:schema)
 )
 {
-  let $_ := trace('base URI=' || $schema/base-uri())
+  let $_ := trace('SCHEMA base URI=' || $schema/base-uri())
   return
   copy $copy := $schema
     modify 
-      for $include in $copy//sch:include 
+      for $include in ($copy//sch:include | $copy//sch:extends[@href]) 
       return
       replace node $include with ie:process-include($include, $schema/base-uri())
   return $copy    
@@ -23,34 +23,43 @@ declare function ie:process-includes(
 
 (:~ Process includes, including any nested ones. :)
 declare %private function ie:process-include(
-  $include as node(),
+  $include as element(),
   $base-uri as xs:anyURI
 ) as node()
 {
+  let $_ := trace('include='||$include=>serialize())
   let $_ := trace('base URI='||$base-uri)
-  let $include := ie:document-or-fragment($include/@href, $base-uri)
+  let $_ := trace('resolving include='||$include/@href)
+  let $include := ie:get-inclusion($include/@href, $base-uri)
+  let $include-base-uri := $include/base-uri()	(:store before we create the copy:)
   return
   copy $copy := $include
     modify
-      for $include in $copy//sch:include 
+      for $include in ($copy/descendant-or-self::sch:include | $copy/descendant-or-self::sch:extends[@href]) 
       return
-      replace node $include with ie:process-include($include, $include/base-uri())
+      replace node $include with ie:process-include($include, $include-base-uri)
   return $copy    
 };
 
-(:~ Return the document or fragment to be included. :)
-declare %private function ie:document-or-fragment(
+(:~ Return the document or element to be included. :)
+declare %private function ie:get-inclusion(
   $href as attribute(href),
   $base-uri as xs:anyURI
 )
 as node()
 {
-  let $url := if(contains($href, '#')) then substring-before($href, '#')
-    else $href
+  let $url := if(contains($href, '#')) then substring-before($href, '#') else $href
   let $fragment := substring-after($href, '#')
   let $doc := doc(resolve-uri($url, $base-uri))
-  return
-  if($fragment)
-  then ($doc//*[@id = $fragment])[1]
-  else $doc
+  let $inclusion as element() :=
+    if($fragment)
+    then ($doc//*[@id = $fragment])[1]
+    else $doc/*
+  let $inclusion :=
+    if($href/parent::sch:extends)
+    then $inclusion/*
+    else $inclusion
+  let $_ := trace('inclusion='||serialize($inclusion)||' base URI='||$inclusion/base-uri())
+  
+  return $inclusion
 };

@@ -54,4 +54,6 @@ declare %unit:test function _:include-fragment()
   )
 };
 
-(:TODO detect circular references:)
+(:TODO 
+detect circular references
+extends[@href]:)

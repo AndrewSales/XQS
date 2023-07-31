@@ -16,17 +16,22 @@ as xs:boolean{
 (:~ Extends performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
-declare %unit:ignore function _:extends-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:rule context="/">
-          <sch:extends href="subdir/include-1.sch"/>
-        </sch:rule>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(_:is-valid($result))};
+declare %unit:test function _:extends-baseuri-fixup1()
+{
+  let $result:= eval:schema(
+    document{<element/>},
+    doc('extends-baseuri-fixup.sch')/* => ie:process-includes(), 
+    ''
+  ) 
+  return
+  (
+    unit:assert(_:is-valid($result))
+  )
+};
+
 (:~ Extends is recursive 
 :)
-declare %unit:ignore function _:extends-recursive1(){let $result:=eval:schema(document{<element/>},
+declare %unit:test function _:extends-recursive1(){let $result:=eval:schema(document{<element/>},
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern>
         <sch:rule context="/">
