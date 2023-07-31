@@ -28,7 +28,7 @@ declare %private function ie:process-include(
 ) as node()
 {
   let $_ := trace('base URI='||$base-uri)
-  let $include := doc(resolve-uri($include/@href, $base-uri))
+  let $include := ie:document-or-fragment($include/@href, $base-uri)
   return
   copy $copy := $include
     modify
@@ -36,4 +36,21 @@ declare %private function ie:process-include(
       return
       replace node $include with ie:process-include($include, $include/base-uri())
   return $copy    
+};
+
+(:~ Return the document or fragment to be included. :)
+declare %private function ie:document-or-fragment(
+  $href as attribute(href),
+  $base-uri as xs:anyURI
+)
+as node()
+{
+  let $url := if(contains($href, '#')) then substring-before($href, '#')
+    else $href
+  let $fragment := substring-after($href, '#')
+  let $doc := doc(resolve-uri($url, $base-uri))
+  return
+  if($fragment)
+  then ($doc//*[@id = $fragment])[1]
+  else $doc
 };

@@ -43,4 +43,15 @@ declare %unit:test function _:process-include-recursive()
   )
 };
 
+declare %unit:test function _:include-fragment()
+{
+  let $doc := doc('test-cases/include-fragment.sch')
+  let $schema := ie:process-includes($doc/*)
+  return
+  (
+    unit:assert(not($schema//sch:include)),
+    unit:assert-equals(count($schema//sch:rule), 1)
+  )
+};
+
 (:TODO detect circular references:)

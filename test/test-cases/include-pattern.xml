@@ -1,5 +1,5 @@
 <pattern xmlns="http://purl.oclc.org/dsdl/schematron">
-  <rule context='*'>
+  <rule context='*' id='rule-1'>
     <assert test='true()'/>
   </rule>
 </pattern>
