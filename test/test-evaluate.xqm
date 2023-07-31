@@ -13,7 +13,7 @@ import module namespace context = 'http://www.andrewsales.com/ns/xqs-context'
   at '../context.xqm';  
 
 (:~ schema title passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-title()
+declare %unit:test function _:eval-schema-title()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -42,7 +42,7 @@ declare %unit:test function _:test-eval-schema-title()
 };
 
 (:~ no schema title present :)
-declare %unit:test function _:test-eval-schema-no-title()
+declare %unit:test function _:eval-schema-no-title()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -70,7 +70,7 @@ declare %unit:test function _:test-eval-schema-no-title()
 };
 
 (:~ phase passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-phase()
+declare %unit:test function _:eval-schema-phase()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -99,7 +99,7 @@ declare %unit:test function _:test-eval-schema-phase()
 };
 
 (:~ no phase present :)
-declare %unit:test function _:test-eval-schema-no-phase()
+declare %unit:test function _:eval-schema-no-phase()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -128,7 +128,7 @@ declare %unit:test function _:test-eval-schema-no-phase()
 };
 
 (:~ namespaces passed through to SVRL :)
-declare %unit:test function _:test-eval-schema-namespaces()
+declare %unit:test function _:eval-schema-namespaces()
 {
   let $svrl := eval:schema(
     <foo/>,
@@ -157,7 +157,7 @@ declare %unit:test function _:test-eval-schema-namespaces()
 };
 
 (:~ active pattern processed :)
-declare %unit:test function _:test-process-pattern()
+declare %unit:test function _:process-pattern()
 {
   let $result := eval:pattern(
     <sch:pattern id='e' name='f' role='g'>
@@ -173,7 +173,7 @@ declare %unit:test function _:test-process-pattern()
 };
 
 (:~ rule in active pattern processed :)
-declare %unit:test function _:test-process-rule()
+declare %unit:test function _:process-rule()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'/>,
@@ -187,7 +187,7 @@ declare %unit:test function _:test-process-rule()
 };
 
 (:~ rule in active pattern processed, with local variable :)
-declare %unit:test function _:test-process-rule-local-variable()
+declare %unit:test function _:process-rule-local-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -205,7 +205,7 @@ declare %unit:test function _:test-process-rule-local-variable()
 (:~ Can only happen if schema is invalid. :)
 declare 
 %unit:test('expected', 'eval:invalid-assertion-element') 
-function _:test-invalid-assertion-element()
+function _:invalid-assertion-element()
 {
   eval:assertion(
     <sch:invalid-assertion-element test='.'/>,
@@ -216,7 +216,7 @@ function _:test-invalid-assertion-element()
 };
 
 (:~ assert processed, with local variable :)
-declare %unit:test function _:test-process-assert-with-variable()
+declare %unit:test function _:process-assert-with-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -237,7 +237,7 @@ declare %unit:test function _:test-process-assert-with-variable()
 };
 
 (:~ report processed, with local variable :)
-declare %unit:test function _:test-process-report-with-variable()
+declare %unit:test function _:process-report-with-variable()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -259,7 +259,7 @@ declare %unit:test function _:test-process-report-with-variable()
 };
 
 (:~ report processed, with global variable :)
-declare %unit:test function _:test-process-report-with-global-variable()
+declare %unit:test function _:process-report-with-global-variable()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -284,7 +284,7 @@ declare %unit:test function _:test-process-report-with-global-variable()
 };
 
 (:~ report processed, with pattern variable :)
-declare %unit:test function _:test-process-report-with-pattern-variable()
+declare %unit:test function _:process-report-with-pattern-variable()
 {
   let $result := eval:schema(
     document{<foo allowed='bar'/>},
@@ -308,7 +308,7 @@ declare %unit:test function _:test-process-report-with-pattern-variable()
 };
 
 (:~ report processed, with global variable element node :)
-declare %unit:test function _:test-process-report-with-global-variable-element-node()
+declare %unit:test function _:process-report-with-global-variable-element-node()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -317,6 +317,7 @@ declare %unit:test function _:test-process-report-with-global-variable-element-n
       <sch:pattern>
         <sch:rule context='*' id='a' name='b' role='c' flag='d'>
         <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed</sch:report>
+        <sch:report test='$allowed/self::allowed'></sch:report>
       </sch:rule>
       </sch:pattern>
     </sch:schema>,
@@ -327,13 +328,65 @@ declare %unit:test function _:test-process-report-with-global-variable-element-n
     $result/svrl:successful-report,
     (
       <svrl:successful-report 
-      test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
+      test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>,
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text></svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ global variable reference in value-of :)
+declare %unit:test function _:global-variable-in-value-of()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+    <sch:let name='allowed'><allowed>bar</allowed></sch:let>
+      <sch:pattern>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+        <sch:report test='$allowed/self::allowed'><sch:value-of select='$allowed/name()'/></sch:report>
+      </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report,
+    (
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ global variable reference in name :)
+declare %unit:test function _:global-variable-in-name()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+    <sch:let name='allowed'><allowed>bar</allowed></sch:let>
+      <sch:pattern>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+        <sch:report test='$allowed/self::allowed'><sch:name path='$allowed/name()'/></sch:report>
+      </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return
+  unit:assert-equals(
+    $result/svrl:successful-report,
+    (
+      <svrl:successful-report 
+      test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
     )
   )
 };
 
 (:~ report processed, with local variable as element node :)
-declare %unit:test function _:test-process-report-with-variable-element-node()
+declare %unit:test function _:process-report-with-variable-element-node()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -355,7 +408,7 @@ declare %unit:test function _:test-process-report-with-variable-element-node()
 };
 
 (:~ value-of and name handled in assertion message :)
-declare %unit:test function _:test-value-of()
+declare %unit:test function _:value-of()
 {
   let $result := eval:rule(
     <sch:rule context='*' id='a' name='b' role='c' flag='d'>
@@ -377,7 +430,7 @@ declare %unit:test function _:test-value-of()
 };
 
 (:~ name/@path handled in assertion message :)
-declare %unit:test function _:test-name-path()
+declare %unit:test function _:name-path()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -398,7 +451,7 @@ declare %unit:test function _:test-name-path()
 };
 
 (:~ elements in assertion message handled correctly :)
-declare %unit:test function _:test-assertion-message-elements()
+declare %unit:test function _:assertion-message-elements()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -421,7 +474,7 @@ declare %unit:test function _:test-assertion-message-elements()
 };
 
 (:~ multiple assertion matches reported correctly :)
-declare %unit:test function _:test-multiple-results()
+declare %unit:test function _:multiple-results()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
@@ -447,7 +500,7 @@ declare %unit:test function _:test-multiple-results()
  : "A rule element acts as an if-then-else statement within each pattern." 
  : @see ISO2020, 6.5
  :)
-declare %unit:test function _:test-rule-halt-on-match()
+declare %unit:test function _:rule-halt-on-match()
 {
   let $result := eval:pattern(
     <sch:pattern>
@@ -476,7 +529,7 @@ declare %unit:test function _:test-rule-halt-on-match()
  : "A rule element acts as an if-then-else statement within each pattern." 
  : @see ISO2020, 6.5
  :)
-declare %unit:test function _:test-rule-continue-on-no-match()
+declare %unit:test function _:rule-continue-on-no-match()
 {
   let $result := eval:pattern(
     <sch:pattern>
@@ -507,7 +560,7 @@ declare %unit:test function _:test-rule-continue-on-no-match()
 (: DIAGNOSTICS :)
 
 (:~ diagnostics reported correctly in SVRL :)
-declare %unit:test function _:test-diagnostics()
+declare %unit:test function _:diagnostics()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -545,7 +598,7 @@ declare %unit:test function _:test-diagnostics()
 };
 
 (:~ children of diagnostic handled in SVRL :)
-declare %unit:test function _:test-diagnostics-mixed-content()
+declare %unit:test function _:diagnostics-mixed-content()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -573,7 +626,7 @@ declare %unit:test function _:test-diagnostics-mixed-content()
 };
 
 (:~ multiple diagnostic references handled correctly in SVRL :)
-declare %unit:test function _:test-diagnostics-multiple()
+declare %unit:test function _:diagnostics-multiple()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -615,7 +668,7 @@ declare %unit:test function _:test-diagnostics-multiple()
 (: PROPERTIES :)
 
 (:~ property references reported correctly in SVRL :)
-declare %unit:test function _:test-properties()
+declare %unit:test function _:properties()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -654,7 +707,7 @@ declare %unit:test function _:test-properties()
 };
 
 (:~ multiple property references reported correctly in SVRL :)
-declare %unit:test function _:test-properties-multiple()
+declare %unit:test function _:properties-multiple()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -690,7 +743,7 @@ declare %unit:test function _:test-properties-multiple()
 };
 
 (:~ children of property handled in SVRL :)
-declare %unit:test function _:test-properties-mixed-content()
+declare %unit:test function _:properties-mixed-content()
 {
     let $result := eval:schema(
     document{<foo/>},
@@ -779,7 +832,7 @@ declare %unit:test function _:global-variable-bindings()
 };
 
 (:~ global variable evaluated in context of lexically previous one :)
-declare %unit:test function _:test-global-variable-relies-on-previous()
+declare %unit:test function _:global-variable-relies-on-previous()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -807,7 +860,7 @@ declare %unit:test function _:test-global-variable-relies-on-previous()
 (:~ pattern variable is scoped to pattern
  : @see https://github.com/Schematron/schematron-conformance/blob/master/src/main/resources/tests/core/let-scope-pattern-01.xml
  :)
-declare %unit:test function _:test-pattern-variable-scope()
+declare %unit:test function _:pattern-variable-scope()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -838,7 +891,7 @@ declare %unit:test function _:test-pattern-variable-scope()
 };
 
 (:~ scope of rule variable :)
-declare %unit:test function _:test-rule-variable-scope()
+declare %unit:test function _:rule-variable-scope()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -872,7 +925,7 @@ declare %unit:test function _:test-rule-variable-scope()
 (:~ (prefixed~) pattern variable is scoped to pattern
  : @see https://github.com/Schematron/schematron-conformance/blob/master/src/main/resources/tests/core/let-scope-pattern-01.xml
  :)
-declare %unit:test function _:test-pattern-variable-scope-with-nss()
+declare %unit:test function _:pattern-variable-scope-with-nss()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -904,7 +957,7 @@ declare %unit:test function _:test-pattern-variable-scope-with-nss()
 };
 
 (:~ local variable with namespace prefix :)
-declare %unit:test function _:test-rule-variable-with-nss()
+declare %unit:test function _:rule-variable-with-nss()
 {
   let $result := eval:schema(
     document{<foo/>},
@@ -929,6 +982,320 @@ declare %unit:test function _:test-rule-variable-with-nss()
   )
 };
 
-(:TODO
-- 
-:)
+(:~ entities, re https://mailman.uni-konstanz.de/pipermail/basex-talk/2023-May/017962.html :)
+declare %unit:test function _:built-in-entities-rule-assert()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y'/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 5)
+  )
+};
+
+declare %unit:test function _:built-in-entities-global-variable()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y'/>
+      <sch:let name='foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
+  )
+};
+
+declare %unit:test function _:built-in-entities-namespaces()
+{
+  let $result := eval:schema(
+    document{<foo>&lt;&amp;&gt;&apos;&quot;</foo>},
+    <sch:schema>
+      <sch:ns prefix='x' uri='y&amp;z'/>
+      <sch:let name='x:foo' value="/*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]"/>
+      <sch:pattern>
+        <sch:rule context="*[contains(., '&amp;') or contains(., '&lt;') or contains(., '&gt;')]">
+          <sch:report test="contains(., '&amp;')"/>
+          <sch:report test="contains(., '&lt;')"/>
+          <sch:report test="contains(., '&gt;')"/>
+          <sch:report test='contains(., "&apos;")'/>
+          <sch:report test="contains(., '&quot;')"/>
+          <sch:report test='$x:foo'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 6)
+  )
+};
+
+(:DOCUMENTS ATTRIBUTE:)
+
+declare %unit:test function _:pattern-documents()
+{
+  let $result := eval:schema(
+    doc('document-01.xml'),
+    <sch:schema>
+      <sch:pattern documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:active-pattern/@documents),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
+declare %unit:test function _:pattern-documents-multiple()
+{
+  let $result := eval:schema(
+    doc('document-03.xml'),
+    <sch:schema>
+      <sch:pattern documents="/foo/subordinate">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:active-pattern/@documents),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[1]/@document/data(),
+      resolve-uri('document-04.xml', static-base-uri())
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[2]/@document/data(),
+      resolve-uri('document-05.xml', static-base-uri())
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[3]/@document/data(),
+      resolve-uri('document-06.xml', static-base-uri())
+    )
+  )
+};
+
+(:~ re https://github.com/AndrewSales/XQS/issues/17 :)
+declare %unit:test('expected', 'err:XPST0008') function _:pattern-documents-variable-scope()
+{
+  eval:schema(
+    document{<foo/>},
+    <sch:schema>
+      <sch:pattern documents="/foo/subordinate[$bar]">
+        <sch:let name='bar' value='"blort"'/>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+};
+
+(:~ see https://github.com/AndrewSales/XQS/issues/10 :)
+declare %unit:test function _:assertion-message-braces()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*">{{</sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern>
+      <sch:rule context="/">
+          <sch:report test="*"><foo>}}</foo></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report[1]/data(),
+      '{'
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report[2]/svrl:text/foo/data(),
+      '}'
+    )
+  )
+};
+
+(: USER-DEFINED FUNCTIONS :)
+
+declare %unit:test function _:user-defined-function()
+{
+  let $result := eval:schema(
+    document{<root/>},
+    <sch:schema>
+      <sch:ns prefix='myfunc' uri='xyz'/>
+      <function xmlns='http://www.w3.org/2012/xquery'>
+      declare function myfunc:test($arg as xs:string) as xs:string{{$arg}};
+      </function>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="root"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
+
+declare %unit:test function _:user-defined-function-from-file()
+{
+  let $result := eval:schema(
+    document{<root/>},
+    doc('user-defined-function.xml')/*,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/data(),
+      'root'
+    )
+  )
+};
+
+declare %unit:test function _:undetected-syntax-error()
+{
+  let $result := eval:schema(
+    document{<root/>},
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/..">
+          <sch:report test="?????"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      0
+    )
+  )
+};
+
+declare %unit:test function _:map-global-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-pattern-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+declare %unit:test function _:map-rule-variable()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' value="map{{'a':'{{'}}" as='map(*)'/>
+          <sch:assert test="$foo instance of map(*)"/>
+          <sch:report test="not($foo instance of map(*))"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert(empty($result/svrl:failed-assert)),
+    unit:assert(empty($result/svrl:successful-report))
+  )
+};

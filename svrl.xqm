@@ -114,7 +114,7 @@ declare function output:assertion-message-content(
       case element(sch:name)
         return if($node/@path) 
           then xquery:eval(
-            $node/@path, 
+            $prolog || $node/@path, 
             map:merge((map{'':$rule-context}, $context?globals))
           ) 
           else name($rule-context)

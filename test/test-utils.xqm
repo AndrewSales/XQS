@@ -27,6 +27,6 @@ declare %unit:test function _:local-variable-decls()
   )
   return unit:assert-equals(
     $decls,
-    'let $foo := bar let $blort := wibble'
+    'let $foo:=bar let $blort:=wibble'
   )
 };

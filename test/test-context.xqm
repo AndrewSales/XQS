@@ -355,6 +355,6 @@ declare %unit:test function _:get-context-globals()
   
   return unit:assert-equals(
     count(map:keys($globals)),
-    3
+    1	(:schema-level only; not phase variables:)
   )
 };

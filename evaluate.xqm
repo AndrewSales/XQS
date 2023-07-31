@@ -8,7 +8,7 @@ import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' at
   'context.xqm';
 import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   'svrl.xqm';  
-import module namespace util = 'http://www.andrewsales.com/ns/xqs-utils' at
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
   'utils.xqm';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
@@ -31,14 +31,13 @@ declare function eval:schema(
   <svrl:schematron-output>
   {output:schema-title($schema/sch:title)}
   {$schema/@schemaVersion}
-  {if($context?phase) then attribute{'phase'}{$context?phase/@id}}
+  {if($context?phase) then attribute{'phase'}{$context?phase/@id} else ()}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
-  {$context?patterns ! eval:pattern(., $context)}
+  {eval:phase($context)}
   </svrl:schematron-output>
 };
 
 (:~ Evaluates a pattern.
- : N.B. this implementation evaluates *all* pattern variables as global variables.
  : @param pattern the pattern to evaluate
  : @param context the validation context
  :)
@@ -47,10 +46,13 @@ declare function eval:pattern(
   $context as map(*)
 )
 {
-  let $prolog := util:make-query-prolog($context)
-    
+  let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
+  
+  (:update context in light of @documents:)
+  let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
+  
   (:evaluate pattern variables against global context:)
-  let $globals as map(*) := context:evaluate-pattern-variables(
+  let $globals as map(*) := context:evaluate-root-context-variables(
         $pattern/sch:let,
         $context?instance,
         $context?ns-decls,
@@ -60,17 +62,20 @@ declare function eval:pattern(
   (: let $_ := trace('PATTERN $globals='||serialize($globals, map{'method':'adaptive'})) :)
   let $context := map:put($context, 'globals', $globals)
   
+  (: let $_ := trace('instance='||$context?instance=>serialize()|| ' (' || count($context?instance) || ')') :)
+  
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
-    
-  return (
+
+  return	(:TODO active-pattern/@name:)(
     <svrl:active-pattern>
-    {$pattern/(@id, @documents, @name, @role)}
+    {$pattern/(@id, @name, @role), 
+    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
     </svrl:active-pattern>, 
-    eval:rules(
+    $context?instance ! eval:rules(
       $pattern/sch:rule, 
-      util:make-query-prolog($context), 
-      $context
+      utils:make-query-prolog($context),
+      map:put($context, 'instance', .)
     )
   )
 };
@@ -110,21 +115,25 @@ declare function eval:rule(
 )
 as element()*
 {
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
   let $query := string-join(
-      ($prolog, util:local-variable-decls($rule/sch:let), 
+      ($prolog, utils:local-variable-decls($rule/sch:let),
       if($rule/sch:let) then 'return ' else '', $rule/@context),
       ' '
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
   let $rule-context := xquery:eval(
-    $query,
+    $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true'}	(:report exception details:)
+    map{'pass':'true'} (:report exception details:)
   )
   return 
   if($rule-context)
   then(
-    <svrl:fired-rule>{$rule/(@id, @name, @context, @role, @flag, @document)}</svrl:fired-rule>,
+    <svrl:fired-rule>
+    {$rule/(@id, @name, @context, @role, @flag),
+    if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
+    </svrl:fired-rule>,
     eval:assertions($rule, $prolog, $rule-context, $context)
   )
   else ()
@@ -144,7 +153,7 @@ declare function eval:assertions(
 )
 as element()*
 {
-  let $prolog := $prolog || util:local-variable-decls($rule/sch:let)
+  let $prolog := $prolog || utils:local-variable-decls($rule/sch:let)
   (: let $_ := trace('[3]ASSERTION prolog='||$prolog) :)
   for $context in $rule-context
     let $prolog := $prolog || (if($rule/sch:let) then ' return ' else '')
@@ -173,7 +182,7 @@ declare function eval:assertion(
 )
 {
   let $result := xquery:eval(
-    $prolog || $assertion/@test,
+    $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
     map{'pass':'true'}
   )
@@ -190,4 +199,22 @@ declare function eval:assertion(
     xs:QName('eval:invalid-assertion-element'), 
     'invalid assertion element: '||$assertion/name()
   )
+};
+
+declare function eval:phase($context as map(*))
+{
+  let $phase := $context?phase
+  let $_ := utils:check-duplicate-variable-names($phase/sch:let)
+  
+  (:add phase variables to context:)
+  let $globals as map(*) := context:evaluate-root-context-variables(
+        $phase/sch:let,
+        $context?instance,
+        $context?ns-decls,
+        $phase/../sch:ns,
+        $context?globals
+      )
+  let $context := map:put($context, 'globals', $globals)
+  
+  return  $context?patterns ! eval:pattern(., $context)
 };
