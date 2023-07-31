@@ -1,0 +1,1 @@
+<assert test="true()" xmlns="http://purl.oclc.org/dsdl/schematron"/>
