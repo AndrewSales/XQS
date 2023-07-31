@@ -4,6 +4,8 @@ declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 import module namespace eval = "http://www.andrewsales.com/ns/xqs-evaluate" at
   "../evaluate.xqm";
+import module namespace ie = "http://www.andrewsales.com/ns/xqs-include-expand" at
+  "../include-expand.xqm";
 declare function _:is-valid($svrl as element(svrl:schematron-output))
 as xs:boolean{
   empty($svrl/(svrl:failed-assert|svrl:successful-report))
@@ -35,19 +37,17 @@ declare %unit:ignore function _:extends-recursive1(){let $result:=eval:schema(do
 (:~ Include performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
-declare %unit:ignore function _:include-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:include href="subdir/include-1.sch"/>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(_:is-valid($result))};
+declare %unit:test function _:include-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
+doc('include-baseuri-fixup.sch')/* => ie:process-includes(), '') return unit:assert(_:is-valid($result))};
 (:~ Include is recursive 
 :)
-declare %unit:ignore function _:include-recursive1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:include href="pattern.sch"/>
-      <sch:pattern/>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+declare %unit:test function _:include-recursive1()
+{
+  let $result:=eval:schema(document{<element/>},
+  doc('include-recursive.sch')/* => ie:process-includes(), '') 
+    return unit:assert(not(_:is-valid($result)))
+};
+
 (:~ It is an error for a variable to be multiply defined in the current rule
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)

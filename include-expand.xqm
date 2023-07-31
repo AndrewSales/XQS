@@ -22,7 +22,7 @@ declare function ie:process-includes(
 };
 
 (:~ Process includes, including any nested ones. :)
-declare function ie:process-include(
+declare %private function ie:process-include(
   $include as node(),
   $base-uri as xs:anyURI
 ) as node()
