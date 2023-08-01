@@ -11,6 +11,24 @@ import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate'
   at '../evaluate.xqm';
 import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' 
   at '../context.xqm';  
+  
+declare variable $_:DYNAMIC_ROLE_SCHEMA := <sch:schema>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='warn'>
+        <sch:let name='dynamic-role' value='"warning"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:phase id='error'>
+        <sch:let name='dynamic-role' value='"error"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' role='$dynamic-role'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>;
 
 (:~ schema title passed through to SVRL :)
 declare %unit:test function _:eval-schema-title()
@@ -1344,5 +1362,50 @@ declare %unit:test function _:map-rule-variable()
   return (
     unit:assert(empty($result/svrl:failed-assert)),
     unit:assert(empty($result/svrl:successful-report))
+  )
+};
+
+(:~ **EXPERIMENTAL** re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-role()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-role' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' role='$dynamic-role'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@role/data(),
+      'bar'
+    )
+  )
+};
+
+declare %unit:test function _:dynamic-role-differs-per-phase()
+{
+  (
+    unit:assert-equals(
+      eval:schema(document{<root/>}, $_:DYNAMIC_ROLE_SCHEMA, 'warn')
+      /svrl:failed-assert/@role/data(),
+      'warning'
+    ),
+    unit:assert-equals(
+      eval:schema(document{<root/>}, $_:DYNAMIC_ROLE_SCHEMA, 'error')
+      /svrl:failed-assert/@role/data(),
+      'error'
+    )
   )
 };
