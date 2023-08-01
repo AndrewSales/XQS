@@ -55,7 +55,7 @@ The output is an XQuery main module, which contains two external variables allow
 
 For convenience, if you have compiled a schema using `compile.bxs`, you can run `validate.bxs`, passing the schema and document locations:
 
-    basex -bschema=mySchema.xqy -buri=myDoc.xml
+    basex -bschema=mySchema.xqy -buri=myDoc.xml validate.bxs
     
 The output is again SVRL.
 
@@ -90,7 +90,7 @@ This is a pre-release and should be treated as such.
 Please refer to the issues for a list of known bugs and planned enhancements.
 
 ## Query language binding
-Your schema *must* specify a `queryBinding` value of : `xquery`, `xquery3` or `xquery31`, in any combination of upper or lower case.
+Your schema should specify a `queryBinding` value of : `xquery`, `xquery3` or `xquery31`, in any combination of upper or lower case.
 
 ## Inclusion and expansion
 
