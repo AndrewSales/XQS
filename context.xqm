@@ -28,7 +28,8 @@ declare function c:get-context(
 as map(*)
 {
   let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase)
-  let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
+  let $active-patterns as element(sch:pattern)* := c:get-active-patterns($schema, $active-phase)
+  let $active-rule-sets as element(sch:rule-set)* := c:get-active-rule-sets($schema, $active-phase)
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := $schema/sch:let
   let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
@@ -46,6 +47,7 @@ as map(*)
   return map{
     'phase' : $active-phase,
     'patterns' : $active-patterns,
+    'rule-sets' : $active-rule-sets,
     'ns-decls' : $namespaces,
     'globals' : $globals,
     'instance' : $instance,
@@ -105,9 +107,26 @@ declare function c:get-active-patterns(
   $schema as element(sch:schema), 
   $active-phase as element(sch:phase)?
 )
-as element(sch:pattern)+
+as element(sch:pattern)*
 {
   $schema/sch:pattern[sch:rule][
+    if($active-phase) then @id = $active-phase/sch:active/@pattern else true()
+  ]  
+};
+
+(:~ Determines the active rule-sets. **EXPERIMENTAL**
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25#issuecomment-1178553154
+ : @param schema the Schematron schema
+ : @param the active phase
+ : @return the active patterns
+ :)
+declare function c:get-active-rule-sets(
+  $schema as element(sch:schema), 
+  $active-phase as element(sch:phase)?
+)
+as element(sch:rule-set)*
+{
+  $schema/sch:rule-set[sch:rule][
     if($active-phase) then @id = $active-phase/sch:active/@pattern else true()
   ]  
 };

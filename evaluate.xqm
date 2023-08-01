@@ -80,6 +80,48 @@ declare function eval:pattern(
   )
 };
 
+(:~ Evaluates a ruleset. **EXPERIMENTAL**
+ : @param pattern the pattern to evaluate
+ : @param context the validation context
+ :)
+declare function eval:rule-set(
+  $pattern as element(sch:rule-set),
+  $context as map(*)
+)
+{
+  let $_ := utils:check-duplicate-variable-names($pattern/sch:let)
+  
+  (:update context in light of @documents:)
+  let $context as map(*) := context:evaluate-pattern-documents($pattern/@documents, $context)
+  
+  (:evaluate pattern variables against global context:)
+  let $globals as map(*) := context:evaluate-root-context-variables(
+        $pattern/sch:let,
+        $context?instance,
+        $context?ns-decls,
+        $pattern/../sch:ns,
+        $context?globals
+      )
+
+  let $context := map:put($context, 'globals', $globals)
+  
+  return	(
+    <svrl:active-rule-set>
+    {$pattern/(@id, @name, @role), 
+    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
+    </svrl:active-rule-set>, 
+    $context?instance ! (
+      for $rule in $pattern/sch:rule
+      return
+      eval:rule(
+        $rule,
+        utils:make-query-prolog($context),
+        map:put($context, 'instance', .)
+      )
+    )
+  )
+};
+
 (:~ Evaluate rules, stopping once one fires.
  : (Necessitated by ISO2020 6.5.)
  : @param rules the rules to evaluate
@@ -216,5 +258,6 @@ declare function eval:phase($context as map(*))
       )
   let $context := map:put($context, 'globals', $globals)
   
-  return  $context?patterns ! eval:pattern(., $context)
+  return $context?patterns ! eval:pattern(., $context),
+    $context?rule-sets ! eval:rule-set(., $context)
 };
