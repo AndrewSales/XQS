@@ -124,3 +124,15 @@ declare function utils:check-duplicate-variable-names($decls as element(sch:let)
     || $names[index-of($names, .)[2]]
   ) else()
 };
+
+(:~ Wrapper around xquery:eval() :)
+declare function utils:eval(
+  $query as xs:string,
+  $bindings as map(*),
+  $options as map(*)
+) as item()*
+{
+  if($options?dry-run eq 'true')
+  then ()
+  else xquery:eval($query, $bindings, map{'pass':'true'})
+};

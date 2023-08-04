@@ -18,6 +18,33 @@ declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
  : @param instance the document instance
  : @param schema the Schematron schema
  : @param phase the active phase
+ : @param options map of options
+ :)
+declare function eval:schema(
+  $instance as node(),
+  $schema as element(sch:schema),
+  $phase as xs:string?,
+  $options as map(*)?
+)
+{
+  if($options?dry-run eq 'true')
+  then  
+  <svrl:schematron-output phase='#ALL'>
+  {output:schema-title($schema/sch:title)}
+  {$schema/@schemaVersion}
+  {output:namespace-decls-as-svrl($schema/sch:ns)}
+  {for $phase in ($schema/sch:phase/@id/data(), '')
+  let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
+  return eval:phase($context)}
+  </svrl:schematron-output>
+  else
+  eval:schema($instance, $schema, $phase)
+};
+
+(:~ Evaluates the schema to produce SVRL output.
+ : @param instance the document instance
+ : @param schema the Schematron schema
+ : @param phase the active phase
  :)
 declare function eval:schema(
   $instance as node(),
@@ -25,7 +52,7 @@ declare function eval:schema(
   $phase as xs:string?
 )
 {
-  let $context as map(*) := context:get-context($instance, $schema, $phase)
+  let $context as map(*) := context:get-context($instance, $schema, $phase, map{})
   
   return 
   <svrl:schematron-output>
@@ -57,7 +84,8 @@ declare function eval:pattern(
         $context?instance,
         $context?ns-decls,
         $pattern/../sch:ns,
-        $context?globals
+        $context?globals,
+        map{'dry-run':$context?dry-run}
       )
   (: let $_ := trace('PATTERN $globals='||serialize($globals, map{'method':'adaptive'})) :)
   let $context := map:put($context, 'globals', $globals)
@@ -122,10 +150,10 @@ as element()*
       ' '
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
-  let $rule-context := xquery:eval(
+  let $rule-context := utils:eval(
     $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true'} (:report exception details:)
+    map{'pass':'true', 'dry-run':$context?dry-run}
   )
   return 
   if($rule-context)
@@ -181,10 +209,10 @@ declare function eval:assertion(
   $context as map(*)
 )
 {
-  let $result := xquery:eval(
+  let $result := utils:eval(
     $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
-    map{'pass':'true'}
+    map{'pass':'true', 'dry-run':$context?dry-run}
   )
   return
   typeswitch($assertion)
@@ -212,7 +240,8 @@ declare function eval:phase($context as map(*))
         $context?instance,
         $context?ns-decls,
         $phase/../sch:ns,
-        $context?globals
+        $context?globals,
+        map{'dry-run':$context?dry-run}
       )
   let $context := map:put($context, 'globals', $globals)
   

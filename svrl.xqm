@@ -3,6 +3,9 @@
  :)
 module namespace output = 'http://www.andrewsales.com/ns/xqs-output';
 
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
+  'utils.xqm';
+
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
@@ -113,15 +116,17 @@ declare function output:assertion-message-content(
     typeswitch($node)
       case element(sch:name)
         return if($node/@path) 
-          then xquery:eval(
+          then utils:eval(
             $prolog || $node/@path, 
-            map:merge((map{'':$rule-context}, $context?globals))
+            map:merge((map{'':$rule-context}, $context?globals)),
+            map{'pass':'true'}
           ) 
           else name($rule-context)
       case element(sch:value-of)
-        return xquery:eval(
+        return utils:eval(
           $prolog || $node/@select, 
-          map:merge((map{'':$rule-context}, $context?globals))
+          map:merge((map{'':$rule-context}, $context?globals)),
+          map{'pass':'true'}
         ) 
         => string()
       case element(sch:emph)

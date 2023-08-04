@@ -19,11 +19,13 @@ declare variable $c:ALL_PATTERNS as xs:string := '#ALL';
  : @param instance the document instance
  : @param schema the Schematron schema
  : @param phase the active phase
+ : @param options map of options
  :)
 declare function c:get-context(
   $instance as node(),
   $schema as element(sch:schema),
-  $phase as xs:string?
+  $phase as xs:string?,
+  $options as map(*)?
 )
 as map(*)
 {
@@ -39,11 +41,15 @@ as map(*)
       $instance, 
       $namespaces, 
       $schema/sch:ns, 
-      map{}
+      map{},
+      $options
     )
     else map{}
   
-  return map{
+  return 
+  map:merge(
+    ($options,
+    map{
     'phase' : $active-phase,
     'patterns' : $active-patterns,
     'ns-decls' : $namespaces,
@@ -52,7 +58,8 @@ as map(*)
     'diagnostics' : $schema/sch:diagnostics/sch:diagnostic,
     'properties' : $schema/sch:properties/sch:property,
     'functions' : $schema/xqy:function
-  }
+    })
+  )
 };
 
 (:NAMESPACE DECLARATIONS:)
@@ -140,13 +147,15 @@ as element(sch:let)*
  : @param instance the document instance
  : @param namespaces namespace declarations
  : @param bindings global variable bindings
+ : @param options map of options
  :)
 declare function c:evaluate-global-variables(
   $variables as element(sch:let)*,
   $instance as node(),
   $namespaces as xs:string?,
   $ns-elems as element(sch:ns)*,
-  $bindings as map(*)
+  $bindings as map(*),
+  $options as map(*)?
 )
 as map(*)
 {
@@ -167,7 +176,8 @@ as map(*)
       $instance,
       $prolog || '$' || $var/@name,
       $ns-elems,
-      $bindings
+      $bindings,
+      $options
     )    
     
     (: let $_ := trace('[5]$bindings='||serialize($binding, map{'method':'adaptive'})) :)
@@ -177,7 +187,8 @@ as map(*)
       $instance,
       $namespaces,
       $ns-elems,
-      $binding
+      $binding,
+      $options
     )
 };
 
@@ -189,13 +200,15 @@ as map(*)
  : @param variables pattern variables
  : @param instance the document instance
  : @param prolog global variable and namespace declarations
+ : @param options map of options
  :)
 declare function c:evaluate-root-context-variables(
   $variables as element(sch:let)*,
   $instance as node()+,
   $namespaces as xs:string?,
   $ns-elems as element(sch:ns)*,
-  $bindings as map(*)
+  $bindings as map(*),
+  $options as map(*)?
 )
 as map(*)
 {
@@ -215,7 +228,8 @@ as map(*)
       $instance,
       $prolog ||  utils:local-variable-decls($var) || ' return $' || $var/@name,
       $ns-elems,
-      $bindings
+      $bindings,
+      $options
     )    
     
     (: let $_ := trace('[5]$bindings='||serialize($binding, map{'method':'adaptive'})) :)
@@ -225,7 +239,8 @@ as map(*)
       $instance,
       $namespaces,
       $ns-elems,
-      $binding
+      $binding,
+      $options
     )
 };
 
@@ -242,16 +257,17 @@ declare function c:evaluate-global-variable(
   $instance as node(),
   $query as xs:string?,
   $ns-elems as element(sch:ns)*,
-  $bindings as map(*)
+  $bindings as map(*),
+  $options as map(*)?
 )
 as map(*)
 {
   (: let $_ := trace('>>>QUERY='||$query) :)
   let $value as item()* := if($variable/@value) 
-    then xquery:eval(
+    then utils:eval(
       $query => utils:escape(),
       map:merge(($bindings, map{'':$instance})),
-      map{'pass':'true'}
+      map:merge($options, map{'pass':'true'})
     )
     else $variable/*
   let $bindings := map:merge(
@@ -283,7 +299,7 @@ as map(*)
 {
   if($documents) 
   then 
-    let $uris := xquery:eval(
+    let $uris := utils:eval(
       utils:make-query-prolog($context) || $documents => utils:escape(),
       map:merge(($context?globals, map{'':$context?instance})),
       map{'pass':'true'}       (:report exception details:)
