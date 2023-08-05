@@ -145,6 +145,7 @@ declare function utils:eval(
       xquery:parse($query, map{'pass':'true'})
     }
     catch * {
+      <svrl:fired-rule context='{$node/path()}'/>,
       <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
       test='xquery:parse(.)'>
       <svrl:text>{$err:description}</svrl:text></svrl:failed-assert>

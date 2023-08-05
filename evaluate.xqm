@@ -35,9 +35,7 @@ declare function eval:schema(
   {output:namespace-decls-as-svrl($schema/sch:ns)}
   {for $phase in ($schema/sch:phase/@id/data(), '')
   let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
-  return 
-  ($context?globals?*[self::svrl:*[@err:*]],
-  eval:phase($context))}
+  return eval:phase($context)}
   </svrl:schematron-output>
   else
   eval:schema($instance, $schema, $phase)
@@ -97,15 +95,19 @@ declare function eval:pattern(
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
 
-  return	(:TODO active-pattern/@name:)(
-    <svrl:active-pattern>
-    {$pattern/(@id, @name, @role), 
-    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
-    </svrl:active-pattern>, 
-    $context?instance ! eval:rules(
-      $pattern/sch:rule, 
-      utils:make-query-prolog($context),
-      map:put($context, 'instance', .)
+  return (
+    if($context?dry-run eq 'true')
+    then $context?globals?*[svrl:*]
+    else (
+      <svrl:active-pattern>
+      {$pattern/(@id, @name, @role), 
+      if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
+      </svrl:active-pattern>, 
+      $context?instance ! eval:rules(
+        $pattern/sch:rule, 
+        utils:make-query-prolog($context),
+        map:put($context, 'instance', .)
+      )
     )
   )
 };
@@ -155,7 +157,7 @@ as element()*
   let $rule-context := utils:eval(
     $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true', 'dry-run':$context?dry-run},
+    map{'dry-run':$context?dry-run},
     $rule/@context
   )
   return 
@@ -215,7 +217,7 @@ declare function eval:assertion(
   let $result := utils:eval(
     $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
-    map{'pass':'true', 'dry-run':$context?dry-run},
+    map{'dry-run':$context?dry-run},
     $assertion/@test
   )
   return
@@ -238,6 +240,8 @@ declare function eval:phase($context as map(*))
   let $phase := $context?phase
   let $_ := utils:check-duplicate-variable-names($phase/sch:let)
   
+  let $dry-run as map(*) := map{'dry-run':$context?dry-run}
+  
   (:add phase variables to context:)
   let $globals as map(*) := context:evaluate-root-context-variables(
         $phase/sch:let,
@@ -245,9 +249,9 @@ declare function eval:phase($context as map(*))
         $context?ns-decls,
         $phase/../sch:ns,
         $context?globals,
-        map{'dry-run':$context?dry-run}
+        $dry-run
       )
   let $context := map:put($context, 'globals', $globals)
-  
-  return  $context?patterns ! eval:pattern(., $context)
+    
+  return  $context?patterns ! eval:pattern(., map:merge(($context, $dry-run)))
 };
