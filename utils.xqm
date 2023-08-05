@@ -125,7 +125,8 @@ declare function utils:check-duplicate-variable-names($decls as element(sch:let)
   ) else()
 };
 
-(:~ Wrapper around xquery:eval() 
+(:~ Wrapper around xquery:eval(). In "dry-run" mode, the query passed in is 
+ : parsed only, and any errors caught reported as svrl:failed-assert.
  : @param $query string of the query to evaluate
  : @param bindings map of bindings
  : @param options map of options
