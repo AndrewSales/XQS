@@ -119,14 +119,16 @@ declare function output:assertion-message-content(
           then utils:eval(
             $prolog || $node/@path, 
             map:merge((map{'':$rule-context}, $context?globals)),
-            map{'pass':'true'}
+            map{'pass':'true'},
+            $node/@path
           ) 
           else name($rule-context)
       case element(sch:value-of)
         return utils:eval(
           $prolog || $node/@select, 
           map:merge((map{'':$rule-context}, $context?globals)),
-          map{'pass':'true'}
+          map{'pass':'true'},
+          $node/@select
         ) 
         => string()
       case element(sch:emph)

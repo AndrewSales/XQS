@@ -1300,3 +1300,27 @@ declare %unit:test function _:map-rule-variable()
     unit:assert(empty($result/svrl:successful-report))
   )
 };
+
+declare %unit:test function _:global-variable-syntax-error()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     doc('global-variable-syntax-error.sch')/*,
+    '',
+    map{'dry-run':'true'}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/@location/data(),
+      "/Q{http://purl.oclc.org/dsdl/schematron}schema[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value" 
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@err:code/data(),
+      "err:XPST0003" 
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>No specifier after lookup operator: ';'.</svrl:text>
+    )
+  )
+};

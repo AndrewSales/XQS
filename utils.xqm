@@ -125,14 +125,28 @@ declare function utils:check-duplicate-variable-names($decls as element(sch:let)
   ) else()
 };
 
-(:~ Wrapper around xquery:eval() :)
+(:~ Wrapper around xquery:eval() 
+ : @param $query string of the query to evaluate
+ : @param bindings map of bindings
+ : @param options map of options
+ : @param node the schema node being evaluated
+ :)
 declare function utils:eval(
   $query as xs:string,
   $bindings as map(*),
-  $options as map(*)
+  $options as map(*),
+  $node as node()
 ) as item()*
 {
   if($options?dry-run eq 'true')
-  then ()
+  then
+    try{
+      xquery:parse($query, map{'pass':'true'})
+    }
+    catch * {
+      <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
+      test='xquery:parse(.)'>
+      <svrl:text>{$err:description}</svrl:text></svrl:failed-assert>
+    }
   else xquery:eval($query, $bindings, map{'pass':'true'})
 };

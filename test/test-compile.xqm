@@ -1328,6 +1328,7 @@ declare %unit:test function _:global-variable-bindings()
     document{<foo bar='some value'><blort/></foo>},
     '',
     (),
+    map{},
     map{}
   )
   return (

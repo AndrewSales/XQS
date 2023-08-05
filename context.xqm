@@ -48,17 +48,19 @@ as map(*)
   
   return 
   map:merge(
-    ($options,
-    map{
-    'phase' : $active-phase,
-    'patterns' : $active-patterns,
-    'ns-decls' : $namespaces,
-    'globals' : $globals,
-    'instance' : $instance,
-    'diagnostics' : $schema/sch:diagnostics/sch:diagnostic,
-    'properties' : $schema/sch:properties/sch:property,
-    'functions' : $schema/xqy:function
-    })
+    (
+      $options,
+      map{
+      'phase' : $active-phase,
+      'patterns' : $active-patterns,
+      'ns-decls' : $namespaces,
+      'globals' : $globals,
+      'instance' : $instance,
+      'diagnostics' : $schema/sch:diagnostics/sch:diagnostic,
+      'properties' : $schema/sch:properties/sch:property,
+      'functions' : $schema/xqy:function
+      }
+    )
   )
 };
 
@@ -251,6 +253,7 @@ as map(*)
  : @param query the query to evaluate
  : @param ns-elems namespace declarations
  : @param bindings map of global variable bindings
+ : @param options map of options
  :)
 declare function c:evaluate-global-variable(
   $variable as element(sch:let),
@@ -267,7 +270,8 @@ as map(*)
     then utils:eval(
       $query => utils:escape(),
       map:merge(($bindings, map{'':$instance})),
-      map:merge($options, map{'pass':'true'})
+      map:merge($options, map{'pass':'true'}),
+      $variable/@value
     )
     else $variable/*
   let $bindings := map:merge(
@@ -302,7 +306,8 @@ as map(*)
     let $uris := utils:eval(
       utils:make-query-prolog($context) || $documents => utils:escape(),
       map:merge(($context?globals, map{'':$context?instance})),
-      map{'pass':'true'}       (:report exception details:)
+      map{'pass':'true'},       (:report exception details:)
+      $documents
     )
     return map:put(
       $context, 

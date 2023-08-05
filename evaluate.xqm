@@ -35,7 +35,9 @@ declare function eval:schema(
   {output:namespace-decls-as-svrl($schema/sch:ns)}
   {for $phase in ($schema/sch:phase/@id/data(), '')
   let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
-  return eval:phase($context)}
+  return 
+  ($context?globals?*[self::svrl:*[@err:*]],
+  eval:phase($context))}
   </svrl:schematron-output>
   else
   eval:schema($instance, $schema, $phase)
@@ -153,7 +155,8 @@ as element()*
   let $rule-context := utils:eval(
     $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true', 'dry-run':$context?dry-run}
+    map{'pass':'true', 'dry-run':$context?dry-run},
+    $rule/@context
   )
   return 
   if($rule-context)
@@ -212,7 +215,8 @@ declare function eval:assertion(
   let $result := utils:eval(
     $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
-    map{'pass':'true', 'dry-run':$context?dry-run}
+    map{'pass':'true', 'dry-run':$context?dry-run},
+    $assertion/@test
   )
   return
   typeswitch($assertion)
