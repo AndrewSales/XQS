@@ -1320,7 +1320,7 @@ declare %unit:test function _:global-variable-syntax-error()
     ),
     unit:assert-equals(
       $result/svrl:failed-assert/svrl:text,
-      <svrl:text>No specifier after lookup operator: ';'.</svrl:text>
+      <svrl:text>No specifier after lookup operator: ';'. @value='?'</svrl:text>
     )
   )
 };

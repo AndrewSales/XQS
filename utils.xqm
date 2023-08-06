@@ -141,14 +141,14 @@ declare function utils:eval(
 {
   if($options?dry-run eq 'true')
   then
+    (<svrl:fired-rule context='{$node/path()}'/>,
     try{
       xquery:parse($query, map{'pass':'true'})
     }
     catch * {
-      <svrl:fired-rule context='{$node/path()}'/>,
       <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
       test='xquery:parse(.)'>
-      <svrl:text>{$err:description}</svrl:text></svrl:failed-assert>
-    }
+      <svrl:text>{$err:description} {' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
+    })
   else xquery:eval($query, $bindings, map{'pass':'true'})
 };

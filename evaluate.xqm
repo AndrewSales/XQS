@@ -33,6 +33,7 @@ declare function eval:schema(
   {output:schema-title($schema/sch:title)}
   {$schema/@schemaVersion}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
+  <svrl:active-pattern name='syntax checker' documents='{$schema/base-uri()}'/>
   {for $phase in ($schema/sch:phase/@id/data(), '')
   let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
   return eval:phase($context)}
@@ -95,20 +96,50 @@ declare function eval:pattern(
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
 
+  let $rules := $pattern/sch:rule
   return (
     if($context?dry-run eq 'true')
-    then $context?globals?*[svrl:*]
+    then 
+    ($context?globals?*[self::svrl:*], eval:all-rules($rules, $context))
     else (
       <svrl:active-pattern>
       {$pattern/(@id, @name, @role), 
       if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
       </svrl:active-pattern>, 
-      $context?instance ! eval:rules(
-        $pattern/sch:rule, 
-        utils:make-query-prolog($context),
-        map:put($context, 'instance', .)
-      )
+      eval:rules($rules, $context)
     )
+  )
+};
+
+declare function eval:all-rules(
+  $rules as element(sch:rule)*,
+  $context as map(*)
+)
+as element()*
+{
+  $context?instance 
+  ! 
+  (for $rule in $rules
+  return
+  eval:rule(
+    $rule, 
+    utils:make-query-prolog($context),
+    map:put($context, 'instance', .)
+  ))
+};
+
+declare function eval:rules(
+  $rules as element(sch:rule)*,
+  $context as map(*)
+)
+as element()*
+{
+  $context?instance 
+  ! 
+  eval:rules(
+    $rules, 
+    utils:make-query-prolog($context),
+    map:put($context, 'instance', .)
   )
 };
 
@@ -162,7 +193,11 @@ as element()*
   )
   return 
   if($rule-context)
-  then(
+  then
+    if($context?dry-run eq 'true')
+    then $rule-context[self::svrl:*]
+    else
+  (
     <svrl:fired-rule>
     {$rule/(@id, @name, @context, @role, @flag),
     if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
