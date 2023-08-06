@@ -33,7 +33,7 @@ declare function eval:schema(
   {output:schema-title($schema/sch:title)}
   {$schema/@schemaVersion}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
-  <svrl:active-pattern name='syntax checker' documents='{$schema/base-uri()}'/>
+  <svrl:active-pattern name='XQS Syntax Error Summary' documents='{$schema/base-uri()}'/>
   {for $phase in ($schema/sch:phase/@id/data(), '')
   let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
   return eval:phase($context)}
@@ -111,6 +111,12 @@ declare function eval:pattern(
   )
 };
 
+(:~ Evaluates all the rules in a pattern.
+ : Initially added for use in dry-run mode, to check for syntax errors.
+ : N.B. we don't need to map the instance each time for this purpose, since we 
+ : are not evaluating @documents, but this approach could be used for 
+ : evaluating sch:rule-set (see https://github.com/AndrewSales/XQS/tree/%234).
+ :)
 declare function eval:all-rules(
   $rules as element(sch:rule)*,
   $context as map(*)
@@ -195,15 +201,19 @@ as element()*
   if($rule-context)
   then
     if($context?dry-run eq 'true')
-    then $rule-context[self::svrl:*]
+    then 
+    (
+      $rule-context[self::svrl:*],
+      eval:assertions($rule, $prolog, <_/>, $context)	(:pass dummy context node:)
+    )
     else
-  (
-    <svrl:fired-rule>
-    {$rule/(@id, @name, @context, @role, @flag),
-    if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
-    </svrl:fired-rule>,
-    eval:assertions($rule, $prolog, $rule-context, $context)
-  )
+    (
+      <svrl:fired-rule>
+      {$rule/(@id, @name, @context, @role, @flag),
+      if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
+      </svrl:fired-rule>,
+      eval:assertions($rule, $prolog, $rule-context, $context)
+    )
   else ()
 };
 
@@ -256,6 +266,13 @@ declare function eval:assertion(
     $assertion/@test
   )
   return
+  if($context?dry-run eq 'true')
+  then 
+  (
+    $result[self::svrl:*],
+    output:assertion-message($assertion, $prolog, $rule-context, $context)
+  )
+  else
   typeswitch($assertion)
     case element(sch:assert)
       return if($result) then () 
