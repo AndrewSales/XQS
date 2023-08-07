@@ -148,7 +148,7 @@ declare function utils:eval(
     catch * {
       <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
       test='xquery:parse(.)'>
-      <svrl:text>{$err:description} {' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
+      <svrl:text>{$err:description}{' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
     })
   else xquery:eval($query, $bindings, map{'pass':'true'})
 };
