@@ -127,9 +127,11 @@ as item()*
       case element(sch:name)
         return if($node/@path) 
           then output:name-value-of($node/@path, $prolog, $rule-context, $context)
-          else name($rule-context)
+          [self::svrl:*]
+          else ()
       case element(sch:value-of)
         return output:name-value-of($node/@select, $prolog, $rule-context, $context)
+        [self::svrl:*]
     default return ()
   else
   <svrl:text>{(:TODO attributes:)
