@@ -185,6 +185,13 @@ declare function eval:rule(
 as element()*
 {
   let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $variable-errors := utils:evaluate-rule-variables(
+    $rule/sch:let,
+    $prolog,
+    map:merge((map{'':$context?instance}, $context?globals)),
+    $context,
+    ()
+  )
   let $query := string-join(
       ($prolog, utils:local-variable-decls($rule/sch:let),
       if($rule/sch:let) then 'return ' else '', $rule/@context),
@@ -203,6 +210,7 @@ as element()*
     if($context?dry-run eq 'true')
     then 
     (
+      $variable-errors[self::svrl:*],
       $rule-context[self::svrl:*],
       eval:assertions($rule, $prolog, <_/>, $context)	(:pass dummy context node:)
     )

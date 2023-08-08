@@ -1399,7 +1399,7 @@ declare %unit:test function _:dry-run-all-rules-processed()
   )
 };
 
-declare %unit:ignore function _:rule-variable-syntax-error()
+declare %unit:test function _:rule-variable-syntax-error()
 {
   let $result :=
   eval:schema(
@@ -1408,6 +1408,7 @@ declare %unit:ignore function _:rule-variable-syntax-error()
       <sch:pattern>
         <sch:rule context="*">
           <sch:let name='bar' value=''/>
+          <sch:assert test='foo'/>
         </sch:rule>
         <sch:rule context='*'></sch:rule>
       </sch:pattern>
@@ -1418,13 +1419,12 @@ declare %unit:ignore function _:rule-variable-syntax-error()
   return
   (
     unit:assert-equals(
-      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/@context')]),
+      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value')]),
       1
     ),
     unit:assert-equals(
-      $result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/@context')]
-      /svrl:text,
-    <svrl:text>TODO</svrl:text>  
+     $result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value')]/svrl:text,
+    <svrl:text>Incomplete FLWOR expression, expecting 'return'. @value=''</svrl:text>
     )
   )
 };
@@ -1512,3 +1512,10 @@ declare %unit:test function _:value-of-select-syntax-error()
     )
   )
 };
+
+(:TODO
+pattern/@documents
+diagnostics
+properties
+rule/let
+:)

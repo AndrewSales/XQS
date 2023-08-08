@@ -125,6 +125,42 @@ declare function utils:check-duplicate-variable-names($decls as element(sch:let)
   ) else()
 };
 
+(:~ In dry-run mode only, evaluate rule variables.
+ : Provides more localized information if syntax errors are present in rule 
+ : variable declarations.
+ :)
+declare function utils:evaluate-rule-variables(
+  $variables as element(sch:let)*,
+  $prolog as xs:string?,
+  $bindings as map(*),
+  $context as map(*),
+  $errors as element()*
+)
+as element()*
+{
+  if($context?dry-run eq 'true')
+  then
+    if(exists($variables))
+    then
+      let $var := head($variables)
+      let $prolog := $prolog || utils:local-variable-decls($var)
+      let $errs := utils:eval(
+        $prolog || ' return $' || $var/@name => utils:escape(),
+        $bindings,
+        map{'dry-run':$context?dry-run},
+        $var/@value
+      )
+      return utils:evaluate-rule-variables(
+        tail($variables),
+        $prolog,
+        $bindings,
+        $context,
+        ($errors,$errs)
+      )
+    else $errors
+  else ()
+};
+
 (:~ Wrapper around xquery:eval(). In "dry-run" mode, the query passed in is 
  : parsed only, and any errors caught reported as svrl:failed-assert.
  : @param $query string of the query to evaluate
