@@ -6,6 +6,7 @@ module namespace _ = 'http://www.andrewsales.com/ns/xqs-evaluation-tests';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
+declare namespace xqy = 'http://www.w3.org/2012/xquery';  
 
 import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate' 
   at '../evaluate.xqm';
@@ -814,6 +815,7 @@ declare %unit:test function _:global-variable-bindings()
     document{<foo bar='some value'><blort/></foo>},
     '',
     (),
+    map{},
     map{}
   )
   return (
@@ -1299,3 +1301,279 @@ declare %unit:test function _:map-rule-variable()
     unit:assert(empty($result/svrl:successful-report))
   )
 };
+
+declare %unit:test function _:global-variable-syntax-error()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     doc('global-variable-syntax-error.sch')/*,
+    '',
+    map{'dry-run':'true'}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/@location/data(),
+      "/Q{http://purl.oclc.org/dsdl/schematron}schema[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value" 
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@err:code/data(),
+      "err:XPST0003" 
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>No specifier after lookup operator: ';'. @value='?'</svrl:text>
+    )
+  )
+};
+
+declare %unit:test function _:pattern-variable-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='y' value='$'/>
+        <sch:rule context="/">
+          <sch:report test="true()"></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      $result/svrl:failed-assert[ends-with(@location ,'/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value')]
+      /svrl:text,
+      <svrl:text>Incomplete FLWOR expression, expecting 'return'. @value='$'</svrl:text>
+    )
+  )
+};
+
+declare %unit:test function _:rule-context-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="">
+          <sch:report test="true()"></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+      <svrl:text>Expecting expression. @context=''</svrl:text>
+    )
+  )
+};
+
+declare %unit:test function _:dry-run-all-rules-processed()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="">
+        </sch:rule>
+        <sch:rule context='*'></sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      2
+    )
+  )
+};
+
+declare %unit:test function _:rule-variable-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="*">
+          <sch:let name='bar' value=''/>
+          <sch:assert test='foo'/>
+        </sch:rule>
+        <sch:rule context='*'></sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value')]),
+      1
+    ),
+    unit:assert-equals(
+     $result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}let[1]/@value')]/svrl:text,
+    <svrl:text>Incomplete FLWOR expression, expecting 'return'. @value=''</svrl:text>
+    )
+  )
+};
+
+declare %unit:test function _:report-test-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="*">
+          <sch:report test='ns:*'/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}report[1]/@test')]),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+    <svrl:text>Namespace prefix not declared: ns. @test='ns:*'</svrl:text>  
+    )
+  )
+};
+
+declare %unit:test function _:name-path-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="*">
+          <sch:report test="."><sch:name path='...'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}report[1]/Q{http://purl.oclc.org/dsdl/schematron}name[1]/@path')]),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+    <svrl:text>Unexpected end of query: '.'. @path='...'</svrl:text>  
+    )
+  )
+};
+
+declare %unit:test function _:value-of-select-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="*">
+          <sch:report test="."><sch:value-of select='...'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:failed-assert[ends-with(@location, '/Q{http://purl.oclc.org/dsdl/schematron}pattern[1]/Q{http://purl.oclc.org/dsdl/schematron}rule[1]/Q{http://purl.oclc.org/dsdl/schematron}report[1]/Q{http://purl.oclc.org/dsdl/schematron}value-of[1]/@select')]),
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:text,
+    <svrl:text>Unexpected end of query: '.'. @select='...'</svrl:text>  
+    )
+  )
+};
+
+declare %unit:test function _:phase-variable-scope-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+       <sch:phase id='one'>
+         <sch:let name='foo' value='bar'/>
+         <sch:active pattern='a'/>
+       </sch:phase>
+       <sch:phase id='two'>
+         <sch:active pattern='a'/>
+       </sch:phase>
+      <sch:pattern id='a'>
+        <sch:rule context="*">
+          <sch:report test="."><sch:value-of select='$foo'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    'two',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      ($result/svrl:failed-assert)[1]/svrl:text,
+      <svrl:text>Undeclared variable: $foo. @select='$foo'</svrl:text>
+    )
+  )
+};
+
+(:TODO:)
+declare %unit:ignore function _:function-syntax-error()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <xqy:function></xqy:function> 
+      <sch:pattern id='a'>
+        <sch:rule context="*">
+          <sch:report test="."><sch:value-of select='foo'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{'dry-run':'true'}
+  )
+  return
+  (
+    unit:assert-equals(
+      ($result/svrl:failed-assert)[1]/svrl:text,
+      <svrl:text>Calculation is incomplete. xqy:function='declare function local:foo(){{**}};'</svrl:text>
+    )
+  )
+};
+
+(:TODO
+pattern/@documents
+diagnostics
+properties
+functions
+:)

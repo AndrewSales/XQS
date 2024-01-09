@@ -11,8 +11,39 @@ import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
 import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
   'utils.xqm';
 
+declare namespace xqy = 'http://www.w3.org/2012/xquery';  
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
+
+(:~ Evaluates the schema to produce SVRL output, applying the processing options
+ : specified.
+ : @param instance the document instance
+ : @param schema the Schematron schema
+ : @param phase the active phase
+ : @param options map of processing options
+ :)
+declare function eval:schema(
+  $instance as node(),
+  $schema as element(sch:schema),
+  $phase as xs:string?,
+  $options as map(*)?
+)
+{
+  if($options?dry-run eq 'true')
+  then  
+  <svrl:schematron-output phase='#ALL'>
+  {output:schema-title($schema/sch:title)}
+  {$schema/@schemaVersion}
+  {output:namespace-decls-as-svrl($schema/sch:ns)}
+  <svrl:active-pattern name='XQS Syntax Error Summary' documents='{$schema/base-uri()}'/>
+  {$schema/xqy:function ! utils:parse-function(., $options)[self::svrl:*]}
+  {for $phase in ($schema/sch:phase/@id, '')
+  let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
+  return eval:phase($context)}
+  </svrl:schematron-output>
+  else
+  eval:schema($instance, $schema, $phase)
+};
 
 (:~ Evaluates the schema to produce SVRL output.
  : @param instance the document instance
@@ -25,7 +56,7 @@ declare function eval:schema(
   $phase as xs:string?
 )
 {
-  let $context as map(*) := context:get-context($instance, $schema, $phase)
+  let $context as map(*) := context:get-context($instance, $schema, $phase, map{})
   
   return 
   <svrl:schematron-output>
@@ -57,7 +88,8 @@ declare function eval:pattern(
         $context?instance,
         $context?ns-decls,
         $pattern/../sch:ns,
-        $context?globals
+        $context?globals,
+        map{'dry-run':$context?dry-run}
       )
   (: let $_ := trace('PATTERN $globals='||serialize($globals, map{'method':'adaptive'})) :)
   let $context := map:put($context, 'globals', $globals)
@@ -67,16 +99,56 @@ declare function eval:pattern(
   (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
   (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
 
-  return	(:TODO active-pattern/@name:)(
-    <svrl:active-pattern>
-    {$pattern/(@id, @name, @role), 
-    if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
-    </svrl:active-pattern>, 
-    $context?instance ! eval:rules(
-      $pattern/sch:rule, 
-      utils:make-query-prolog($context),
-      map:put($context, 'instance', .)
+  let $rules := $pattern/sch:rule
+  return (
+    if($context?dry-run eq 'true')
+    then 
+    ($context?globals?*[self::svrl:*], eval:all-rules($rules, $context))
+    else (
+      <svrl:active-pattern>
+      {$pattern/(@id, @name, @role), 
+      if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
+      </svrl:active-pattern>, 
+      eval:rules($rules, $context)
     )
+  )
+};
+
+(:~ Evaluates all the rules in a pattern.
+ : Initially added for use in dry-run mode, to check for syntax errors.
+ : N.B. we don't need to map the instance each time for this purpose, since we 
+ : are not evaluating @documents, but this approach could be used for 
+ : evaluating sch:rule-set (see https://github.com/AndrewSales/XQS/tree/%234).
+ :)
+declare function eval:all-rules(
+  $rules as element(sch:rule)*,
+  $context as map(*)
+)
+as element()*
+{
+  $context?instance 
+  ! 
+  (for $rule in $rules
+  return
+  eval:rule(
+    $rule, 
+    utils:make-query-prolog($context),
+    map:put($context, 'instance', .)
+  ))
+};
+
+declare function eval:rules(
+  $rules as element(sch:rule)*,
+  $context as map(*)
+)
+as element()*
+{
+  $context?instance 
+  ! 
+  eval:rules(
+    $rules, 
+    utils:make-query-prolog($context),
+    map:put($context, 'instance', .)
   )
 };
 
@@ -116,26 +188,43 @@ declare function eval:rule(
 as element()*
 {
   let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $variable-errors := utils:evaluate-rule-variables(
+    $rule/sch:let,
+    $prolog,
+    map:merge((map{'':$context?instance}, $context?globals)),
+    $context,
+    ()
+  )
   let $query := string-join(
       ($prolog, utils:local-variable-decls($rule/sch:let),
       if($rule/sch:let) then 'return ' else '', $rule/@context),
       ' '
     )
   (: let $_ := trace('[2]RULE query='||$query) :)
-  let $rule-context := xquery:eval(
+  let $rule-context := utils:eval(
     $query => utils:escape(),
     map:merge((map{'':$context?instance}, $context?globals)),
-    map{'pass':'true'} (:report exception details:)
+    map{'dry-run':$context?dry-run},
+    $rule/@context
   )
   return 
   if($rule-context)
-  then(
-    <svrl:fired-rule>
-    {$rule/(@id, @name, @context, @role, @flag),
-    if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
-    </svrl:fired-rule>,
-    eval:assertions($rule, $prolog, $rule-context, $context)
-  )
+  then
+    if($context?dry-run eq 'true')
+    then 
+    (
+      $variable-errors[self::svrl:*],
+      $rule-context[self::svrl:*],
+      eval:assertions($rule, $prolog, <_/>, $context)	(:pass dummy context node:)
+    )
+    else
+    (
+      <svrl:fired-rule>
+      {$rule/(@id, @name, @context, @role, @flag),
+      if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
+      </svrl:fired-rule>,
+      eval:assertions($rule, $prolog, $rule-context, $context)
+    )
   else ()
 };
 
@@ -181,12 +270,20 @@ declare function eval:assertion(
   $context as map(*)
 )
 {
-  let $result := xquery:eval(
+  let $result := utils:eval(
     $prolog || $assertion/@test => utils:escape(),
     map:merge((map{'':$rule-context}, $context?globals)),
-    map{'pass':'true'}
+    map{'dry-run':$context?dry-run},
+    $assertion/@test
   )
   return
+  if($context?dry-run eq 'true')
+  then 
+  (
+    $result[self::svrl:*],
+    output:assertion-message($assertion, $prolog, $rule-context, $context)
+  )
+  else
   typeswitch($assertion)
     case element(sch:assert)
       return if($result) then () 
@@ -206,15 +303,18 @@ declare function eval:phase($context as map(*))
   let $phase := $context?phase
   let $_ := utils:check-duplicate-variable-names($phase/sch:let)
   
+  let $dry-run as map(*) := map{'dry-run':$context?dry-run}
+  
   (:add phase variables to context:)
   let $globals as map(*) := context:evaluate-root-context-variables(
         $phase/sch:let,
         $context?instance,
         $context?ns-decls,
         $phase/../sch:ns,
-        $context?globals
+        $context?globals,
+        $dry-run
       )
   let $context := map:put($context, 'globals', $globals)
-  
-  return  $context?patterns ! eval:pattern(., $context)
+    
+  return  $context?patterns ! eval:pattern(., map:merge(($context, $dry-run)))
 };

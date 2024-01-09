@@ -3,6 +3,9 @@
  :)
 module namespace output = 'http://www.andrewsales.com/ns/xqs-output';
 
+import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
+  'utils.xqm';
+
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
@@ -30,6 +33,14 @@ declare function output:assertion-message(
   $context as map(*)
 )
 {
+  if($context?dry-run eq 'true')
+  then output:assertion-message-content(
+        $assertion/node(), 
+        $prolog, 
+        $rule-context,
+        $context
+      )
+      else
   element{
     QName("http://purl.oclc.org/dsdl/svrl", 
     if($assertion/self::sch:assert) then 'failed-assert' else 'successful-report')}
@@ -106,23 +117,34 @@ declare function output:assertion-message-content(
   $rule-context as node(),
   $context as map(*)
 )
+as item()*
 {
+  if($context?dry-run eq 'true')
+  then
+    for $node in $content/(self::sch:name|self::sch:value-of)
+    return
+    typeswitch($node)
+      case element(sch:name)
+        return if($node/@path) 
+          then output:name-value-of($node/@path, $prolog, $rule-context, $context)
+          [self::svrl:*]
+          else ()
+      case element(sch:value-of)
+        return output:name-value-of($node/@select, $prolog, $rule-context, $context)
+        [self::svrl:*]
+    default return ()
+  else
   <svrl:text>{(:TODO attributes:)
   for $node in $content
     return
     typeswitch($node)
       case element(sch:name)
         return if($node/@path) 
-          then xquery:eval(
-            $prolog || $node/@path, 
-            map:merge((map{'':$rule-context}, $context?globals))
-          ) 
+          then output:name-value-of($node/@path, $prolog, $rule-context, $context)
+          => string()
           else name($rule-context)
       case element(sch:value-of)
-        return xquery:eval(
-          $prolog || $node/@select, 
-          map:merge((map{'':$rule-context}, $context?globals))
-        ) 
+        return output:name-value-of($node/@select, $prolog, $rule-context, $context)
         => string()
       case element(sch:emph)
         return output:assertion-child-elements($node)
@@ -132,4 +154,19 @@ declare function output:assertion-message-content(
         return output:assertion-child-elements($node)      
     default return $node
   }</svrl:text>
+};
+
+declare function output:name-value-of(
+  $attr as attribute(),
+  $prolog as xs:string?,
+  $rule-context as node(),
+  $context as map(*)
+)
+{
+  utils:eval(
+    $prolog || $attr, 
+    map:merge((map{'':$rule-context}, $context?globals)),
+    map{'dry-run':$context?dry-run},
+    $attr
+  )
 };

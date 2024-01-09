@@ -6,6 +6,7 @@ declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
+declare namespace xqy = 'http://www.w3.org/2012/xquery';  
 
 (:~ Builds the string of variable declarations in the prolog, for initial
  : evaluation.
@@ -123,4 +124,86 @@ declare function utils:check-duplicate-variable-names($decls as element(sch:let)
     'duplicate variable name in element ' || local-name(head($decls)/..) || ': '
     || $names[index-of($names, .)[2]]
   ) else()
+};
+
+(:~ In dry-run mode only, evaluate rule variables.
+ : Provides more localized information if syntax errors are present in rule 
+ : variable declarations.
+ :)
+declare function utils:evaluate-rule-variables(
+  $variables as element(sch:let)*,
+  $prolog as xs:string?,
+  $bindings as map(*),
+  $context as map(*),
+  $errors as element()*
+)
+as element()*
+{
+  if($context?dry-run eq 'true')
+  then
+    if(exists($variables))
+    then
+      let $var := head($variables)
+      let $prolog := $prolog || utils:local-variable-decls($var)
+      let $errs := utils:eval(
+        $prolog || ' return $' || $var/@name => utils:escape(),
+        $bindings,
+        map{'dry-run':$context?dry-run},
+        $var/@value
+      )
+      return utils:evaluate-rule-variables(
+        tail($variables),
+        $prolog,
+        $bindings,
+        $context,
+        ($errors,$errs)
+      )
+    else $errors
+  else ()
+};
+
+(:~ Wrapper around xquery:eval(). In "dry-run" mode, the query passed in is 
+ : parsed only, and any errors caught reported as svrl:failed-assert.
+ : @param $query string of the query to evaluate
+ : @param bindings map of bindings
+ : @param options map of options
+ : @param node the schema node being evaluated
+ :)
+declare function utils:eval(
+  $query as xs:string,
+  $bindings as map(*),
+  $options as map(*),
+  $node as node()
+) as item()*
+{
+  if($options?dry-run eq 'true')
+  then
+    (<svrl:fired-rule context='{$node/path()}'/>,
+    try{
+      xquery:parse($query, map{'pass':'true'})
+    }
+    catch * {
+      <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
+      test='xquery:parse(.)'>
+      <svrl:text>{$err:description}{' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
+    })
+  else xquery:eval($query, $bindings, map{'pass':'true'})
+};
+
+declare function utils:parse-function(
+  $node as element(xqy:function),
+  $options as map(*)
+)
+as element()+
+{
+  <svrl:fired-rule context='{$node/path()}'/>,
+  try{
+    xquery:parse($node || 0, map{'pass':'true'})
+  }
+  catch * {
+    <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
+    test='xquery:parse(.)'>
+    <svrl:text>{$err:description}{' '||$node/name()}='{$node/data()}'</svrl:text>
+    </svrl:failed-assert>
+  }  
 };

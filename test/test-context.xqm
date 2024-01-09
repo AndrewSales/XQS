@@ -271,7 +271,8 @@ declare %unit:test function _:get-context-patterns()
   let $patterns := c:get-context(
     <foo/>,
     $schema,
-    'phase1'
+    'phase1',
+    map{}
   )?patterns
   
   return unit:assert-equals(
@@ -296,7 +297,8 @@ declare %unit:test function _:get-context-active-phase()
   let $phase := c:get-context(
     <foo/>,
     $schema,
-    'phase1'
+    'phase1',
+    map{}
   )?phase
   
   return unit:assert-equals(
@@ -322,7 +324,8 @@ declare %unit:test function _:get-context-namespaces()
   let $ns-decls := c:get-context(
     <foo/>,
     $schema,
-    ''
+    '',
+    map{}
   )?ns-decls
   
   return unit:assert-equals(
@@ -350,7 +353,8 @@ declare %unit:test function _:get-context-globals()
   let $globals := c:get-context(
     <foo/>,
     $schema,
-    'phase1'
+    'phase1',
+    map{}
   )?globals
   
   return unit:assert-equals(
