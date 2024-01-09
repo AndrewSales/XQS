@@ -6,6 +6,7 @@ declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
+declare namespace xqy = 'http://www.w3.org/2012/xquery';  
 
 (:~ Builds the string of variable declarations in the prolog, for initial
  : evaluation.
@@ -187,4 +188,22 @@ declare function utils:eval(
       <svrl:text>{$err:description}{' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
     })
   else xquery:eval($query, $bindings, map{'pass':'true'})
+};
+
+declare function utils:parse-function(
+  $node as element(xqy:function),
+  $options as map(*)
+)
+as element()+
+{
+  <svrl:fired-rule context='{$node/path()}'/>,
+  try{
+    xquery:parse($node || 0, map{'pass':'true'})
+  }
+  catch * {
+    <svrl:failed-assert err:code='{$err:code}' location='{$node/path()}' 
+    test='xquery:parse(.)'>
+    <svrl:text>{$err:description}{' '||$node/name()}='{$node/data()}'</svrl:text>
+    </svrl:failed-assert>
+  }  
 };

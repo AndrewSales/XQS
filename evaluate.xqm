@@ -11,14 +11,16 @@ import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
 import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
   'utils.xqm';
 
+declare namespace xqy = 'http://www.w3.org/2012/xquery';  
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
-(:~ Evaluates the schema to produce SVRL output.
+(:~ Evaluates the schema to produce SVRL output, applying the processing options
+ : specified.
  : @param instance the document instance
  : @param schema the Schematron schema
  : @param phase the active phase
- : @param options map of options
+ : @param options map of processing options
  :)
 declare function eval:schema(
   $instance as node(),
@@ -34,7 +36,8 @@ declare function eval:schema(
   {$schema/@schemaVersion}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
   <svrl:active-pattern name='XQS Syntax Error Summary' documents='{$schema/base-uri()}'/>
-  {for $phase in ($schema/sch:phase/@id/data(), '')
+  {$schema/xqy:function ! utils:parse-function(., $options)[self::svrl:*]}
+  {for $phase in ($schema/sch:phase/@id, '')
   let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
   return eval:phase($context)}
   </svrl:schematron-output>
