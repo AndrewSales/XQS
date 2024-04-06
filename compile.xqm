@@ -117,8 +117,6 @@ declare function compile:pattern(
   if($pattern/@documents)
   then compile:pattern-documents($pattern, $phase)
   else
-    let $function-id := compile:function-id($pattern)
-    return
     ('declare function ' || compile:function-name($pattern) || '(){',
       <svrl:active-pattern>
       {$pattern/(@id, @name, @role)}
@@ -143,7 +141,7 @@ declare function compile:pattern-documents(
 {
   let $function-id := compile:function-id($pattern)
   return
-  ('declare function ' || compile:function-name($pattern) || '(){' ||
+  compile:declare-function(compile:function-name($pattern), '') || '{' ||
     'let ' || $compile:SUBORDINATE_DOC_URIS || ':=' || 
     $compile:INSTANCE_DOC || '/(' || $pattern/@documents => utils:escape() || ')' ||
     'let ' || $compile:SUBORDINATE_DOC || ' as document-node()* :=' ||
@@ -154,12 +152,11 @@ declare function compile:pattern-documents(
     </svrl:active-pattern>, ', local:rules((' ||
     string-join(
       for $rule in $pattern/sch:rule 
-      return compile:function-name($rule) || '#1',
+      return compile:function-name($rule) || '#3',
       ','
     ) || '), ' || $compile:SUBORDINATE_DOC || ')',
     ')};',
     $pattern/sch:rule ! compile:rule-documents(., $phase)
-  )
 };
 
 (:~ Creates a function for a rule to process a subordinate document. :)
@@ -171,8 +168,8 @@ declare function compile:rule-documents(
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
-    'declare function ' || $function-name || '(' || $compile:SUBORDINATE_DOC || 
-    ' as document-node()){' ||
+    compile:declare-function($function-name, $compile:SUBORDINATE_DOC) || 
+    ' as document-node(){' ||
     string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
       utils:declare-variable(
@@ -378,7 +375,7 @@ as xs:string*
   $functions ! string(.)
 };
 
-declare function compile:declare-function($name as xs:string, $params as xs:string+)
+declare function compile:declare-function($name as xs:string, $params as xs:string*)
 {
   'declare function ' || $name || '(' || string-join($params, ',') || ')'
 };
