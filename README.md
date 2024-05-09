@@ -97,3 +97,25 @@ Your schema should specify a `queryBinding` value of : `xquery`, `xquery3` or `x
 These are not yet supported: see [#6](https://github.com/AndrewSales/XQS/issues/6). If your schema makes use of these, consider using a tool such as [SchXslt](https://github.com/schxslt/schxslt) to perform these steps in the meantime.
 
 **CAUTION** When compiling, avoid using the XQS namespace (`http://www.andrewsales.com/ns/xqs`) in your schema, which XQS uses for variables internal to the application.
+
+# Troubleshooting
+
+## My existing schema produces different results with XQS: rules don't fire that I expect to.
+
+When using an XSLT implementation, a rule's `context` attribute with an XPath such as `foo` will match any instance of that element in the document being validated, and the rule is said to "fire".
+
+The key difference with XQS is that it evaluates these XPaths _in the context of the document root_, so `foo` will only match **if it is the root element**.
+
+To address this, XPaths should be changed as appropriate, e.g. to `//foo`, which will ensure that the element would be matched anywhere in the document.
+
+## User-defined functions in my existing schema aren't working.
+
+If your schema was intended for use with an XSLT implementation, then any user-defined functions will most likely be expressed using `xsl:function`.
+
+XQS is a pure XQuery implementation and doesn't recognize these, so they need to be re-written as XQuery, contained in `function` elements in the XQuery namespace, e.g.
+
+    <function xmlns='http://www.w3.org/2012/xquery'>
+    declare function local:foo($i as xs:int) as xs:int{
+      $i * $i
+    };
+    </function>
