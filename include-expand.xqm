@@ -6,19 +6,26 @@ module namespace ie = 'http://www.andrewsales.com/ns/xqs-include-expand';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
-(:~ Handle includes in the main schema document. :)
+(:~ Handle includes in the main schema document. 
+ : Resolve any includes, then recurse if any remain as a result.
+ :)
 declare function ie:process-includes(
   $schema as element(sch:schema)
 )
 {
   let $_ := trace('SCHEMA base URI=' || $schema/base-uri())
-  return
+  let $copy :=
   copy $copy := $schema
-    modify 
+    modify
       for $include in ($copy//sch:include | $copy//sch:extends[@href]) 
       return
       replace node $include with ie:process-include($include, $schema/base-uri())
-  return $copy    
+    return $copy
+    
+  return 
+  if($copy//sch:include | $copy//sch:extends[@href])
+  then ie:process-includes($copy)
+  else $copy
 };
 
 (:~ Process includes, including any nested ones. :)
@@ -36,8 +43,9 @@ declare %private function ie:process-include(
   copy $copy := $include
     modify
       for $include in ($copy/descendant-or-self::sch:include | $copy/descendant-or-self::sch:extends[@href]) 
+      let $resolved-uri := resolve-uri($include/@href, $include-base-uri)
       return
-      replace node $include with ie:process-include($include, $include-base-uri)
+      replace value of node $include/@href with $resolved-uri
   return $copy    
 };
 
