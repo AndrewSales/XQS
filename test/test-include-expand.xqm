@@ -54,6 +54,20 @@ declare %unit:test function _:include-fragment()
   )
 };
 
+declare %unit:test function _:abstract-rule()
+{
+  let $schema := doc('test-cases/abstract-rule.sch')
+  let $result := ie:include-expand($schema/*)
+  return
+  (
+    unit:assert(not($result//sch:extends)),
+    unit:assert-equals(count($result//sch:rule), 1),
+    unit:assert($result//sch:rule[@context eq 'element']),
+    unit:assert($result//sch:rule/sch:report[@test eq 'self::element'])
+  )
+  
+};
+
 (:TODO 
 detect circular references
-extends[@href]:)
+:)

@@ -380,7 +380,7 @@ declare %unit:test function _:let-value-element-content-012(){let $result:=eval:
 (:~ An abstract pattern is instantiated
 : @see ISO Schematron 2016: Section 6.3 
 :)
-declare %unit:ignore function _:pattern-abstract-011(){let $result:=eval:schema(document{<element/>},
+declare %unit:test function _:pattern-abstract-011(){let $result:=eval:schema(document{<element/>},
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern abstract="true" id="abstract-pattern">
         <sch:rule context="$context">
@@ -421,8 +421,8 @@ declare %unit:test function _:pattern-subordinate-document-021(){
 (:~ An abstract rule is instantiated
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
-declare %unit:ignore function _:rule-abstract-011(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+declare %unit:test function _:rule-abstract-011(){
+  let $schema := ie:include-expand(<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern>
         <sch:rule abstract="true" id="abstract-rule">
           <sch:report test="self::element"/>
@@ -431,7 +431,13 @@ declare %unit:ignore function _:rule-abstract-011(){let $result:=eval:schema(doc
           <sch:extends rule="abstract-rule"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>)
+  let $result := eval:schema(
+    document{<element/>},
+    $schema,
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to extend an abstract rule that is defined in a different pattern
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
