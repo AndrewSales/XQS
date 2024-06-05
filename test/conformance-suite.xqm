@@ -31,14 +31,16 @@ declare %unit:test function _:extends-baseuri-fixup1()
 
 (:~ Extends is recursive 
 :)
-declare %unit:test function _:extends-recursive1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:rule context="/">
-          <sch:extends href="include.sch"/>
-        </sch:rule>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+declare %unit:test function _:extends-recursive1(){
+  let $schema := ie:process-includes(doc('extends-recursive.sch')/*)
+  let $result := 
+  eval:schema(
+    document{<element/>},
+    $schema,
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))
+};
 (:~ Include performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
