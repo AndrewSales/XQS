@@ -65,7 +65,16 @@ declare %unit:test function _:abstract-rule()
     unit:assert($result//sch:rule[@context eq 'element']),
     unit:assert($result//sch:rule/sch:report[@test eq 'self::element'])
   )
-  
+};
+
+declare %unit:test function _:abstract-pattern()
+{
+  let $schema := doc('test-cases/abstract-pattern.sch')
+  let $result := ie:include-expand($schema/*)
+  return
+  (
+    unit:assert(not($result//sch:pattern[@abstract eq 'true']))
+  )
 };
 
 (:TODO 

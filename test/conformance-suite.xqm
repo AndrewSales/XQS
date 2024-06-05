@@ -380,8 +380,8 @@ declare %unit:test function _:let-value-element-content-012(){let $result:=eval:
 (:~ An abstract pattern is instantiated
 : @see ISO Schematron 2016: Section 6.3 
 :)
-declare %unit:test function _:pattern-abstract-011(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+declare %unit:test function _:pattern-abstract-011(){
+  let $schema := ie:include-expand(<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern abstract="true" id="abstract-pattern">
         <sch:rule context="$context">
           <sch:assert test="$placeholder = 0"/>
@@ -391,7 +391,13 @@ declare %unit:test function _:pattern-abstract-011(){let $result:=eval:schema(do
         <sch:param name="context" value="element"/>
         <sch:param name="placeholder" value="1"/>
       </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>)
+  let $result := eval:schema(
+    document{<element/>},
+    $schema, 
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))};
 (:~ Pattern in a subordinate document
 : @see ISO Schematron 2016: Section 5.4.9 clause 2 
 :)

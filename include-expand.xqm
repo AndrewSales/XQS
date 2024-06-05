@@ -16,7 +16,7 @@ declare function ie:include-expand($schema as element(sch:schema))
 (:~ Perform abstract rule and pattern expansion. :)
 declare function ie:process-abstracts($schema as element(sch:schema))
 {
-  ie:expand-rules($schema)
+  ie:expand-rules($schema) => ie:expand-patterns()
 };
 
 (:~ Handle includes in the main schema document. 
@@ -115,6 +115,11 @@ as node()*
   $abstract/node()
   (:TODO language fixup:)
   (:replace extends[@rule] with children of abstract rule:)
+};
+
+declare function ie:expand-patterns($schema as element(sch:schema))
+{
+  
 };
 
 declare function ie:expand-pattern($abstract as element(sch:pattern))
