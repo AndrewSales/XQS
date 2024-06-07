@@ -73,8 +73,85 @@ declare %unit:test function _:abstract-pattern()
   let $result := ie:include-expand($schema/*)
   return
   (
-    unit:assert(not($result//sch:pattern[@abstract eq 'true']))
+    unit:assert(not($result//sch:pattern[@abstract eq 'true'])),
+    unit:assert-equals($result//sch:assert/@test/data(), '1 = 0')
   )
+};
+
+declare %unit:test function _:replace-param-refs()
+{
+  let $result := ie:replace-param-refs(
+    '$foo eq $fo eq $f',
+    (<sch:param name='foo' value='1'/>, <sch:param name='fo' value='2'/>,
+  <sch:param name='f' value='3'/>)
+  )
+  return unit:assert-equals($result, '1 eq 2 eq 3')
+};
+
+(:~ No param refs to replace, so return unchanged :)
+declare %unit:test function _:replace-param-refs-verbatim()
+{
+  let $result := ie:replace-param-refs(
+    'foo bar blort',
+    ()
+  )
+  return unit:assert-equals($result, 'foo bar blort')
+};
+
+declare %unit:test function _:pattern-attributes()
+{
+  let $result := ie:pattern-elements(
+    <sch:assert test='$foo eq 1'/>,
+    <sch:param name='foo' value='bar'/>
+  )
+  return
+  unit:assert-equals(
+    $result,
+    attribute{'test'}{'bar eq 1'}
+  )
+};
+
+declare %unit:test function _:pattern-filter()
+{
+  let $result := ie:pattern-filter(
+    <sch:pattern>
+        <sch:rule context="$context">
+          <sch:assert test="$foo = 1"/>
+        </sch:rule>
+      </sch:pattern>,
+    (<sch:param name='foo' value='bar'/>, <sch:param name='context' value='blort'/>)
+  )
+  return
+  unit:assert-equals(
+    $result,
+    <sch:pattern>
+        <sch:rule context="blort">
+          <sch:assert test="bar = 1"/>
+        </sch:rule>
+      </sch:pattern>
+  )
+};
+
+declare %unit:test function _:expand-pattern()
+{
+   let $result := ie:expand-pattern(
+      <sch:pattern is-a="abstract-pattern">
+        <sch:param name="context" value="element"/>
+        <sch:param name="placeholder" value="1"/>
+      </sch:pattern>,
+      <sch:pattern abstract="true" id="abstract-pattern">
+        <sch:rule context="$context">
+          <sch:assert test="$placeholder = 0"/>
+        </sch:rule>
+      </sch:pattern>
+    )
+    return
+    unit:assert-equals(
+      $result,
+      <sch:pattern> <sch:rule context="element">
+          <sch:assert test="1 = 0"/>
+        </sch:rule></sch:pattern>
+    )
 };
 
 (:TODO 

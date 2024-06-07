@@ -96,8 +96,7 @@ as element(sch:schema)
   modify
     (for $extends in $copy//sch:extends[@rule]
     return replace node $extends with ie:expand-rule($extends, $schema),
-    for $abstract in $copy//sch:rule[@abstract eq 'true']
-    return delete node $abstract)
+    delete node $copy//sch:rule[@abstract eq 'true'])
   return $copy
 };
 
@@ -114,31 +113,115 @@ as node()*
   else 
   $abstract/node()
   (:TODO language fixup:)
-  (:replace extends[@rule] with children of abstract rule:)
 };
 
 declare function ie:expand-patterns($schema as element(sch:schema))
+as element(sch:schema)
 {
-  
+  let $abstract-pattern-ids := $schema//sch:pattern[@abstract eq 'true']/@id
+  return
+  copy $copy := $schema
+     modify (
+     for $pattern in $copy//sch:pattern[@is-a]
+     return replace node $pattern with 
+     ie:expand-pattern($pattern, $abstract-pattern-ids[. eq $pattern/@is-a]/..),
+     delete node $copy//sch:pattern[@abstract eq 'true']
+   )
+  return $copy
 };
 
-declare function ie:expand-pattern($abstract as element(sch:pattern))
+declare function ie:expand-pattern(
+  $pattern as element(sch:pattern),
+  $abstract as element(sch:pattern)
+)
 as element(sch:pattern)
 {
-  <sch:pattern>
-  {@* except @is-a}
+  (: if(not(@documents)) then $abstract/@documents else ():)
   (: TODO language fixup :)
   (: TODO @documents :)
   (: TODO properties :)
   (: TODO diagnostics :)
-  (: TODO replace params in abstract pattern (**only if pattern[param]**)
-  sch:assert/@test | sch:report/@test | sch:rule/@context | sch:value-of/@select | sch:pattern/@documents | sch:name/@path | sch:let/@value:)
+  (: TODO replace params in abstract pattern:)
+  <sch:pattern>
+  {$pattern/@* except $pattern/@is-a}
+  {$abstract/node() ! ie:pattern-filter(., $pattern/sch:param)}
   </sch:pattern>
 };
 
-declare function ie:replace-params($param as attribute())
-as xs:string
+declare function ie:pattern-filter(
+  $node as node()*,
+  $params as element(sch:param)*
+)
 {
+  typeswitch($node)
+    case element() 
+      return element{$node/name()}
+        {ie:pattern-elements($node, $params),
+        $node/node() ! ie:pattern-filter(., $params)}
+    default return $node
+};
+
+(:~ Replace any parameter references in instantiated abstract patterns. 
+ : @param element the element whose attributes might contain param refs
+ : @param params parameters declared in the instantiated pattern 
+ :)
+declare function ie:pattern-elements(
+  $element as element(),
+  $params as element(sch:param)*
+)
+as attribute()*
+{
+  switch($element)
+    case $element/(self::sch:assert | self::sch:report)
+      return ie:pattern-attributes($element, 'test', $params)
+    case $element/self::sch:rule
+      return ie:pattern-attributes($element, 'context', $params)
+    case $element/self::sch:value-of
+      return ie:pattern-attributes($element, 'select', $params)
+    case $element/self::sch:let
+      return ie:pattern-attributes($element, 'value', $params)
+    case $element/self::sch:name
+      return ie:pattern-attributes($element, 'path', $params)
+    (:TODO sch:pattern/@documents:)
+    default return $element/@*
+};
+
+declare function ie:pattern-attributes(
+  $element as element(),
+  $attribute as xs:string,
+  $params as element(sch:param)*
+)
+as attribute()*
+{
+  let $replace := $element/@*[name() eq $attribute]
+  return
+  (
+    $element/@* except $replace,
+    attribute{$attribute}{ie:replace-param-refs($replace, $params)}
+  )
+};
+
+(:~ Replace parameter references.
+ : N.B. This matches the recursive approach SchXslt uses.
+ :)
+declare function ie:replace-param-refs(
+  $expr as xs:string,
+  $params as element(sch:param)*
+)
+as xs:string?
+{
+  if(empty($params))
+  then $expr
+  else
   (:sort params by desc length of name:)
-  (:...:)
+  let $sorted := for $param in $params 
+    order by string-length($param/@name) descending
+    return $param
+  let $value := replace(head($sorted)/@value, '\\', '\\\\') => replace('\$', '\\\$')
+  let $expr := replace(
+    $expr, 
+    '(\W*)\$' || $sorted[1]/@name || '(\W*)', 
+    '$1' || $value || '$2'
+  )
+  return ie:replace-param-refs($expr, tail($sorted))
 };
