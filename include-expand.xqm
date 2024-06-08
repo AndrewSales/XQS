@@ -26,7 +26,7 @@ declare function ie:process-includes(
   $schema as element(sch:schema)
 )
 {
-  let $_ := trace('SCHEMA base URI=' || $schema/base-uri())
+  (: let $_ := trace('SCHEMA base URI=' || $schema/base-uri()) :)
   let $copy :=
   copy $copy := $schema
     modify
@@ -47,9 +47,9 @@ declare %private function ie:process-include(
   $base-uri as xs:anyURI
 ) as node()
 {
-  let $_ := trace('include='||$include=>serialize())
-  let $_ := trace('base URI='||$base-uri)
-  let $_ := trace('resolving include='||$include/@href)
+  (: let $_ := trace('include='||$include=>serialize()) :)
+  (: let $_ := trace('base URI='||$base-uri) :)
+  (: let $_ := trace('resolving include='||$include/@href) :)
   let $include := ie:get-inclusion($include/@href, $base-uri)
   let $include-base-uri := $include/base-uri()	(:store before we create the copy:)
   return
@@ -80,7 +80,7 @@ as node()
     if($href/parent::sch:extends)
     then $inclusion/*
     else $inclusion
-  let $_ := trace('inclusion='||serialize($inclusion)||' base URI='||$inclusion/base-uri())
+  (: let $_ := trace('inclusion='||serialize($inclusion)||' base URI='||$inclusion/base-uri()) :)
   
   return $inclusion
 };
@@ -109,7 +109,7 @@ as node()*
   let $abstract := $schema//sch:rule[@id eq $extends/@rule]
   return
   if(empty($abstract))
-  then error(xs:QName('no-such-abstract-rule'), $extends/@rule)
+  then error(xs:QName('xqs:no-such-abstract-rule'), $extends/@rule)
   else 
   $abstract/node()
   (:TODO language fixup:)
@@ -141,7 +141,6 @@ as element(sch:pattern)
   (: TODO @documents :)
   (: TODO properties :)
   (: TODO diagnostics :)
-  (: TODO replace params in abstract pattern:)
   <sch:pattern>
   {$pattern/@* except $pattern/@is-a}
   {$abstract/node() ! ie:pattern-filter(., $pattern/sch:param)}

@@ -6,6 +6,8 @@ import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate' at
   'evaluate.xqm';  
 import module namespace compile = 'http://www.andrewsales.com/ns/xqs-compile' at
   'compile.xqm';    
+import module namespace ie = 'http://www.andrewsales.com/ns/xqs-include-expand'
+  at 'include-expand.xqm';  
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
@@ -19,7 +21,7 @@ declare function xqs:validate(
 )
 {
   xqs:check-query-binding($schema),
-  eval:schema($instance, $schema, '')
+  eval:schema($instance, ie:include-expand($schema), '')
 };
 
 (:~ Validates a document against a Schematron schema, applying an optional phase.
@@ -34,7 +36,7 @@ declare function xqs:validate(
 )
 {
   xqs:check-query-binding($schema),
-  eval:schema($instance, $schema, $phase)
+  eval:schema($instance, ie:include-expand($schema), $phase)
 };
 
 (:~ Compiles a Schematron schema, without applying a phase.
@@ -46,7 +48,7 @@ declare function xqs:compile(
 as xs:string
 {
   xqs:check-query-binding($schema),
-  compile:schema($schema, '')
+  compile:schema(ie:include-expand($schema), '')
 };
 
 (:~ Compiles a Schematron schema, applying an optional phase.
@@ -60,7 +62,7 @@ declare function xqs:compile(
 as xs:string
 {
   xqs:check-query-binding($schema),
-  compile:schema($schema, $phase)
+  compile:schema(ie:include-expand($schema), $phase)
 };
 
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)
