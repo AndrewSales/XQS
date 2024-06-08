@@ -4,6 +4,8 @@ declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 import module namespace eval = "http://www.andrewsales.com/ns/xqs-evaluate" at
   "../evaluate.xqm";
+import module namespace ie = "http://www.andrewsales.com/ns/xqs-include-expand" at
+  "../include-expand.xqm";
 declare function _:is-valid($svrl as element(svrl:schematron-output))
 as xs:boolean{
   empty($svrl/(svrl:failed-assert|svrl:successful-report))
@@ -14,40 +16,45 @@ as xs:boolean{
 (:~ Extends performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
-declare %unit:ignore function _:extends-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:rule context="/">
-          <sch:extends href="subdir/include-1.sch"/>
-        </sch:rule>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(_:is-valid($result))};
+declare %unit:test function _:extends-baseuri-fixup1()
+{
+  let $result:= eval:schema(
+    document{<element/>},
+    doc('extends-baseuri-fixup.sch')/* => ie:process-includes(), 
+    ''
+  ) 
+  return
+  (
+    unit:assert(_:is-valid($result))
+  )
+};
+
 (:~ Extends is recursive 
 :)
-declare %unit:ignore function _:extends-recursive1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:rule context="/">
-          <sch:extends href="include.sch"/>
-        </sch:rule>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+declare %unit:test function _:extends-recursive1(){
+  let $schema := ie:process-includes(doc('extends-recursive.sch')/*)
+  let $result := 
+  eval:schema(
+    document{<element/>},
+    $schema,
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))
+};
 (:~ Include performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
-declare %unit:ignore function _:include-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:pattern>
-        <sch:include href="subdir/include-1.sch"/>
-      </sch:pattern>
-    </sch:schema>, '') return unit:assert(_:is-valid($result))};
+declare %unit:test function _:include-baseuri-fixup1(){let $result:=eval:schema(document{<element/>},
+doc('include-baseuri-fixup.sch')/* => ie:process-includes(), '') return unit:assert(_:is-valid($result))};
 (:~ Include is recursive 
 :)
-declare %unit:ignore function _:include-recursive1(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
-      <sch:include href="pattern.sch"/>
-      <sch:pattern/>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+declare %unit:test function _:include-recursive1()
+{
+  let $result:=eval:schema(document{<element/>},
+  doc('include-recursive.sch')/* => ie:process-includes(), '') 
+    return unit:assert(not(_:is-valid($result)))
+};
+
 (:~ It is an error for a variable to be multiply defined in the current rule
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -373,8 +380,8 @@ declare %unit:test function _:let-value-element-content-012(){let $result:=eval:
 (:~ An abstract pattern is instantiated
 : @see ISO Schematron 2016: Section 6.3 
 :)
-declare %unit:ignore function _:pattern-abstract-011(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+declare %unit:test function _:pattern-abstract-011(){
+  let $schema := ie:include-expand(<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern abstract="true" id="abstract-pattern">
         <sch:rule context="$context">
           <sch:assert test="$placeholder = 0"/>
@@ -384,7 +391,13 @@ declare %unit:ignore function _:pattern-abstract-011(){let $result:=eval:schema(
         <sch:param name="context" value="element"/>
         <sch:param name="placeholder" value="1"/>
       </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>)
+  let $result := eval:schema(
+    document{<element/>},
+    $schema, 
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))};
 (:~ Pattern in a subordinate document
 : @see ISO Schematron 2016: Section 5.4.9 clause 2 
 :)
@@ -414,8 +427,8 @@ declare %unit:test function _:pattern-subordinate-document-021(){
 (:~ An abstract rule is instantiated
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
-declare %unit:ignore function _:rule-abstract-011(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+declare %unit:test function _:rule-abstract-011(){
+  let $schema := ie:include-expand(<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern>
         <sch:rule abstract="true" id="abstract-rule">
           <sch:report test="self::element"/>
@@ -424,7 +437,13 @@ declare %unit:ignore function _:rule-abstract-011(){let $result:=eval:schema(doc
           <sch:extends rule="abstract-rule"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>)
+  let $result := eval:schema(
+    document{<element/>},
+    $schema,
+    ''
+  ) 
+  return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to extend an abstract rule that is defined in a different pattern
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)

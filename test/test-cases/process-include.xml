@@ -1,0 +1,3 @@
+<schema xmlns="http://purl.oclc.org/dsdl/schematron">
+  <include href='include-pattern.xml'/>
+</schema>
