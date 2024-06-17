@@ -12,6 +12,7 @@ declare namespace xqy = 'http://www.w3.org/2012/xquery';
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
+declare variable $compile:SUBORDINATE_DOCS := '$Q{http://www.andrewsales.com/ns/xqs}sub-docs';
 declare variable $compile:SUBORDINATE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc';
 declare variable $compile:SUBORDINATE_DOC_URIS := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc-uris';
 declare variable $compile:RULE := '$Q{http://www.andrewsales.com/ns/xqs}rule';
@@ -38,7 +39,7 @@ as element()*
         (head($rules)($context, $matched),
         local:rules(tail($rules), tail($contexts), $matched | $context))
 }; ';
-declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $contexts as function(*)*, $matched as node()*, $doc as document-node()*)
+declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $contexts as function(*)*, $matched as node()*, $doc as document-node())
 as element()*
 {
     $doc ! (
@@ -139,24 +140,40 @@ declare function compile:pattern-documents(
   $phase as element(sch:phase)?
 )
 {
-  let $function-id := compile:function-id($pattern)
-  return
-  compile:declare-function(compile:function-name($pattern), '') || '{' ||
-    'let ' || $compile:SUBORDINATE_DOC_URIS || ':=' || 
-    $compile:INSTANCE_DOC || '/(' || $pattern/@documents => utils:escape() || ')' ||
-    'let ' || $compile:SUBORDINATE_DOC || ' as document-node()* :=' ||
-    $compile:SUBORDINATE_DOC_URIS || '!' || 'doc(.) return (',
-    <svrl:active-pattern 
-      documents='{{string-join({$compile:SUBORDINATE_DOC} ! base-uri(.))}}'>
-    {$pattern/(@id, @name, @role)}
-    </svrl:active-pattern>, ', local:rules((' ||
-    string-join(
-      for $rule in $pattern/sch:rule 
-      return compile:function-name($rule) || '#3',
-      ','
-    ) || '), ' || $compile:SUBORDINATE_DOC || ')',
-    ')};',
-    $pattern/sch:rule ! compile:rule-documents(., $phase)
+  compile:declare-function(
+    compile:function-name($pattern), 
+    '',
+    (
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOC_URIS,
+        $compile:INSTANCE_DOC || '/(' || $pattern/@documents => utils:escape() || ')'
+      ) ||
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOCS,
+        $compile:SUBORDINATE_DOC_URIS || '! doc(.)',
+        'document-node()*'
+      ) ||
+      ' return (',
+      <svrl:active-pattern 
+        documents='{{string-join({$compile:SUBORDINATE_DOCS} ! base-uri(.))}}'>
+      {$pattern/(@id, @name, @role)}
+      </svrl:active-pattern>, 
+      ', ' || $compile:SUBORDINATE_DOCS || ' ! local:rules((' ||
+      string-join(
+        for $rule in $pattern/sch:rule 
+        return compile:function-name($rule) || '#3',
+        ','
+      ) || '), (' ||
+      string-join(for $rule in $pattern/sch:rule 
+      return ' ' || compile:function-name($rule) || '#1', ',') ||
+      '), (), .))'
+    )
+  ),
+    $pattern/sch:rule ! 
+    (
+      compile:rule-documents(., $phase), 
+      compile:rule-context-documents(., $phase)
+    )
 };
 
 (:~ Creates a function for a rule to process a subordinate document. :)
@@ -165,45 +182,82 @@ declare function compile:rule-documents(
   $phase as element(sch:phase)?
 )
 {
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
   let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
-    compile:declare-function($function-name, $compile:SUBORDINATE_DOC) || 
-    ' as document-node(){' ||
-    string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
+    compile:declare-function(
+      $function-name, 
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED, $compile:SUBORDINATE_DOCS), (: || ' as document-node(){' || :)
+      (
+      string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
       utils:declare-variable(
         $compile:RULE_CONTEXT_NAME,
-        $compile:SUBORDINATE_DOC || '/(' || $rule/@context => utils:escape() || ')'
+        $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
-    ' return if(' || $compile:RULE_CONTEXT || ') then (',
-      <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOC})}}'>
+      ' return if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
+        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+      <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
       {$rule/(@id, @name, @context, @role, @flag)}
       </svrl:fired-rule>,
-    ', ' || $compile:RULE_CONTEXT || '! (',
-    string-join(
-      for $assertion in $assertions
-      return compile:function-name($assertion, true()) || '(.)', 
-      ','
-    ) 
-    || ')) else ()};' || string-join($assertions ! compile:assertion(., $phase, true()))
+      ', ' || $compile:RULE_CONTEXT || '! (',
+      string-join(
+        for $assertion in $assertions
+        return compile:function-name($assertion, true()) || '(.)', 
+        ','
+      ) 
+      || ')) else ()'
+      )
+  ) || string-join($assertions ! compile:assertion(., $phase, true()))
   )
 };
 
+(:~ Creates a function returning the rule context.
+ : @param rule the rule
+ : @param phase optional phase
+ :)
 declare function compile:rule-context(
   $rule as element(sch:rule),
   $phase as element(sch:phase)?
 )
+as xs:string
 {
-  let $function-name := compile:function-name($rule)
-  return (
-    compile:declare-function($function-name, '') || '{' ||
-    string-join(compile:root-context-variables($phase/sch:let), ' ') ||
-    string-join(compile:root-context-variables($rule/../sch:let), ' ') ||
-    string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
-      (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
-    $compile:INSTANCE_DOC || '/(' || $rule/@context => utils:escape() || ')'
-    ) || '};'
+  compile:declare-function(
+    compile:function-name($rule),
+    '',
+    compile:rule-context-body($rule, $phase, $compile:INSTANCE_DOC)
+  )
+};
+
+(:~ Creates a function returning the rule context.
+ : @param rule the rule
+ : @param phase optional phase
+ :)
+declare function compile:rule-context-documents(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
+{
+  compile:declare-function(
+    compile:function-name($rule),
+    $compile:SUBORDINATE_DOC,
+    compile:rule-context-body($rule, $phase, $compile:SUBORDINATE_DOC)
+  )
+};
+
+declare %private function compile:rule-context-body(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?,
+  $doc as xs:string
+)
+as xs:string
+{
+  string-join(compile:root-context-variables($phase/sch:let), ' ') ||
+  string-join(compile:root-context-variables($rule/../sch:let), ' ') ||
+  string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
+  (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
+  $doc || '/(' || $rule/@context => utils:escape() || ')'
 };
 
 declare function compile:rule(
@@ -212,22 +266,26 @@ declare function compile:rule(
 )
 {
   let $_ := utils:check-duplicate-variable-names($rule/sch:let)
-  let $function-name := compile:function-name($rule)
   let $assertions as element()+ := $rule/(sch:assert|sch:report)
   return (
-    compile:declare-function($function-name, ($compile:RULE_CONTEXT, $compile:RULE_MATCHED)) || '{' ||
-    'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
-    $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
-    <svrl:fired-rule>
-    {$rule/(@id, @name, @context, @role, @flag)}
-    </svrl:fired-rule>,
-    ', ' || $compile:RULE_CONTEXT || '! (' ||
-    string-join(
-      for $assertion in $assertions
-      return compile:function-name($assertion) || '(.)', 
-      ','
-    ) 
-    || ')) else ()};' || string-join($assertions ! compile:assertion(., $phase, false()))
+    compile:declare-function(
+      compile:function-name($rule),
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED),
+      (
+        'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
+        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+        <svrl:fired-rule>
+        {$rule/(@id, @name, @context, @role, @flag)}
+        </svrl:fired-rule>,
+        ', ' || $compile:RULE_CONTEXT || '! (' ||
+        string-join(
+          for $assertion in $assertions
+          return compile:function-name($assertion) || '(.)', 
+          ','
+        ) 
+        || ')) else ()'
+      )
+    ) || string-join($assertions ! compile:assertion(., $phase, false()))
   )
 };
 
@@ -375,7 +433,46 @@ as xs:string*
   $functions ! string(.)
 };
 
-declare function compile:declare-function($name as xs:string, $params as xs:string*)
+(:~ Declare a function.
+ : @param name function name
+ : @param params function parameters
+ : @param body function body
+ :)
+declare %private function compile:declare-function(
+  $name as xs:string, 
+  $params as xs:string*,
+  $body as item()*
+)
+as xs:string
 {
-  'declare function ' || $name || '(' || string-join($params, ',') || ')'
+  'declare function ' || $name || '(' || string-join($params, ',') || '){'
+  || serialize($body) || '};'
+};
+
+(:~ Create a variable declaration. 
+ : @param name variable name
+ : @param value variable value
+ :)
+declare %private function compile:declare-variable(
+  $name as xs:string,
+  $value as xs:string
+)
+as xs:string
+{
+  'let ' || $name || ':=' || $value
+};
+
+(:~ Create a variable declaration. 
+ : @param name variable name
+ : @param value variable value
+ : @param type variable type
+ :)
+declare %private function compile:declare-variable(
+  $name as xs:string,
+  $value as xs:string,
+  $type as xs:string
+)
+as xs:string
+{
+  'let ' || $name || ' as ' || $type || ' :=' || $value
 };
