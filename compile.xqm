@@ -49,7 +49,7 @@ as element()*
     else
         let $context := head($contexts)(.)
         return
-        (head($rules)($context, $matched),
+        (head($rules)($context, $matched, .),
         local:rules(tail($rules), tail($contexts), $matched | $context, $doc))
       )
 }; ';  
@@ -134,6 +134,10 @@ declare function compile:pattern(
 
 (:~ Creates a function to process a pattern which specifies subordinate 
  : documents. 
+ : This implementation resolves the URIs of subordinate documents
+ : against the base URI of the instance document.
+ : @param pattern the pattern[@documents]
+ : @param phase optional phase
  :)
 declare function compile:pattern-documents(
   $pattern as element(sch:pattern),
@@ -150,7 +154,8 @@ declare function compile:pattern-documents(
       ) ||
       compile:declare-variable(
         $compile:SUBORDINATE_DOCS,
-        $compile:SUBORDINATE_DOC_URIS || '! doc(.)',
+        $compile:SUBORDINATE_DOC_URIS || 
+          '! doc(resolve-uri(., ' || $compile:INSTANCE_DOC || '/base-uri()))',
         'document-node()*'
       ) ||
       ' return (',
