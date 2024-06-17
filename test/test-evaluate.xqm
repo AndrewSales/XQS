@@ -558,6 +558,49 @@ declare %unit:test function _:rule-continue-on-no-match()
   )
 };
 
+(:~ "A rule context (3.19) is said to match an information item when that 
+ : information item has not been matched by any lexically-previous rule-context
+ : expressions in the same pattern (3.13) and the information item is one of
+ : the information items that the query would specify"
+ : "A rule element acts as an if-then-else statement within each pattern." 
+ : @see ISO2020, 3.20 & 6.5
+ :)
+declare %unit:test function _:rule-processing()
+{
+  (:The third rule will not fire, since it was matched by the previous one. But
+  the fourth rule does fire, since it hasn't been matched yet. Likewise, the 
+  last rule has already been matched, so doesn't fire.:)
+  let $result := eval:pattern(
+    <pattern xmlns='http://purl.oclc.org/dsdl/schematron'>
+        <rule context="/article"><report test=".">article</report></rule>
+        <rule context="/article/section[true()]"><report test=".">section</report></rule>
+        <rule context="/article/section[@role='foo']"><report test=".">section role='foo'</report></rule>
+        <rule context="/article/section/@role"><report test=".">@role</report></rule>
+         <rule context="/article/section/@role[.='foo']"><report test=".">@role = 'foo'</report></rule>
+    </pattern>,
+    map{
+      'instance':document{<article><section role='foo'/></article>},
+      'globals':map{}
+    }
+  )
+  return
+  unit:assert-equals(
+    $result,
+    (
+      <svrl:active-pattern/>,
+      <svrl:fired-rule context='/article'/>,
+      <svrl:successful-report
+      test='.' location='/Q{{}}article[1]'><svrl:text>article</svrl:text></svrl:successful-report>,
+      <svrl:fired-rule context='/article/section[true()]'/>,
+      <svrl:successful-report
+      test='.' location='/Q{{}}article[1]/Q{{}}section[1]'><svrl:text>section</svrl:text></svrl:successful-report>,
+      <svrl:fired-rule context='/article/section/@role'/>,
+      <svrl:successful-report
+      test='.' location='/Q{{}}article[1]/Q{{}}section[1]/@role'><svrl:text>@role</svrl:text></svrl:successful-report>
+    )
+  )
+};
+
 (: DIAGNOSTICS :)
 
 (:~ diagnostics reported correctly in SVRL :)

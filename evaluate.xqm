@@ -152,8 +152,8 @@ as element()*
   )
 };
 
-(:~ Evaluate rules, stopping once one fires.
- : (Necessitated by ISO2020 6.5.)
+(:~ Evaluate rules, only further processing those whose context has not already   : been matched.
+ : @see ISO2020 6.5.
  : @param rules the rules to evaluate
  : @param prolog the query prolog consisting of any variable and namespace declarations
  : @param context the validation context
@@ -169,10 +169,50 @@ as element()*
   then ()
   else
     (: let $_ := trace('[1]RULE prolog='||$prolog) :)
-    let $result := eval:rule(head($rules), $prolog, $context)
-    return if($result)
-    then $result
-    else eval:rules(tail($rules), $prolog, $context)
+    let $rule := head($rules)
+    let $rule-context := eval:rule-context($rule, $prolog, $context)
+    (: let $_ := trace('context=' || serialize($context, map{'method':'adaptive'})) :)
+    return 
+    (
+      eval:process-rule($rule, $prolog, $rule-context, $context),
+      eval:rules(
+        tail($rules), 
+        $prolog, 
+        (:update the matched contexts each time:)
+        map:put(
+          $context,
+          'matched',
+          $context?matched | $rule-context
+        )
+      )
+    )
+};
+
+(:~ Evaluate the rule context.
+ : @param rule the rule whose context is to be evaluated
+ : @param prolog the query prolog consisting of any variable and namespace declarations
+ : @param context the validation context
+ : @return the rule context
+ :)
+declare function eval:rule-context(
+  $rule as element(sch:rule),
+  $prolog as xs:string?,
+  $context as map(*)
+) as node()*
+{
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $query := string-join(
+      ($prolog, utils:local-variable-decls($rule/sch:let),
+      if($rule/sch:let) then 'return ' else '', $rule/@context),
+      ' '
+    )
+  (: let $_ := trace('[2]RULE query='||$query) :)
+  return utils:eval(
+    $query => utils:escape(),
+    map:merge((map{'':$context?instance}, $context?globals)),
+    map{'dry-run':$context?dry-run},
+    $rule/@context
+  )
 };
 
 (:~ Evaluates a rule.
@@ -187,44 +227,48 @@ declare function eval:rule(
 )
 as element()*
 {
-  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
-  let $variable-errors := utils:evaluate-rule-variables(
-    $rule/sch:let,
-    $prolog,
-    map:merge((map{'':$context?instance}, $context?globals)),
-    $context,
-    ()
-  )
-  let $query := string-join(
-      ($prolog, utils:local-variable-decls($rule/sch:let),
-      if($rule/sch:let) then 'return ' else '', $rule/@context),
-      ' '
-    )
-  (: let $_ := trace('[2]RULE query='||$query) :)
-  let $rule-context := utils:eval(
-    $query => utils:escape(),
-    map:merge((map{'':$context?instance}, $context?globals)),
-    map{'dry-run':$context?dry-run},
-    $rule/@context
-  )
+  let $rule-context := eval:rule-context($rule, $prolog, $context)
   return 
   if($rule-context)
   then
     if($context?dry-run eq 'true')
     then 
     (
+      let $variable-errors := utils:evaluate-rule-variables(
+        $rule/sch:let,
+        $prolog,
+        map:merge((map{'':$context?instance}, $context?globals)),
+        $context,
+        ()
+      )
+      return 
       $variable-errors[self::svrl:*],
       $rule-context[self::svrl:*],
       eval:assertions($rule, $prolog, <_/>, $context)	(:pass dummy context node:)
     )
-    else
-    (
-      <svrl:fired-rule>
+    else eval:process-rule($rule, $prolog, $rule-context, $context)
+  else ()
+};
+
+(:~ Process a rule.
+ : @param rule the rule to process
+ : @param prolog the query prolog consisting of any variable and namespace declarations
+ : @param rule-context the evaluated rule context
+ : @param context the validation context :)
+declare function eval:process-rule(
+  $rule as element(sch:rule),
+  $prolog as xs:string?,
+  $rule-context as node()*,
+  $context as map(*)
+)
+{
+  if(exists($rule-context) and empty($rule-context intersect $context?matched))
+  then
+  (<svrl:fired-rule>
       {$rule/(@id, @name, @context, @role, @flag),
       if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
       </svrl:fired-rule>,
-      eval:assertions($rule, $prolog, $rule-context, $context)
-    )
+      eval:assertions($rule, $prolog, $rule-context, $context))
   else ()
 };
 
