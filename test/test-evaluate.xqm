@@ -1101,6 +1101,26 @@ declare %unit:test function _:built-in-entities-namespaces()
   )
 };
 
+(:don't allow the XML namespace to be (re-)declared :)
+declare %unit:test function _:xml-ns-decls()
+{
+  let $result := eval:schema(
+    document{<foo xml:lang='en' xml:space='default' xml:base='blort.xml'></foo>},
+    <sch:schema>
+      <sch:ns prefix='xml' uri=''/>
+      <sch:pattern>
+        <sch:rule context="*/@xml:*">
+          <sch:report test="."/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )  
+  return (
+    unit:assert(count($result/svrl:successful-report) = 3)
+  )
+};
+
 (:DOCUMENTS ATTRIBUTE:)
 
 declare %unit:test function _:pattern-documents()

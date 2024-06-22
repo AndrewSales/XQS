@@ -69,7 +69,9 @@ as map(*)
 declare function c:make-ns-decls($nss as element(sch:ns)*)
 as xs:string?
 {
-  $nss ! c:make-ns-decl(.) => string-join()
+  (:exclude the XML namespace:)
+  $nss[not(@uri eq 'http://www.w3.org/XML/1998/namespace')][not(@prefix eq 'xml')]
+  ! c:make-ns-decl(.) => string-join()
 };
 
 declare %private function c:make-ns-decl($ns as element(sch:ns))

@@ -500,6 +500,29 @@ declare %unit:test function _:built-in-entities-namespaces()
   )
 };
 
+(:don't allow the XML namespace to be (re-)declared :)
+declare %unit:test function _:xml-ns-decls()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:ns prefix='xml' uri=''/>
+      <sch:pattern>
+        <sch:rule context="*/@xml:*">
+          <sch:report test="."/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo xml:lang='en' xml:space='default' xml:base='blort.xml'></foo>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 3)
+  )
+};
+
 (:~ see https://github.com/AndrewSales/XQS/issues/10 :)
 declare %unit:test function _:assertion-message-braces()
 {

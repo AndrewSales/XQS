@@ -447,8 +447,8 @@ declare %unit:test function _:rule-abstract-011(){
 (:~ It is an error to extend an abstract rule that is defined in a different pattern
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
-declare %unit:ignore function _:rule-abstract-021(){let $result:=eval:schema(document{<element/>},
-<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+declare %unit:test function _:rule-abstract-021(){let $result:=eval:schema(document{<element/>},
+ie:include-expand(<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:pattern>
         <sch:rule abstract="true" id="abstract-rule">
           <sch:report test="self::element"/>
@@ -459,7 +459,7 @@ declare %unit:ignore function _:rule-abstract-021(){let $result:=eval:schema(doc
           <sch:extends rule="abstract-rule"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>), '') return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is an attribute node
 : @see ISO Schematron 2016: Annex C Clause 2 (xslt), Annex H Clause 2 (xslt2), Annex I Clause 2 (xpath2) 
 :)

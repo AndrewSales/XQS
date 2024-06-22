@@ -115,6 +115,7 @@ as node()*
   (:TODO language fixup:)
 };
 
+(:~ Instantiate abstract patterns and delete abstract patterns. :)
 declare function ie:expand-patterns($schema as element(sch:schema))
 as element(sch:schema)
 {
@@ -130,6 +131,11 @@ as element(sch:schema)
   return $copy
 };
 
+(:~ Instantiate an abstract pattern by inserting the abstract pattern body and
+ : replacing any parameter references.
+ : @param pattern the pattern instance
+ : @param abstract the abstract pattern
+ :)
 declare function ie:expand-pattern(
   $pattern as element(sch:pattern),
   $abstract as element(sch:pattern)
@@ -147,6 +153,10 @@ as element(sch:pattern)
   </sch:pattern>
 };
 
+(:~ Process the contents of an abstract pattern instance.
+ : @param node child nodes of the instance
+ : @param params instance parameters
+ :)
 declare function ie:pattern-filter(
   $node as node()*,
   $params as element(sch:param)*
@@ -185,6 +195,11 @@ as attribute()*
     default return $element/@*
 };
 
+(:~ Replace parameter references in the attribute value passed in with parameter : values.
+ : @param element parent element of the attribute
+ : @param attribute attribute value to be updated
+ : @param params parameters to replace
+ :)
 declare function ie:pattern-attributes(
   $element as element(),
   $attribute as xs:string,
@@ -200,7 +215,7 @@ as attribute()*
   )
 };
 
-(:~ Replace parameter references.
+(:~ Replace parameter references with parameter values.
  : N.B. This matches the recursive approach SchXslt uses.
  :)
 declare function ie:replace-param-refs(
