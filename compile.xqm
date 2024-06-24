@@ -71,18 +71,21 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
     compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
     $active-patterns ! compile:pattern(., $active-phase),
-    'declare function local:schema(){',
-    <svrl:schematron-output>
-      {output:schema-title($schema/sch:title)}
-      {$schema/@schemaVersion}
-      {if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()}
-      {output:namespace-decls-as-svrl($schema/sch:ns)}
-    {'{', string-join(
-      for $pattern in $active-patterns 
-      return compile:function-name($pattern) ||'()',
-      ','
-    ), '}'} </svrl:schematron-output>,
-    '};' || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
+    compile:declare-function(
+      'local:schema',
+      (),
+      <svrl:schematron-output>
+        {output:schema-title($schema/sch:title)}
+        {$schema/@schemaVersion}
+        {if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()}
+        {output:namespace-decls-as-svrl($schema/sch:ns)}
+      {'{', string-join(
+        for $pattern in $active-patterns 
+        return compile:function-name($pattern) ||'()',
+        ','
+      ), '}'} </svrl:schematron-output>
+    )
+    || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
     'local:schema()'
   ) => serialize(map{'method':'basex'})
 };
@@ -118,15 +121,18 @@ declare function compile:pattern(
   if($pattern/@documents)
   then compile:pattern-documents($pattern, $phase)
   else
-    ('declare function ' || compile:function-name($pattern) || '(){',
-      <svrl:active-pattern>
-      {$pattern/(@id, @name, @role)}
-      </svrl:active-pattern>, ', local:rules((' ||
-      string-join(for $rule in $pattern/sch:rule 
-      return ' ' || compile:function-name($rule) || '#2', ',') || '), (' ||
-      string-join(for $rule in $pattern/sch:rule 
-      return ' ' || compile:function-name($rule) || '#0', ',') || '), ())',
-      '};',
+    (compile:declare-function(
+      compile:function-name($pattern),
+      (),
+      (
+        <svrl:active-pattern>
+        {$pattern/(@id, @name, @role)}
+        </svrl:active-pattern>, ', local:rules((' ||
+        string-join(for $rule in $pattern/sch:rule 
+        return ' ' || compile:function-name($rule) || '#2', ',') || '), (' ||
+        string-join(for $rule in $pattern/sch:rule 
+        return ' ' || compile:function-name($rule) || '#0', ',') || '), ())')
+      ),
       $pattern/sch:rule ! 
       (compile:rule(., $phase), compile:rule-context(., $phase))
     )
@@ -193,8 +199,7 @@ declare function compile:rule-documents(
   return (
     compile:declare-function(
       $function-name, 
-      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED, $compile:SUBORDINATE_DOCS), (: || ' as document-node(){' || :)
-      (
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED, $compile:SUBORDINATE_DOCS),      (
       string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
       (if($rule/sch:let) then ' return ' else ()) ||
       utils:declare-variable(
@@ -258,9 +263,7 @@ declare %private function compile:rule-context-body(
 )
 as xs:string
 {
-  string-join(compile:root-context-variables($phase/sch:let), ' ') ||
-  string-join(compile:root-context-variables($rule/../sch:let), ' ') ||
-  string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
+  compile:variables($rule, $phase) ||
   (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
   $doc || '/(' || $rule/@context => utils:escape() || ')'
 };
@@ -303,22 +306,21 @@ declare function compile:assertion(
   if(not($assertion/(self::sch:assert|self::sch:report)))
   then error()	(:shouldn't happen if schema is valid:)
   else
-  'declare function ' || compile:function-name($assertion, $distinct-name) ||
-  '(' || $compile:RULE_CONTEXT || '){' ||
-  string-join(compile:root-context-variables($phase/sch:let), ' ') ||
-  string-join(compile:root-context-variables($assertion/../../sch:let), ' ') ||
-  string-join(utils:local-variable-decls($assertion/../sch:let), ' ') || ' ' ||
-  utils:declare-variable(
-    $compile:RESULT_NAME,
-    $compile:RULE_CONTEXT || '/(' || $assertion/@test => utils:escape() || ')'
-  ) ||
-  ' return if(' || $compile:RESULT || ') then ' ||
-  (
-    if($assertion/self::sch:assert) 
-    then '() else ' || compile:assertion-message($assertion) => serialize()
-    else compile:assertion-message($assertion) => serialize() || ' else ()'
+  compile:declare-function(
+    compile:function-name($assertion, $distinct-name),
+    $compile:RULE_CONTEXT,
+    compile:variables($assertion, $phase) || ' ' ||
+    utils:declare-variable(
+      $compile:RESULT_NAME,
+      $compile:RULE_CONTEXT || '/(' || $assertion/@test => utils:escape() || ')'
+    ) ||
+    ' return if(' || $compile:RESULT || ') then ' ||
+    (
+      if($assertion/self::sch:assert) 
+      then '() else ' || compile:assertion-message($assertion) => serialize()
+      else compile:assertion-message($assertion) => serialize() || ' else ()'
+    )
   )
-  || '};'
 };
 
 declare %private function compile:assertion-message($assertion as element())
@@ -351,10 +353,33 @@ as element()
   }
 };
 
-declare %private function compile:root-context-variables($variables as element(sch:let)*)
+declare %private function compile:variables(
+  $context as element(),
+  $phase as element(sch:phase)?
+)
+as xs:string?
 {
-  for $var in $variables 
-  return utils:declare-variable(
+  string-join(
+    (compile:root-context-variables($context, $phase),  
+    utils:local-variable-decls($context/ancestor-or-self::sch:rule/sch:let)), 
+    ' '
+  )
+};
+
+declare %private function compile:root-context-variables(
+  $context as element(),
+  $phase as element(sch:phase)?
+)
+as xs:string*
+{
+  $phase/sch:let ! compile:root-context-variable(.),
+  $context/ancestor::sch:pattern/sch:let ! compile:root-context-variable(.)
+};
+
+declare %private function compile:root-context-variable($var as element(sch:let))
+as xs:string?
+{
+  utils:declare-variable(
     $var/@name,
     if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value => utils:escape() || ')'
     else serialize($var/*)
@@ -455,7 +480,7 @@ declare %private function compile:declare-function(
 as xs:string
 {
   'declare function ' || $name || '(' || string-join($params, ',') || '){'
-  || serialize($body) || '};'
+  || serialize($body, map{'method':'basex'}) || '};'
 };
 
 (:~ Create a variable declaration. 
