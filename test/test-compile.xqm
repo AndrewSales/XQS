@@ -1583,3 +1583,75 @@ declare %unit:test function _:rule-variable-with-nss()
     )
   )
 };
+
+declare %unit:test function _:subject-assert()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='@bar eq "bar"' subject='@bar'>expected 'bar'; got <sch:value-of select='@bar'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo bar='blort'/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/@location/data(),
+      '/Q{}foo[1]/@bar'
+    )
+  )
+};
+
+declare %unit:test function _:subject-report()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:report test='@bar ne "bar"' subject='@bar'>expected 'bar'; got <sch:value-of select='@bar'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo bar='blort'/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:successful-report/@location/data(),
+      '/Q{}foo[1]/@bar'
+    )
+  )
+};
+
+declare %unit:test function _:subject-rule()
+{
+    let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='//foo' subject='..'>
+          <sch:assert test='@bar eq "bar"'>expected 'bar'; got <sch:value-of select='@bar'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root><foo bar='blort'/></root>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:failed-assert/@location/data(),
+      '/Q{}root[1]'
+    )
+  )
+};
