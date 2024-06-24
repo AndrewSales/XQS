@@ -329,7 +329,11 @@ as element()
     if($assertion/self::sch:assert) then 'svrl:failed-assert' else 'svrl:successful-report')
   }
   {
-    attribute{'location'}{'{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
+    attribute{'location'}{
+      if($assertion/@subject or $assertion/../@subject)
+      then '{path(($Q{http://www.andrewsales.com/ns/xqs}context)/' ||
+        ($assertion/@subject, $assertion/../@subject)[1] || ')}'
+      else '{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
     $assertion/(@id, @role, @flag),
     attribute{'test'}{$assertion/@test => replace('\{', '{{') => replace('\}', '}}')},
     $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]

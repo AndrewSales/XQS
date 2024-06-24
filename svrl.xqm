@@ -45,7 +45,12 @@ declare function output:assertion-message(
     QName("http://purl.oclc.org/dsdl/svrl", 
     if($assertion/self::sch:assert) then 'failed-assert' else 'successful-report')}
     {
-      attribute{'location'}{path($rule-context)},
+      attribute{'location'}{utils:location(
+        $assertion,
+        $prolog,
+        $rule-context,
+        $context
+      )},
       $assertion/(@id, @role, @flag, @test),
       output:diagnostics(
         $context?diagnostics[@id = tokenize($assertion/@diagnostics)],

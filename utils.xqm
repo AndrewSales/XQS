@@ -190,6 +190,35 @@ declare function utils:eval(
   else xquery:eval($query, $bindings, map{'pass':'true'})
 };
 
+(:~ Obtain the (XPath) location of a node which has failed an assertion.
+ : Use @subject to refine the location by evaluating its expression against the
+ : rule context node: the assertion's @subject if present, falling back to
+ : the parent rule's @subject. Otherwise, use the location of the rule context
+ : node.
+ : @param assertion the assertion reported
+ : @param prolog query prolog
+ : @param rule-context the evaluated rule context
+ : @param context evaluation context
+ :)
+declare function utils:location(
+  $assertion as element(),
+  $prolog as xs:string?,
+  $rule-context as node(),
+  $context as map(*)
+)
+as xs:string
+{
+  if($assertion/@subject or $assertion/../@subject)
+  then utils:eval(
+    $prolog || ($assertion/@subject, $assertion/../@subject)[1],
+    map:merge((map{'':$rule-context}, $context?globals)),
+    map{'dry-run':$context?dry-run},
+    $rule-context
+  ) => path()
+  else
+  path($rule-context)	(:just use rule context:)
+};
+
 declare function utils:parse-function(
   $node as element(xqy:function),
   $options as map(*)
