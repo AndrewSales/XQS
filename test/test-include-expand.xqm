@@ -154,6 +154,28 @@ declare %unit:test function _:expand-pattern()
     )
 };
 
+declare %unit:test function _:process-extends()
+{
+  let $doc := doc('test-cases/extends.sch')
+  let $schema := ie:process-includes($doc/*)
+  return
+  (
+    unit:assert(not($schema//sch:extends)),
+    unit:assert(count($schema/sch:pattern) = 3)
+  )
+};
+
+declare %unit:test function _:process-extends-recursive()
+{
+  let $doc := doc('test-cases/extends-recursive.sch')
+  let $schema := ie:process-includes($doc/*)
+  return
+  (
+    unit:assert(not($schema//sch:extends)),
+    unit:assert(count($schema/sch:pattern) = 5)
+  )
+};
+
 (:TODO 
 detect circular references
 :)

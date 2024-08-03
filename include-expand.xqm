@@ -30,9 +30,13 @@ declare function ie:process-includes(
   let $copy :=
   copy $copy := $schema
     modify
-      for $include in ($copy//sch:include | $copy//sch:extends[@href]) 
+      for $include in ($copy//sch:include | $copy//sch:extends[@href])
+      let $replacement := ie:process-include($include, $schema/base-uri())
       return
-      replace node $include with ie:process-include($include, $schema/base-uri())
+      replace node $include with 
+        if($include/self::sch:extends)
+        then $replacement/*
+        else $replacement
     return $copy
     
   return 
@@ -41,45 +45,48 @@ declare function ie:process-includes(
   else $copy
 };
 
-(:~ Process includes, including any nested ones. :)
+(:~ For a given inclusion instruction, retrieve the element to be included,
+ : performing base URI fixup on any inclusion instructions it contains. 
+ : @param include the inclusion instruction
+ : @param base-uri base URI of the containing document
+ :)
 declare %private function ie:process-include(
   $include as element(),
   $base-uri as xs:anyURI
 ) as node()
 {
-  (: let $_ := trace('include='||$include=>serialize()) :)
-  (: let $_ := trace('base URI='||$base-uri) :)
-  (: let $_ := trace('resolving include='||$include/@href) :)
+  (: let $_ := trace('include='||$include=>serialize())
+  let $_ := trace('base URI='||$base-uri)
+  let $_ := trace('resolving include='||$include/@href) :)
   let $include := ie:get-inclusion($include/@href, $base-uri)
   let $include-base-uri := $include/base-uri()	(:store before we create the copy:)
   return
   copy $copy := $include
     modify
-      for $include in ($copy/descendant-or-self::sch:include | $copy/descendant-or-self::sch:extends[@href]) 
-      let $resolved-uri := resolve-uri($include/@href, $include-base-uri)
+      for $href in $copy/(descendant-or-self::sch:include | descendant-or-self::sch:extends)/@href
+      let $resolved-uri := resolve-uri($href, $include-base-uri)
       return
-      replace value of node $include/@href with $resolved-uri
+      replace value of node $href with $resolved-uri
   return $copy    
 };
 
-(:~ Return the document or element to be included. :)
+(:~ Return the element to be included. 
+ : @param href href attribute giving location of the inclusion
+ : @param base-uri base URI of the inclusion
+ :)
 declare %private function ie:get-inclusion(
   $href as attribute(href),
   $base-uri as xs:anyURI
 )
-as node()
+as element()
 {
   let $url := if(contains($href, '#')) then substring-before($href, '#') else $href
   let $fragment := substring-after($href, '#')
   let $doc := doc(resolve-uri($url, $base-uri))
   let $inclusion as element() :=
     if($fragment)
-    then ($doc//*[@id = $fragment])[1]
+    then ($doc//*[@id eq $fragment])[1]
     else $doc/*
-  let $inclusion :=
-    if($href/parent::sch:extends)
-    then $inclusion/*
-    else $inclusion
   (: let $_ := trace('inclusion='||serialize($inclusion)||' base URI='||$inclusion/base-uri()) :)
   
   return $inclusion
