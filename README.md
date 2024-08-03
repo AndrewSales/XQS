@@ -20,6 +20,8 @@ Basic [command scripts](https://docs.basex.org/wiki/Commands#Command_Scripts) ar
 
 The `-b` options given below simply bind a variable; their order is not significant.
 
+The named example files used in the commands below are also included in this repository, alongside the command scripts.
+
 ### Evaluate
 
 Run `evaluate.bxs`, passing the locations of the XML document (`uri`) and the Schematron schema (`schema`):
@@ -30,7 +32,7 @@ You can also pass an optional phase (as `phase`):
 
     basex -buri=myDoc.xml -bschema=mySchema.sch -bphase=myPhase evaluate.bxs
 
-The output is SVRL.
+The output is in the Schematron Validation Reporting Language (SVRL) format.
 
 ### Compile
 
@@ -38,18 +40,22 @@ Run `compile.bxs`, passing the location of the Schematron schema (`schema`):
 
     basex -bschema=mySchema.sch compile.bxs
     
-You can also pass an optional phase:
+Example output for this command is shown in `mySchema.xqy`.    
+    
+If your schema uses phases, you can also select a phase:
 
     basex -bschema=mySchema.sch -bphase=myPhase compile.bxs
     
-**Note** a current limitation is that schema phase can only be specified during compilation and not at validation-time: see [#7](https://github.com/AndrewSales/XQS/issues/7).
+Example output for this command is shown in `mySchema-myPhase.xqy`.
 
-The output is an XQuery main module, which contains two external variables allowing the document to validate to be passed in:
+The output from `compile.bxs` is an XQuery main module, which contains two external variables allowing the document to validate to be passed in:
 
     $Q{http://www.andrewsales.com/ns/xqs}uri
     $Q{http://www.andrewsales.com/ns/xqs}doc
     
 `$uri` should be a URI. If your XQuery processor supports it, you can use `$doc` to pass a document node instead. 
+
+**CAUTION** When compiling, avoid using the XQS namespace (`http://www.andrewsales.com/ns/xqs`) in your schema, which XQS uses for variables internal to the application.
 
 ### Validate
 
@@ -77,6 +83,18 @@ or
 
     xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
     
+## Inclusion and expansion
+
+Inclusions are resolved and abstract rules and patterns instantiated automatically, whether you are compiling or evaluating a schema. There is no need to carry out a separate initial process.
+
+If you do wish to perform this step only, in order to produce a fully resolved and instantiated schema, `include-expand.bxs` is provided for this purpose. Run it, passing the location of the schema, as follows:
+
+    basex -bschema=myModularSchema.sch include-expand.bxs
+    
+Example output for this command is shown in `myResolvedSchema.sch`.
+    
+The output from `include-expand.bxs` is the schema with inclusions resolved and abstract patterns and rules instantiated. (Note that this command script can be used on **any** valid Schematron schema, regardless of the target query language; it does not depend on the query language binding the schema declares.)  
+    
 # Running the test suite
 The test suite is found in the `test/ `sub-directory.
 To run all the tests there, at the command line, specify the `-t` option and the path to the `test` directory:
@@ -86,17 +104,11 @@ To run all the tests there, at the command line, specify the `-t` option and the
 The command returns `0` if all tests pass, otherwise `1`.  
     
 # Advisory notes
-This is a pre-release and should be treated as such.
+This is an early release and should be treated as such. Bug reports, feature requests and other observations are welcome.
 Please refer to the issues for a list of known bugs and planned enhancements.
 
 ## Query language binding
 Your schema should specify a `queryBinding` value of : `xquery`, `xquery3` or `xquery31`, in any combination of upper or lower case.
-
-## Inclusion and expansion
-
-These are not yet supported: see [#6](https://github.com/AndrewSales/XQS/issues/6). If your schema makes use of these, consider using a tool such as [SchXslt](https://github.com/schxslt/schxslt) to perform these steps in the meantime.
-
-**CAUTION** When compiling, avoid using the XQS namespace (`http://www.andrewsales.com/ns/xqs`) in your schema, which XQS uses for variables internal to the application.
 
 # Troubleshooting
 
@@ -104,7 +116,7 @@ These are not yet supported: see [#6](https://github.com/AndrewSales/XQS/issues/
 
 When using an XSLT implementation, a rule's `context` attribute with an XPath such as `foo` will match any instance of that element in the document being validated, and the rule is said to "fire".
 
-The key difference with XQS is that it evaluates these XPaths _in the context of the document root_, so `foo` will only match **if it is the root element**.
+The key difference with XQS is that it evaluates these XPaths _in the context of the document root_, so the expression `foo` will only match **if it is the root element**.
 
 To address this, XPaths should be changed as appropriate, e.g. to `//foo`, which will ensure that the element would be matched anywhere in the document.
 
