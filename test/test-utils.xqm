@@ -30,3 +30,25 @@ declare %unit:test function _:local-variable-decls()
     'let $foo:=bar let $blort:=wibble'
   )
 };
+
+declare %unit:test function _:global-typed-variable-decls()
+{
+  let $decls := util:global-variable-decls(
+    (<sch:let name='foo' value='bar' as='xs:string'/>, <sch:let name='blort' value='1' as='xs:integer'/>)
+  )
+  return unit:assert-equals(
+    $decls,
+    'declare variable $foo as xs:string :=bar;declare variable $blort as xs:integer :=1;'
+  )
+};
+
+declare %unit:test function _:local-typed-variable-decls()
+{
+  let $decls := util:local-variable-decls(
+    (<sch:let name='foo' value='bar' as='xs:string'/>, <sch:let name='blort' value='1' as='xs:integer'/>)
+  )
+  return unit:assert-equals(
+    $decls,
+    'let $foo as xs:string :=bar let $blort as xs:integer :=1'
+  )
+};

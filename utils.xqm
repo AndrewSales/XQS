@@ -17,7 +17,8 @@ as xs:string?
 {
   string-join(
     for $var in $globals
-    return 'declare variable $' || $var/@name || ':=' || utils:variable-value($var)  || ';'
+    return 'declare variable $' || $var/@name || (if($var/@as) then (' as ' || $var/@as || ' ') else '') ||
+    ':=' || utils:variable-value($var)  || ';'
   )
 };
 
@@ -40,7 +41,8 @@ as xs:string
 {
   string-join(
     for $var in $locals
-    return utils:declare-variable($var/@name, utils:variable-value($var)),
+    return utils:declare-variable($var/@name, utils:variable-value($var),
+  $var/@as),
     ' '
   )
 };
@@ -106,6 +108,17 @@ declare function utils:declare-variable(
 as xs:string
 {
   'let $' || $name || ':=' || $value
+};
+
+declare function utils:declare-variable(
+  $name as xs:string,
+  $value as item()+,
+  $type as attribute(as)?
+)
+as xs:string
+{
+  'let $' || $name || (if($type) then (' as ' || $type || ' ') else '') 
+  || ':=' || $value
 };
 
 (:VARIABLES:)
