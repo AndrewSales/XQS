@@ -103,6 +103,15 @@ as xs:string
 
 declare function utils:declare-variable(
   $name as xs:string,
+  $value as item()+
+)
+as xs:string
+{
+  'let $' || $name || ':=' || $value
+};
+
+declare function utils:declare-variable(
+  $name as xs:string,
   $value as item()+,
   $type as attribute(as)?
 )

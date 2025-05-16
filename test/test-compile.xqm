@@ -1655,3 +1655,144 @@ declare %unit:test function _:subject-rule()
     )
   )
 };
+
+(:TYPED VARIABLES:)
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:typed-global-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:let name='foo' value="12" as='map(*)'/>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="$foo instance of map(*)"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ : N.B. the variable's type is only checked when evaluated, hence the 
+ : deliberately failing assertion with message reporting its value.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-global-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:let name='foo' as='element(bar)'><foo/></sch:let>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>          
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};
+
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:typed-pattern-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' value="12" as='map(*)'/>
+        <sch:rule context="/">
+          <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ : N.B. the variable's type is only checked when evaluated, hence the 
+ : deliberately failing assertion with message reporting its value.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-pattern-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:let name='foo' as='element(bar)'><foo/></sch:let>
+        <sch:rule context="/">
+          <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:typed-rule-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' value="12" as='map(*)'/>
+          <sch:assert test="$foo instance of map(*)"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};
+
+(:~ If @as is included correctly, we should get a type error when the compiled
+ : query is evaluated.
+ : N.B. the variable's type is only checked when evaluated, hence the 
+ : deliberately failing assertion with message reporting its value.
+ :)
+declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-rule-variable()
+{
+  let $compiled := compile:schema(
+     <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:let name='foo' as='element(bar)'><foo/></sch:let>
+          <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+};

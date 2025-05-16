@@ -381,8 +381,14 @@ as xs:string?
 {
   utils:declare-variable(
     $var/@name,
-    if($var/@value) then $compile:INSTANCE_DOC || '/(' || $var/@value => utils:escape() || ')'
-    else serialize($var/*)
+    $compile:INSTANCE_DOC || '/(' || 
+    (
+      if($var/@value) 
+      then $var/@value => utils:escape()
+      else serialize($var/*)
+    )
+    || ')',
+    $var/@as
   )
 };
 
