@@ -359,6 +359,27 @@ declare function eval:phase($context as map(*))
         $dry-run
       )
   let $context := map:put($context, 'globals', $globals)
+  let $_:= map:merge(($context, $dry-run))
     
-  return  $context?patterns ! eval:pattern(., map:merge(($context, $dry-run)))
+  return
+  if($phase/@from) then eval:phase-from($phase/@from, $context)
+  else $context?patterns ! eval:pattern(., $context)
+};
+
+declare function eval:phase-from(
+  $from as attribute(from),
+  $context as map(*)
+)
+{
+  let $instance := $context?instance
+    
+  let $contexts := utils:eval(
+    $from/data(), 
+    map:merge((map{'':$context?instance}, $context?globals)),
+    map{'dry-run':$context?dry-run},
+    $from
+  )
+  
+  return
+  $context?patterns ! eval:pattern(., map:merge(($context, map{'instance':$contexts})))
 };
