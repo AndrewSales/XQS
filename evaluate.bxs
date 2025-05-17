@@ -5,7 +5,8 @@
 declare variable $uri external;
 declare variable $schema external;
 declare variable $phase external := '';
+declare variable $options external := map{};
 
-xqs:validate(doc($uri), doc($schema)/*, $phase)
+xqs:validate(doc($uri), doc($schema)/*, $phase, $options)
 </xquery>
 </commands>

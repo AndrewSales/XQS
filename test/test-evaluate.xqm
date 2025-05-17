@@ -1788,6 +1788,29 @@ declare %unit:test function _:phase-from-attribute-evaluates-empty()
   )
 };
 
+(:~ schema/@schematronEdition
+ :)
+declare %unit:test function _:schematron-edition()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema schematronEdition='2025'>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:report test='true()'><sch:name/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      $result/@schematronEdition/data(),
+      '2025'
+    )
+  )
+};
+
 (:TODO
 @when
 @severity

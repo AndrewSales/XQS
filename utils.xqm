@@ -249,3 +249,21 @@ as element()+
     </svrl:failed-assert>
   }  
 };
+
+(:~ Report the Schematron edition declared in the schema. 
+ : This implementation emits the schema root element with any schematronEdition 
+ : attribute if present to stderr.
+ : @param schema the schema 
+ : @param map of options
+ : @see ISO2025 5.5.15
+ :)
+declare function utils:report-edition(
+  $schema as element(sch:schema),
+  $options as map(*)?
+)
+{
+  if($options?report-edition = ('true', 'y', 'yes', '1'))
+  then 
+  trace(<sch:schema>{$schema/@schematronEdition}</sch:schema>)    
+  else ()
+};
