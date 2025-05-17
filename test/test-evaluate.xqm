@@ -1755,6 +1755,39 @@ declare %unit:test function _:phase-from-attribute-no-phase()
   )
 };
 
+(:~ @from present and phase selected, but evaluation result is empty: rule does
+ : not fire and so no assertions are evaluated.
+ :)
+declare %unit:test function _:phase-from-attribute-evaluates-empty()
+{
+  let $result := eval:schema(
+    document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
+    <sch:schema>
+      <sch:phase id='wibble' from='/no/such/path'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:pattern id='wibble'>
+        <sch:rule context='.//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    'wibble'
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      0
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      0
+    )
+  )
+};
+
 (:TODO
 @when
 @severity
