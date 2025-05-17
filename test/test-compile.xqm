@@ -1868,7 +1868,7 @@ declare %unit:test function _:phase-from-attribute-evaluates-empty()
 {
   let $compiled := compile:schema(
     <sch:schema>
-      <sch:phase id='wibble' from='/foo/bar'>
+      <sch:phase id='wibble' from='/no/such/path'>
         <sch:active pattern='wibble'/>
       </sch:phase>
       <sch:pattern id='wibble'>
@@ -1877,7 +1877,7 @@ declare %unit:test function _:phase-from-attribute-evaluates-empty()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    ''
+    'wibble'
   )
   let $result := xquery:eval(
     $compiled,
