@@ -54,6 +54,7 @@ declare function eval:schema(
   <svrl:schematron-output>
   {output:schema-title($schema/sch:title)}
   {$schema/@schemaVersion}
+  {$schema/@schematronEdition}
   {if($context?phase) then attribute{'phase'}{$context?phase/@id} else ()}
   {output:namespace-decls-as-svrl($schema/sch:ns)}
   {eval:phase($context)}
