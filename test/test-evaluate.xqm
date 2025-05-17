@@ -1707,11 +1707,11 @@ declare %unit:test function _:phase-from-attribute()
     <blort wibble='1'/>
     <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
     <sch:schema>
-      <sch:phase id='wibble' from='/foo/bar/blort'>
+      <sch:phase id='wibble' from='/foo/bar'>
         <sch:active pattern='wibble'/>
       </sch:phase>
       <sch:pattern id='wibble'>
-        <sch:rule context='//blort[@wibble]'>
+        <sch:rule context='.//blort[@wibble]'>
           <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
         </sch:rule>
       </sch:pattern>
@@ -1726,9 +1726,41 @@ declare %unit:test function _:phase-from-attribute()
   )
 };
 
+(:~ @from present, but relevant phase not selected, so this will identify all 
+ : 3 blort elements, rather than the 2 at the XPath specified by @from. 
+ :)
+declare %unit:test function _:phase-from-attribute-no-phase()
+{
+  let $result := eval:schema(
+    document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
+    <sch:schema>
+      <sch:phase id='wibble' from='/foo/bar'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:pattern id='wibble'>
+        <sch:rule context='.//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      3
+    )
+  )
+};
+
 (:TODO
-pattern/@documents
-diagnostics
-properties
-functions
+@when
+@severity
+@schematronEdition
+@visit-each
+group
+library
+rules
 :)
