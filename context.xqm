@@ -320,3 +320,26 @@ as map(*)
     )
   else $context
 };
+
+(:~ Establish the context against which rule context expressions are evaluated.
+ : Normally this will be the instance document, but with phase/@from, this can
+ : change.
+ : @param context the overall validation context
+ :)
+declare function c:rule-evaluation-context($context as map(*))
+as map(*)
+{
+  let $from := $context?from
+  return
+  if($from)
+  then
+    let $from-context := utils:eval(
+      utils:make-query-prolog($context) || $from => utils:escape(), 
+      map:merge((map{'':$context?instance}, $context?globals)),
+      map{'dry-run':$context?dry-run},
+      $from
+    )
+    return map:merge((map{'':$from-context}, $context?globals))
+  else
+    map:merge((map{'':$context?instance}, $context?globals))
+};

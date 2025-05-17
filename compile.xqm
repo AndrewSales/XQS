@@ -265,7 +265,9 @@ as xs:string
 {
   compile:variables($rule, $phase) ||
   (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
-  $doc || '/(' || $rule/@context => utils:escape() || ')'
+  $doc ||
+  (if($phase/@from) then '/(' || $phase/@from => utils:escape() || ')' else ())
+  || '/(' || $rule/@context => utils:escape() || ')'
 };
 
 declare function compile:rule(

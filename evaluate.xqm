@@ -91,15 +91,10 @@ declare function eval:pattern(
         $context?globals,
         map{'dry-run':$context?dry-run}
       )
-  (: let $_ := trace('PATTERN $globals='||serialize($globals, map{'method':'adaptive'})) :)
-  let $context := map:put($context, 'globals', $globals)
-  
-  (: let $_ := trace('instance='||$context?instance=>serialize()|| ' (' || count($context?instance) || ')') :)
-  
-  (: let $_ := trace('PATTERN '||$pattern/@id||' prolog='||$prolog) :)
-  (: let $_ := trace('PATTERN $bindings '||serialize($context?globals, map{'method':'adaptive'})) :)
 
+  let $context := map:put($context, 'globals', $globals)
   let $rules := $pattern/sch:rule
+  
   return (
     if($context?dry-run eq 'true')
     then 
@@ -109,7 +104,13 @@ declare function eval:pattern(
       {$pattern/(@id, @name, @role), 
       if($pattern/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
       </svrl:active-pattern>, 
-      eval:rules($rules, $context)
+      $context?instance 
+      ! 
+      eval:rules(
+        $rules, 
+        utils:make-query-prolog($context),
+        map:put($context, 'instance', .)
+      )
     )
   )
 };
@@ -137,22 +138,8 @@ as element()*
   ))
 };
 
-declare function eval:rules(
-  $rules as element(sch:rule)*,
-  $context as map(*)
-)
-as element()*
-{
-  $context?instance 
-  ! 
-  eval:rules(
-    $rules, 
-    utils:make-query-prolog($context),
-    map:put($context, 'instance', .)
-  )
-};
-
-(:~ Evaluate rules, only further processing those whose context has not already   : been matched.
+(:~ Evaluate rules, only further processing those whose context has not already
+ : been matched.
  : @see ISO2020 6.5.
  : @param rules the rules to evaluate
  : @param prolog the query prolog consisting of any variable and namespace declarations
@@ -168,10 +155,8 @@ as element()*
   if(empty($rules))
   then ()
   else
-    (: let $_ := trace('[1]RULE prolog='||$prolog) :)
     let $rule := head($rules)
     let $rule-context := eval:rule-context($rule, $prolog, $context)
-    (: let $_ := trace('context=' || serialize($context, map{'method':'adaptive'})) :)
     return 
     (
       eval:process-rule($rule, $prolog, $rule-context, $context),
@@ -206,16 +191,17 @@ declare function eval:rule-context(
       if($rule/sch:let) then 'return ' else '', $rule/@context),
       ' '
     )
-  (: let $_ := trace('[2]RULE query='||$query) :)
-  return utils:eval(
+  let $evaluation-context := context:rule-evaluation-context($context)
+  let $result:= utils:eval(
     $query => utils:escape(),
-    map:merge((map{'':$context?instance}, $context?globals)),
+    $evaluation-context,
     map{'dry-run':$context?dry-run},
     $rule/@context
   )
+  return $result
 };
 
-(:~ Evaluates a rule.
+(:~ Evaluates a rule, regardless of whether the context has been matched previously.
  : @param rule the rule to evaluate
  : @param prolog the query prolog consisting of any variable and namespace declarations
  : @param context the validation context
@@ -287,10 +273,8 @@ declare function eval:assertions(
 as element()*
 {
   let $prolog := $prolog || utils:local-variable-decls($rule/sch:let)
-  (: let $_ := trace('[3]ASSERTION prolog='||$prolog) :)
   for $context in $rule-context
     let $prolog := $prolog || (if($rule/sch:let) then ' return ' else '')
-    (: let $_ := trace('[4]ASSERTION query='||$prolog) :)
     return $rule/(sch:assert|sch:report) 
     ! 
     eval:assertion(
@@ -342,6 +326,10 @@ declare function eval:assertion(
   )
 };
 
+(:~ Evaluate a phase.
+ : @param context the validation context
+ : @see ISO2025 5.5.7 re phase/@from
+ :)
 declare function eval:phase($context as map(*))
 {
   let $phase := $context?phase
@@ -359,6 +347,10 @@ declare function eval:phase($context as map(*))
         $dry-run
       )
   let $context := map:put($context, 'globals', $globals)
+  let $_:= map:merge(($context, $dry-run))
     
-  return  $context?patterns ! eval:pattern(., map:merge(($context, $dry-run)))
+  return
+  $context?patterns ! 
+  eval:pattern(., if($phase/@from) then map:put($context, 'from', $phase/@from)
+   else $context)
 };
