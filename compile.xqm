@@ -61,12 +61,31 @@ declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:
  : @param phase the active phase, if any
  : @return the compiled schema
  :)
-declare function compile:schema($schema as element(sch:schema), $phase as xs:string?)
+declare function compile:schema(
+  $schema as element(sch:schema),
+  $phase as xs:string?
+)
+{
+  compile:schema($schema, $phase, map{})
+};
+
+(:~ Compile a schema, passing any configuration options.
+ : @param schema the schema to compile
+ : @param phase the active phase, if any
+ : @param options a map of options
+ : @return the Schematron edition, at user option; the compiled schema
+ :)
+declare function compile:schema(
+  $schema as element(sch:schema),
+  $phase as xs:string?,
+  $options as map(xs:string, xs:string)?
+)
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
   let $_ := (utils:check-duplicate-variable-names($schema/sch:let), utils:check-duplicate-variable-names($active-phase/sch:let))
   return
+  (utils:report-edition($schema, $options),
   (
     compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
@@ -88,7 +107,7 @@ declare function compile:schema($schema as element(sch:schema), $phase as xs:str
     )
     || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
     'local:schema()'
-  ) => serialize(map{'method':'basex'})
+  ) => serialize(map{'method':'basex'}))
 };
 
 declare function compile:prolog($schema as element(sch:schema))

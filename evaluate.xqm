@@ -28,9 +28,10 @@ declare function eval:schema(
   $instance as node(),
   $schema as element(sch:schema),
   $phase as xs:string?,
-  $options as map(*)?
+  $options as map(xs:string, xs:string)?
 )
 {
+  utils:report-edition($schema, $options),
   if($options?dry-run eq 'true')
   then dr:schema($instance, $schema, $options)  
   else

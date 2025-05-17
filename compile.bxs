@@ -4,7 +4,8 @@
 
 declare variable $schema external;
 declare variable $phase external := '';
+declare variable $options external := map{};
 
-xqs:compile(doc($schema)/*, $phase)
+xqs:compile(doc($schema)/*, $phase, $options)
 </xquery>
 </commands>
