@@ -6,6 +6,8 @@ module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate';
 
 import module namespace context = 'http://www.andrewsales.com/ns/xqs-context' at
   'context.xqm';
+import module namespace dr = 'http://www.andrewsales.com/ns/xqs-dry-run' at
+  'dry-run.xqm';  
 import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
   'svrl.xqm';  
 import module namespace utils = 'http://www.andrewsales.com/ns/xqs-utils' at
@@ -30,17 +32,7 @@ declare function eval:schema(
 )
 {
   if($options?dry-run eq 'true')
-  then  
-  <svrl:schematron-output phase='#ALL'>
-  {output:schema-title($schema/sch:title)}
-  {$schema/@schemaVersion}
-  {output:namespace-decls-as-svrl($schema/sch:ns)}
-  <svrl:active-pattern name='XQS Syntax Error Summary' documents='{$schema/base-uri()}'/>
-  {$schema/xqy:function ! utils:parse-function(., $options)[self::svrl:*]}
-  {for $phase in ($schema/sch:phase/@id, '')
-  let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
-  return eval:phase($context)}
-  </svrl:schematron-output>
+  then dr:schema($instance, $schema, $options)  
   else
   eval:schema($instance, $schema, $phase)
 };
@@ -97,8 +89,7 @@ declare function eval:pattern(
   
   return (
     if($context?dry-run eq 'true')
-    then 
-    ($context?globals?*[self::svrl:*], eval:all-rules($rules, $context))
+    then dr:pattern($context, $rules)
     else (
       <svrl:active-pattern>
       {$pattern/(@id, @name, @role), 
@@ -216,23 +207,7 @@ as element()*
   let $rule-context := eval:rule-context($rule, $prolog, $context)
   return 
   if($rule-context)
-  then
-    if($context?dry-run eq 'true')
-    then 
-    (
-      let $variable-errors := utils:evaluate-rule-variables(
-        $rule/sch:let,
-        $prolog,
-        map:merge((map{'':$context?instance}, $context?globals)),
-        $context,
-        ()
-      )
-      return 
-      $variable-errors[self::svrl:*],
-      $rule-context[self::svrl:*],
-      eval:assertions($rule, $prolog, <_/>, $context)	(:pass dummy context node:)
-    )
-    else eval:process-rule($rule, $prolog, $rule-context, $context)
+  then eval:process-rule($rule, $prolog, $rule-context, $context)
   else ()
 };
 
@@ -248,6 +223,9 @@ declare function eval:process-rule(
   $context as map(*)
 )
 {
+    if($context?dry-run eq 'true')
+    then dr:rule($rule, $prolog, $rule-context, $context)
+    else
   if(exists($rule-context) and empty($rule-context intersect $context?matched))
   then
   (<svrl:fired-rule>
@@ -306,11 +284,7 @@ declare function eval:assertion(
   )
   return
   if($context?dry-run eq 'true')
-  then 
-  (
-    $result[self::svrl:*],
-    output:assertion-message($assertion, $prolog, $rule-context, $context)
-  )
+  then dr:assertion($result, $assertion, $prolog, $rule-context, $context)
   else
   typeswitch($assertion)
     case element(sch:assert)
