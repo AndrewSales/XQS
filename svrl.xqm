@@ -51,7 +51,7 @@ declare function output:assertion-message(
         $rule-context,
         $context
       )},
-      $assertion/(@id, @role, @flag, @test),
+      $assertion/(@id, @role, @flag, @test, @severity),
       output:diagnostics(
         $context?diagnostics[@id = tokenize($assertion/@diagnostics)],
         $prolog,

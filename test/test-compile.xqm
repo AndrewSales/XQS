@@ -1922,3 +1922,38 @@ declare %unit:test function _:schematron-edition()
     )
   )
 };
+
+(:~ New attribute severity.
+ :)
+declare %unit:test function _:attribute-severity()
+{
+  let $compiled := compile:schema(
+    <sch:schema schematronEdition='2025'>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:report test='true()' severity='error'><sch:name/></sch:report>
+          <sch:assert test='false()' severity='warning'><sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/(svrl:successful-report|svrl:failed-assert)/@severity),
+      2
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/@severity/data(),
+      'error'
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@severity/data(),
+      'warning'
+    )
+  )
+};
