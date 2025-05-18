@@ -358,7 +358,7 @@ as element()
       then '{path(($Q{http://www.andrewsales.com/ns/xqs}context)/' ||
         ($assertion/@subject, $assertion/../@subject)[1] || ')}'
       else '{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
-    $assertion/(@id, @role, @flag),
+    $assertion/(@id, @role, @flag, @severity),
     attribute{'test'}{$assertion/@test => replace('\{', '{{') => replace('\}', '}}')},
     $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]
     !
