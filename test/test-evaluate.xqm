@@ -1861,7 +1861,7 @@ declare %unit:test function _:phase-when-attribute()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'wibble'
+    '#ANY'
   )
   return (
     unit:assert-equals(
@@ -1870,7 +1870,7 @@ declare %unit:test function _:phase-when-attribute()
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
-      1
+      3
     )
   )
 };
@@ -1899,7 +1899,7 @@ declare %unit:test function _:phase-when-attribute-first-match()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'wibble'
+    '#ANY'
   )
   return (
     unit:assert-equals(
@@ -1945,7 +1945,7 @@ declare %unit:test function _:phase-when-attribute-no-match()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'wibble'
+    '#ANY'
   )
   return (
     unit:assert-equals(

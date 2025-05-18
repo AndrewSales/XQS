@@ -13,6 +13,7 @@ declare namespace xqy = 'http://www.w3.org/2012/xquery';
 
 declare variable $c:DEFAULT_PHASE as xs:string := '#DEFAULT';
 declare variable $c:ALL_PATTERNS as xs:string := '#ALL';
+declare variable $c:ANY_PHASE as xs:string := '#ANY';
 
 (:~ Sets up the validation context: namespaces, global variables, active phase 
  : (if configured) and patterns.
@@ -29,12 +30,8 @@ declare function c:get-context(
 )
 as map(*)
 {
-  let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase)
-  let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := $schema/sch:let
-  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
-  utils:check-duplicate-variable-names($active-phase/sch:let))
   let $globals as map(*) := if($globals) 
     then c:evaluate-global-variables(
       $globals, 
@@ -45,7 +42,12 @@ as map(*)
       $options
     )
     else map{}
-  
+    
+  let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase, $instance, $globals, $options)
+  let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
+  utils:check-duplicate-variable-names($active-phase/sch:let))
+    
   return 
   map:merge(
     (
@@ -86,12 +88,16 @@ as xs:string
  : @see ISO2020 5.4.11
  : @param schema the Schematron schema
  : @param the active phase
+ : @para instance the instance document
  : @return the active phase, or the empty sequence if none is defined or can be
  : determined
  :)
 declare function c:get-active-phase(
   $schema as element(sch:schema), 
-  $phase as xs:string
+  $phase as xs:string,
+  $instance as node(),
+  $globals as map(*)?,
+  $options as map(*)
 )
 as element(sch:phase)?
 {
@@ -103,7 +109,39 @@ as element(sch:phase)?
   else
     if($phase eq $c:ALL_PATTERNS)
     then ()
+  else
+    if($phase eq $c:ANY_PHASE)
+    then c:get-active-phase-by-when($schema/sch:phase/@when, $instance, $globals, $options)
     else $schema/sch:phase[@id eq $phase]	(:TODO report if none?:)
+};
+
+(:~ Evaluate phase/@when against then document instance, 
+ : returning the first matching phase, if any.
+ : @param when phase/@when attributes
+ : @param instance the document instance
+ : @param globals map of global variables
+ : @param options map of options
+ :)
+declare function c:get-active-phase-by-when(
+  $when as attribute(when)*,
+  $instance as node(),
+  $globals as map(*)?,
+  $options as map(*)
+)
+as element(sch:phase)?
+{
+    let $phase := 
+    ($when
+    !
+    utils:eval(
+      utils:escape(.),
+      map:merge((map{'':$instance}, $globals)),
+      map{'dry-run':$options?dry-run},
+      $when
+    )/.)[1]/$when/..
+    
+    let $_ := trace('when='||$phase/@id)
+    return $phase
 };
 
 (:~ Determines the active patterns.

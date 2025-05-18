@@ -9,6 +9,9 @@ import module namespace c = 'http://www.andrewsales.com/ns/xqs-context' at
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
+declare variable $_:DUMMY_DOC := <foo/>;
+declare variable $_:EMPTY_MAP := map{};
+
 (: PHASES :)
 
 (:~ no active phase specified :)  
@@ -16,7 +19,10 @@ declare %unit:test function _:active-phase-none()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    ''
+    '',
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
@@ -31,7 +37,10 @@ declare %unit:test function _:active-phase-default()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron" defaultPhase='foo'>
       <phase id='foo'/>
     </schema>,
-    $c:DEFAULT_PHASE
+    $c:DEFAULT_PHASE,
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
@@ -44,7 +53,10 @@ declare %unit:test function _:active-phase-no-default()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    $c:DEFAULT_PHASE
+    $c:DEFAULT_PHASE,
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
@@ -59,7 +71,10 @@ declare %unit:test function _:active-phase-schema-default()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron" defaultPhase='phase'>
       <phase id='phase'/>
     </schema>,
-    ''
+    '',
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
@@ -72,7 +87,10 @@ declare %unit:test function _:active-phase-all()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    $c:ALL_PATTERNS
+    $c:ALL_PATTERNS,
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
@@ -87,11 +105,33 @@ declare %unit:test function _:active-phase-by-id()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron">
       <phase id='foo'/>
     </schema>,
-    'foo'
+    'foo',
+    $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
   )
   return unit:assert-equals(
     $active-phase, 
     <phase xmlns="http://purl.oclc.org/dsdl/schematron" id='foo'/>
+  )
+};
+
+declare %unit:test function _:active-phase-when()
+{
+  let $active-phase := c:get-active-phase(
+    <schema xmlns="http://purl.oclc.org/dsdl/schematron">
+      <phase id='foo' when='//@wibble'/>
+    </schema>,
+    $c:ANY_PHASE,
+    document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
+  )
+  return unit:assert-equals(
+    $active-phase, 
+    <phase xmlns="http://purl.oclc.org/dsdl/schematron" id='foo' when='//@wibble'/>
   )
 };
 
@@ -107,7 +147,10 @@ declare %unit:test function _:get-active-patterns-no-phases()
     $schema,
     c:get-active-phase(
       $schema,
-      ''
+      '',
+      $_:DUMMY_DOC,
+    $_:EMPTY_MAP,
+    $_:EMPTY_MAP
     )
   )
   return unit:assert-equals(
@@ -130,7 +173,10 @@ declare %unit:test function _:get-active-patterns-all()
     $schema,
     c:get-active-phase(
       $schema,
-      $c:ALL_PATTERNS
+      $c:ALL_PATTERNS,
+      $_:DUMMY_DOC,
+      $_:EMPTY_MAP,
+      $_:EMPTY_MAP
     )
   )
   return unit:assert-equals(
@@ -153,7 +199,10 @@ declare %unit:test function _:get-active-patterns-default-phase()
     $schema,
     c:get-active-phase(
       $schema,
-      $c:DEFAULT_PHASE
+      $c:DEFAULT_PHASE,
+      $_:DUMMY_DOC,
+      $_:EMPTY_MAP,
+      $_:EMPTY_MAP
     )
   )
   return unit:assert-equals(
@@ -174,7 +223,10 @@ declare %unit:test function _:get-active-patterns-by-phase-id()
     
   let $active-phase := c:get-active-phase(
       $schema,
-      'phase1'
+      'phase1',
+      $_:DUMMY_DOC,
+      $_:EMPTY_MAP,
+      $_:EMPTY_MAP
     )
     
   let $active-patterns := c:get-active-patterns(
