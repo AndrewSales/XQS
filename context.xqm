@@ -130,17 +130,23 @@ declare function c:get-active-phase-by-when(
 )
 as element(sch:phase)?
 {
-    let $phase := 
-    ($when
-    !
-    utils:eval(
-      utils:escape(.),
-      map:merge((map{'':$instance}, $globals)),
-      map{'dry-run':$options?dry-run},
-      $when
-    )/.)[1]/$when/..
+    let $context as map(*) := map:merge((map{'':$instance}, $globals))
+    let $options as map(*) := map{'dry-run':$options?dry-run} 
     
-    let $_ := trace('when='||$phase/@id)
+    let $phase := 
+    (
+        for $query in $when
+        return
+        (
+         utils:eval(
+           utils:escape($query),
+           $context,
+           $options,
+           $query
+         )/.
+        )/$query/..
+    )[1]
+    
     return $phase
 };
 

@@ -1905,13 +1905,18 @@ declare %unit:test function _:phase-when-attribute-first-match()
     unit:assert-equals(
       $result/@phase/data(),
       'foo'
-    ),unit:assert-equals(
+    ),
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
       count($result/svrl:fired-rule),
       1
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
-      1
+      3
     )
   )
 };
@@ -1962,7 +1967,7 @@ declare %unit:test function _:phase-when-attribute-no-match()
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
-      2
+      4
     )
   )
 };
