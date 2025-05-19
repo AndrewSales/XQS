@@ -12,6 +12,7 @@ declare namespace xqy = 'http://www.w3.org/2012/xquery';
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
+declare variable $compile:ANY_PHASE := '$Q{http://www.andrewsales.com/ns/xqs}ANY_PHASE';
 declare variable $compile:SUBORDINATE_DOCS := '$Q{http://www.andrewsales.com/ns/xqs}sub-docs';
 declare variable $compile:SUBORDINATE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc';
 declare variable $compile:SUBORDINATE_DOC_URIS := '$Q{http://www.andrewsales.com/ns/xqs}sub-doc-uris';
@@ -89,6 +90,7 @@ declare function compile:schema(
   (
     compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
+    compile:any-phase($schema, $phase),
     $active-patterns ! compile:pattern(., $active-phase),
     compile:declare-function(
       'local:schema',
@@ -97,17 +99,99 @@ declare function compile:schema(
         {output:schema-title($schema/sch:title)}
         {$schema/@schemaVersion}
         {$schema/@schematronEdition}
-        {if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()}
+        {compile:active-phase($active-phase)}
         {output:namespace-decls-as-svrl($schema/sch:ns)}
-      {'{', string-join(
-        for $pattern in $active-patterns 
-        return compile:function-name($pattern) ||'()',
-        ','
-      ), '}'} </svrl:schematron-output>
+      {'{', compile:active-patterns($active-patterns, $phase), '}'}
+      </svrl:schematron-output>
     )
     || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
+    compile:choose-phase($schema, $phase) ||
     'local:schema()'
   ) => serialize(map{'method':'basex'}))
+};
+
+(:~ If #ANY phase is selected, compile a function to compute this, based on
+ : evaluating phase/@when against the instance document root.
+ : @param schema the schema
+ : @param phase the selected phase
+ :)
+declare function compile:choose-phase(
+  $schema as element(sch:schema),
+  $phase as xs:string?
+)
+{
+  if($phase eq $context:ANY_PHASE)
+  then
+  compile:declare-function(
+    'local:choose-phase',
+    (),
+    for $when at $pos in $schema/sch:phase/@when 
+    let $last := count($schema/sch:phase/@when)
+    return 'if(' || $compile:INSTANCE_DOC || '/' || '(' || $when || ')) then "'
+    || $when/../@id || '" else ' || (if($pos eq $last) then '()' else ())
+  )
+  else ()
+};
+
+(:~ If #ANY phase is selected, include this as a global variable in the compiled
+ : query.
+ : @param schema the schema
+ : @param phase the selected phase
+ :)
+declare function compile:any-phase(
+  $schema as element(sch:schema),
+  $phase as xs:string?
+)
+{
+  if($phase eq $context:ANY_PHASE)
+  then 'declare variable ' || $compile:ANY_PHASE || ' as xs:string? := local:choose-phase();'
+  else ()
+};
+
+(:~ Compile invocations of the active patterns in the schema, based on the active : phase. The active phase can only be determined dynamically when #ANY is used,
+ : so this implementation includes that decision logic.
+ : @param patterns active patterns
+ : @param phase the selected phase
+ :)
+declare function compile:active-patterns(
+  $patterns as element(sch:pattern)+,
+  $phase as xs:string?
+)
+{
+  if($phase eq $context:ANY_PHASE)
+  then
+    let $schema := $patterns/..
+    return
+    'switch(' || $compile:ANY_PHASE || ') ' 
+    || (for $phase in $schema/sch:phase[@when] return 'case "' || $phase/@id
+    || '" return ' || compile:invoke-patterns($patterns) || ' ')
+    || 'default return ' || compile:invoke-patterns($patterns)
+  else compile:invoke-patterns($patterns)
+};
+
+declare %private function compile:invoke-patterns($patterns as element(sch:pattern)+)
+{
+  string-join(
+    for $pattern in $patterns 
+    return compile:function-name($pattern) ||'()',
+    ','
+  )
+};
+
+declare function compile:active-phase($active-phase as element(sch:phase)?)
+{
+  if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()
+  (:TODO dynamic evaluation re phase/@from and #ANY:)
+};
+
+declare function compile:phase-when(
+  $schema as element(sch:schema),
+  $phase as xs:string
+)
+{
+  if($phase eq $context:ANY_PHASE)
+  then $schema/sch:phase[@when]	(:TODO evaluate exprr against instance:)
+  else ()
 };
 
 declare function compile:prolog($schema as element(sch:schema))

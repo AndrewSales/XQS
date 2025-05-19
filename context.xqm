@@ -84,18 +84,37 @@ as xs:string
 
 (:PHASES:)
 
+(:~ Compile-specific version of c:get-active-phase#5.
+ : This is a convenience to preserve the existing API and necessitated by @when,
+ : whose introduction means the active phase cannot be determined statically.
+ : @see ISO2025 5.5.22
+ : @param schema the Schematron schema
+ : @param the active phase
+ : @return the active phase, or the empty sequence if none is defined or can be
+ : determined
+ :)
+declare function c:get-active-phase(
+  $schema as element(sch:schema), 
+  $phase as xs:string
+)
+as element(sch:phase)?
+{
+  if($phase eq $c:ANY_PHASE) then ()	(:#ANY:)
+  else c:get-active-phase($schema, $phase, (), map{}, map{})
+};
+
 (:~ Determines the active phase.
  : @see ISO2020 5.4.11
  : @param schema the Schematron schema
  : @param the active phase
- : @para instance the instance document
+ : @param instance the instance document
  : @return the active phase, or the empty sequence if none is defined or can be
  : determined
  :)
 declare function c:get-active-phase(
   $schema as element(sch:schema), 
   $phase as xs:string,
-  $instance as node(),
+  $instance as node()?,
   $globals as map(*)?,
   $options as map(*)
 )
