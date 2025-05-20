@@ -2040,6 +2040,7 @@ declare %unit:test function _:phase-when-attribute-first-match()
     <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
   )
   return (
+    (:dynamically selected phase correctly reported in SVRL:)
     unit:assert-equals(
       $result/@phase/data(),
       'foo'

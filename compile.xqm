@@ -39,7 +39,7 @@ as element()*
         return
         (head($rules)($context, $matched),
         local:rules(tail($rules), tail($contexts), $matched | $context))
-}; ';
+}; ' => normalize-space();
 declare variable $compile:RULES_FUNCTION_WITH_CONTEXT := 'declare function local:rules($rules as function(*)*, $contexts as function(*)*, $matched as node()*, $doc as document-node())
 as element()*
 {
@@ -53,7 +53,7 @@ as element()*
         (head($rules)($context, $matched, .),
         local:rules(tail($rules), tail($contexts), $matched | $context, $doc))
       )
-}; ';  
+}; ' => normalize-space();  
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
@@ -99,7 +99,7 @@ declare function compile:schema(
         {output:schema-title($schema/sch:title)}
         {$schema/@schemaVersion}
         {$schema/@schematronEdition}
-        {compile:active-phase($active-phase)}
+        {compile:active-phase($active-phase, $phase)}
         {output:namespace-decls-as-svrl($schema/sch:ns)}
       {'{', compile:active-patterns($active-patterns, $phase), '}'}
       </svrl:schematron-output>
@@ -188,10 +188,22 @@ as xs:string?
   || ')'
 };
 
-declare function compile:active-phase($active-phase as element(sch:phase)?)
+(:~ Record any phase applied during validation.
+ : Note that with phase/@when, the inclusion of the SVRL phase attribute and its
+ : value need to be dynamically evaluated at validation-time.
+ : @param active-phase the statically-determined phase
+ : @param phase the selected phase (e.g. as a parameter at compilation- or 
+ : validation-time)
+ :)
+declare function compile:active-phase(
+  $active-phase as element(sch:phase)?,
+  $phase as xs:string?
+)
 {
-  if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()
-  (:TODO dynamic evaluation re phase/@from and #ANY:)
+  if($phase eq $context:ANY_PHASE)
+  then '{if(exists(' || $compile:ANY_PHASE || ')) then attribute{"phase"}{' 
+  || $compile:ANY_PHASE || '}}'
+  else if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()
 };
 
 declare function compile:phase-when(
