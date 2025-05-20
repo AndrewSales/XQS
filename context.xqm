@@ -46,9 +46,7 @@ as map(*)
     
   let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase, $instance, $globals, $options)
   let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
-  (: let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
-  utils:check-duplicate-variable-names($active-phase/sch:let)) :)
-    
+      
   return 
   map:merge(
     (
