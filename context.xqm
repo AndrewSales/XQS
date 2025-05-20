@@ -32,6 +32,7 @@ as map(*)
 {
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := $schema/sch:let
+  let $_ := utils:check-duplicate-variable-names($schema/sch:let)
   let $globals as map(*) := if($globals) 
     then c:evaluate-global-variables(
       $globals, 
@@ -45,8 +46,8 @@ as map(*)
     
   let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase, $instance, $globals, $options)
   let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
-  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
-  utils:check-duplicate-variable-names($active-phase/sch:let))
+  (: let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
+  utils:check-duplicate-variable-names($active-phase/sch:let)) :)
     
   return 
   map:merge(
