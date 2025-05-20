@@ -157,25 +157,35 @@ declare function compile:active-patterns(
   $patterns as element(sch:pattern)+,
   $phase as xs:string?
 )
+as xs:string?
 {
   if($phase eq $context:ANY_PHASE)
   then
     let $schema := $patterns/..
     return
     'switch(' || $compile:ANY_PHASE || ') ' 
-    || (for $phase in $schema/sch:phase[@when] return 'case "' || $phase/@id
-    || '" return ' || compile:invoke-patterns($patterns) || ' ')
-    || 'default return ' || compile:invoke-patterns($patterns)
-  else compile:invoke-patterns($patterns)
+    || string-join(
+        for $phase in $schema/sch:phase[@when] return 'case "' || $phase/@id 
+        || '" return ' 
+        || compile:invoke-patterns($patterns[@id = $phase/sch:active/@pattern], $phase) || ' '
+      )
+    || 'default return ' || compile:invoke-patterns($patterns, $phase)
+  else compile:invoke-patterns($patterns, $phase)
 };
 
-declare %private function compile:invoke-patterns($patterns as element(sch:pattern)+)
+declare %private function compile:invoke-patterns(
+  $patterns as element(sch:pattern)+,
+  $phase as xs:string?
+)
+as xs:string?
 {
+  '(' ||
   string-join(
     for $pattern in $patterns 
     return compile:function-name($pattern) ||'()',
     ','
   )
+  || ')'
 };
 
 declare function compile:active-phase($active-phase as element(sch:phase)?)
