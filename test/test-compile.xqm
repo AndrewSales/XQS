@@ -1957,3 +1957,163 @@ declare %unit:test function _:attribute-severity()
     )
   )
 };
+
+(: PHASES :)
+
+(:~ @when present and phase selected
+ :)
+declare %unit:test function _:phase-when-attribute()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:phase id='wibble' when='//@wibble'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern id='non-phase'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '#ANY'
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      3
+    )
+  )
+};
+
+(:~ @when present and first matching phase selected
+ :)
+declare %unit:test function _:phase-when-attribute-first-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:phase id='foo' when='/foo'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:phase id='wibble' when='//@wibble'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:phase id='bar' when='/foo/bar'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern id='bar'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '#ANY'
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    (:dynamically selected phase correctly reported in SVRL:)
+    unit:assert-equals(
+      $result/@phase/data(),
+      'foo'
+    ),
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      3
+    )
+  )
+};
+
+(:~ @when present and no matching phase
+ : N.B. this will pass even if phase/@when is not implemented, because the 
+ : behaviour effectively matches #ALL.
+ :)
+declare %unit:test function _:phase-when-attribute-no-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:phase id='foo' when='/foot'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:phase id='wibble' when='//@wibblet'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:phase id='bar' when='/foot/bart'>
+        <sch:active pattern='wibble'/>
+      </sch:phase>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//blort[@wibble]'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+      <sch:pattern id='non-phase'>
+        <sch:rule context='//bar'>
+          <sch:report test='blort'><sch:value-of select='count(blort)'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '#ANY'
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/@phase,
+      ()
+    ),
+    unit:assert-equals(
+      count($result/svrl:active-pattern),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      4
+    )
+  )
+};
+
+(:TODO #ANY phase reported correctly in SVRL:)
