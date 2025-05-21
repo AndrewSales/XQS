@@ -1972,10 +1972,44 @@ declare %unit:test function _:phase-when-attribute-no-match()
   )
 };
 
+(:~ @visit-each
+ :)
+declare %unit:test function _:attribute-visit-each()
+{
+  let $result := eval:schema(
+    document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//bar' visit-each='blort'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '#ANY'
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    )
+  )
+};
+
 (:TODO
-@when
 @when with @from
 @visit-each
+@visit-each in SVRL?
+@visit-each and @subject?
 group
 library
 rules

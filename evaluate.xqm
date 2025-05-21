@@ -253,7 +253,7 @@ declare function eval:assertions(
 as element()*
 {
   let $prolog := $prolog || utils:local-variable-decls($rule/sch:let)
-  for $context in $rule-context
+  for $context in eval:visit-each($rule, $prolog, $rule-context, $validation-context)
     let $prolog := $prolog || (if($rule/sch:let) then ' return ' else '')
     return $rule/(sch:assert|sch:report) 
     ! 
@@ -263,6 +263,31 @@ as element()*
       $context,
       $validation-context
     )
+};
+
+(:~ Adjust the rule context by evaluating attribute visit-each against it.
+ : @param rule-context the rule context
+ :)
+declare function eval:visit-each(
+  $rule as element(sch:rule),
+  $prolog as xs:string?,
+  $rule-context as node()+,
+  $validation-context as map(*)
+)
+{
+  let $visit-each as attribute(visit-each)? := $rule/@visit-each
+  return
+  if($visit-each)
+  then
+    $rule-context
+    !
+    utils:eval(
+      $visit-each => utils:escape(),
+      map:merge((map{'':$rule-context}, $validation-context?globals)),
+      map{'dry-run':$validation-context?dry-run},
+      $rule/@visit-each
+    )
+  else $rule-context
 };
 
 (:~ Evaluates an assertion.
