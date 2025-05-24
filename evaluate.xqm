@@ -206,7 +206,7 @@ declare function eval:rule(
 )
 as element()*
 {
-  let $rule-context := eval:rule-context($rule, $prolog, $context)
+  let $rule-context as node()* := eval:rule-context($rule, $prolog, $context)
   return 
   if($rule-context)
   then eval:process-rule($rule, $prolog, $rule-context, $context)
@@ -253,8 +253,10 @@ declare function eval:assertions(
 as element()*
 {
   let $prolog := $prolog || utils:local-variable-decls($rule/sch:let)
-  for $context in $rule-context
-    let $prolog := $prolog || (if($rule/sch:let) then ' return ' else '')
+    || (if($rule/sch:let) then ' return ' else '')
+  let $context := eval:visit-each($rule, $prolog, $rule-context, $validation-context)
+  
+  for $context in $context    
     return $rule/(sch:assert|sch:report) 
     ! 
     eval:assertion(
@@ -263,6 +265,29 @@ as element()*
       $context,
       $validation-context
     )
+};
+
+(:~ Adjust the rule context by evaluating attribute visit-each against it.
+ : @param rule-context the rule context
+ :)
+declare function eval:visit-each(
+  $rule as element(sch:rule),
+  $prolog as xs:string?,
+  $rule-context as node()*,
+  $validation-context as map(*)
+)
+{
+  let $visit-each as attribute(visit-each)? := $rule/@visit-each
+  return
+  if($visit-each)
+  then
+    utils:eval(
+      $prolog || $visit-each => utils:escape(),
+      map:merge((map{'':$rule-context}, $validation-context?globals)),
+      map{'dry-run':$validation-context?dry-run},
+      $rule/@visit-each
+    )
+  else $rule-context
 };
 
 (:~ Evaluates an assertion.

@@ -2116,4 +2116,158 @@ declare %unit:test function _:phase-when-attribute-no-match()
   )
 };
 
-(:TODO #ANY phase reported correctly in SVRL:)
+(:~ @visit-each
+ :)
+declare %unit:test function _:attribute-visit-each()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//bar' visit-each='blort'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      4
+    )
+  )
+};
+
+(:~ @visit-each
+ :)
+declare %unit:test function _:attribute-visit-each-analyze-string()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='/foo' visit-each='analyze-string(., "foo")/fn:match'>
+          <sch:report test='.'><sch:value-of select='.'/> at index <sch:value-of select='string-length(
+            string-join(preceding-sibling::fn:*))+1'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>foo bar blort foo bar</foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    )
+  )
+};
+
+(:~ @visit-each with local variable
+ :)
+declare %unit:test function _:attribute-visit-each-with-let()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//bar' visit-each='blort'>
+          <sch:let name='context' value='.'/>
+          <sch:report test='$context/@wibble'><sch:value-of select='$context/@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report[. eq '2']),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report[. eq '3']),
+      2
+    )
+  )
+};
+
+(:~ local variable evaluated against current context
+ :)
+declare %unit:test function _:rule-variable-evaluated-against-context()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//bar'>
+          <sch:let name='context' value='blort'/>
+          <sch:report test='$context/@wibble'><sch:value-of select='$context/@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report[. eq '2']),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report[. eq '3']),
+      2
+    )
+  )
+};
