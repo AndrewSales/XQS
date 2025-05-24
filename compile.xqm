@@ -206,16 +206,6 @@ declare function compile:active-phase(
   else if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()
 };
 
-declare function compile:phase-when(
-  $schema as element(sch:schema),
-  $phase as xs:string
-)
-{
-  if($phase eq $context:ANY_PHASE)
-  then $schema/sch:phase[@when]	(:TODO evaluate exprr against instance:)
-  else ()
-};
-
 declare function compile:prolog($schema as element(sch:schema))
 as xs:string*
 {
@@ -394,6 +384,7 @@ as xs:string
   $doc ||
   (if($phase/@from) then '/(' || $phase/@from => utils:escape() || ')' else ())
   || '/(' || $rule/@context => utils:escape() || ')'
+  || (if($rule/@visit-each) then '/(' || $rule/@visit-each || ')' else ())
 };
 
 declare function compile:rule(
