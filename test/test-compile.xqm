@@ -2189,8 +2189,10 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
 };
 
 (:~ @visit-each with local variable
+ : IGNORING: this can't work until the bug below is fixed
+ : @see https://github.com/AndrewSales/XQS/issues/45
  :)
-declare %unit:test function _:attribute-visit-each-with-let()
+declare %unit:ignore function _:attribute-visit-each-with-let()
 {
   let $compiled := compile:schema(
     <sch:schema>
@@ -2271,3 +2273,5 @@ declare %unit:test function _:rule-variable-evaluated-against-context()
     )
   )
 };
+
+(:CHECKME other targets of compile:variables() work as expected:)

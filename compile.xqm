@@ -485,6 +485,28 @@ as xs:string?
   )
 };
 
+(:~ Builds the string of local variable declarations.
+ : This is a compilation-specific version, used to include the rule context variable. 
+ : @param locals the variables to declare
+ : @see $compile:RULE_CONTEXT_NAME
+ :)
+declare function compile:local-variable-decls($locals as element(sch:let)*)
+as xs:string
+{
+  '
+(:LOCALS:)
+  '||
+  string-join(
+    for $var in $locals
+    return utils:declare-variable(
+        $var/@name, 
+        (:$compile:RULE_CONTEXT_NAME || '/(' ||:) utils:variable-value($var)(: || ')':),
+        $var/@as
+    ),
+    ' '
+  )
+};
+
 declare %private function compile:root-context-variables(
   $context as element(),
   $phase as element(sch:phase)?
