@@ -54,6 +54,21 @@ as element()*
         local:rules(tail($rules), tail($contexts), $matched | $context, $doc))
       )
 }; ' => normalize-space();  
+declare variable $compile:ALL_RULES_FUNCTION := 'declare function local:rules(
+  $rules as function(*)*,
+  $contexts as function(*)*
+)(:evaluate all rules (within a group):)
+as element()*
+{
+    if (empty($rules))
+    then
+        ()
+    else
+        let $context := head($contexts)()
+        return
+        (head($rules)($context),
+        local:rules(tail($rules), tail($contexts)))
+}; ' => normalize-space();
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
@@ -84,14 +99,16 @@ declare function compile:schema(
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
-  let $_ := (utils:check-duplicate-variable-names($schema/sch:let), utils:check-duplicate-variable-names($active-phase/sch:let))
+  let $active-groups := context:get-active-groups($schema, $active-phase)
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let), 
+    utils:check-duplicate-variable-names($active-phase/sch:let))
   return
   (utils:report-edition($schema, $options),
   (
     compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
     compile:any-phase($schema, $phase),
-    $active-patterns ! compile:pattern(., $active-phase),
+    ($active-patterns|$active-groups) ! compile:pattern-group(., $active-phase),
     compile:declare-function(
       'local:schema',
       (),
@@ -101,10 +118,12 @@ declare function compile:schema(
         {$schema/@schematronEdition}
         {compile:active-phase($active-phase, $phase)}
         {output:namespace-decls-as-svrl($schema/sch:ns)}
-      {'{', compile:active-patterns($active-patterns, $phase), '}'}
+      {'{', compile:active-patterns-groups($active-patterns | $active-groups, $phase), '}'}
       </svrl:schematron-output>
     )
     || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
+    (if(exists($active-groups) or $phase eq $compile:ANY_PHASE) 
+    then $compile:ALL_RULES_FUNCTION else ()) ||
     compile:choose-phase($schema, $phase) ||
     'local:schema()'
   ) => serialize(map{'method':'basex'}))
@@ -148,13 +167,14 @@ declare function compile:any-phase(
   else ()
 };
 
-(:~ Compile invocations of the active patterns in the schema, based on the active : phase. The active phase can only be determined dynamically when #ANY is used,
- : so this implementation includes that decision logic.
+(:~ Compile invocations of the active patterns and groups in the schema, based 
+ : on the active phase. The active phase can only be determined dynamically when
+ : #ANY is used, so this implementation includes that decision logic.
  : @param patterns active patterns
  : @param phase the selected phase
  :)
-declare function compile:active-patterns(
-  $patterns as element(sch:pattern)+,
+declare function compile:active-patterns-groups(
+  $patterns as element(sch:*)+,
   $phase as xs:string?
 )
 as xs:string?
@@ -167,14 +187,14 @@ as xs:string?
     || string-join(
         for $phase in $schema/sch:phase[@when] return 'case "' || $phase/@id 
         || '" return ' 
-        || compile:invoke-patterns($patterns[@id = $phase/sch:active/@pattern], $phase) || ' '
+        || compile:invoke-patterns-groups($patterns[@id = $phase/sch:active/@pattern], $phase) || ' '
       )
-    || 'default return ' || compile:invoke-patterns($patterns, $phase)
-  else compile:invoke-patterns($patterns, $phase)
+    || 'default return ' || compile:invoke-patterns-groups($patterns, $phase)
+  else compile:invoke-patterns-groups($patterns, $phase)
 };
 
-declare %private function compile:invoke-patterns(
-  $patterns as element(sch:pattern)+,
+declare %private function compile:invoke-patterns-groups(
+  $patterns as element(sch:*)+,
   $phase as xs:string?
 )
 as xs:string?
@@ -226,8 +246,8 @@ as xs:string*
  : _rule-function_#2, whose body is executed if the rule context has not already
  : been matched.
  :)
-declare function compile:pattern(
-  $pattern as element(sch:pattern),
+declare function compile:pattern-group(
+  $pattern as element(sch:*),
   $phase as element(sch:phase)?
 )
 {
@@ -241,13 +261,14 @@ declare function compile:pattern(
       compile:function-name($pattern),
       (),
       (
-        <svrl:active-pattern>
-        {$pattern/(@id, @name, @role)}
-        </svrl:active-pattern>, ', local:rules((' ||
+        element{'svrl:active-'||$pattern/local-name()}
+        {$pattern/(@id, @name, @role)}, ', local:rules((' ||
         string-join(for $rule in $pattern/sch:rule 
         return ' ' || compile:function-name($rule) || '#2', ',') || '), (' ||
         string-join(for $rule in $pattern/sch:rule 
-        return ' ' || compile:function-name($rule) || '#0', ',') || '), ())')
+        return ' ' || compile:function-name($rule) || '#0', ',') || ')' ||
+        (if($pattern/self::sch:group) then () else ', ()') ||
+        ')')
       ),
       $pattern/sch:rule ! 
       (compile:rule(., $phase), compile:rule-context(., $phase))
@@ -397,10 +418,12 @@ declare function compile:rule(
   return (
     compile:declare-function(
       compile:function-name($rule),
-      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED),
+      ($compile:RULE_CONTEXT, 
+      if($rule/../self::sch:pattern) then $compile:RULE_MATCHED else ()),
       (
-        'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
-        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+        'if(exists(' || $compile:RULE_CONTEXT || ')' ||
+        (if($rule/../self::sch:pattern) then (' and empty(' || $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')') else ()) || 
+        ') then (',
         <svrl:fired-rule>
         {$rule/(@id, @name, @context, @role, @flag)}
         </svrl:fired-rule>,
@@ -515,7 +538,8 @@ declare %private function compile:function-name($element as element())
 as xs:string
 {
   'local:' ||
-  $element/ancestor-or-self::*[ancestor-or-self::sch:pattern] ! 
+  $element/ancestor-or-self::*
+  [ancestor-or-self::sch:pattern or ancestor-or-self::sch:group] ! 
   (local-name(.) || compile:function-id(.))
   => string-join('-')
 };

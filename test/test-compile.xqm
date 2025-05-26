@@ -2273,3 +2273,82 @@ declare %unit:ignore function _:rule-variable-evaluated-against-context()
     )
   )
 };
+
+(:GROUPS:)
+
+(:~ active group processed :)
+declare %unit:test function _:process-group()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group id='e' name='f' role='g'>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+          <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-group,
+      <svrl:active-group id='e' name='f' role='g'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule,
+      <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>
+    )
+  )
+};
+
+(:~ Groups turn off the if-then-else processing of the rules they contain.
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25
+ :)
+declare %unit:test function _:group-continue-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+        <sch:rule context='foo'>
+          <sch:report test='.'>should reach here</sch:report>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-group,
+      <svrl:active-group/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[1],
+      <svrl:fired-rule context='*'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[2],
+      <svrl:fired-rule context='foo'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      <svrl:failed-assert 
+      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report,
+      <svrl:successful-report 
+      test='.' location='/Q{{}}foo[1]'><svrl:text>should reach here</svrl:text></svrl:successful-report>
+    )
+  )
+};
