@@ -686,6 +686,31 @@ declare %unit:test('expected', 'err:XPST0008') function _:pattern-documents-vari
   ) => xquery:eval(map{$_:DOC_PARAM:document{<root/>}})
 };
 
+declare %unit:test function _:group-documents()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-group/@documents),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
 (: USER-DEFINED FUNCTIONS :)
 
 declare %unit:test function _:user-defined-function()

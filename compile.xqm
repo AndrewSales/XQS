@@ -108,7 +108,8 @@ declare function compile:schema(
     compile:prolog($schema),
     compile:user-defined-functions($schema/xqy:function),
     compile:any-phase($schema, $phase),
-    ($active-patterns|$active-groups) ! compile:pattern-group(., $active-phase),
+    $active-patterns ! compile:pattern(., $active-phase),
+    $active-groups ! compile:group(., $active-phase),
     compile:declare-function(
       'local:schema',
       (),
@@ -246,8 +247,8 @@ as xs:string*
  : _rule-function_#2, whose body is executed if the rule context has not already
  : been matched.
  :)
-declare function compile:pattern-group(
-  $pattern as element(sch:*),
+declare function compile:pattern(
+  $pattern as element(sch:pattern),
   $phase as element(sch:phase)?
 )
 {
@@ -266,11 +267,44 @@ declare function compile:pattern-group(
         string-join(for $rule in $pattern/sch:rule 
         return ' ' || compile:function-name($rule) || '#2', ',') || '), (' ||
         string-join(for $rule in $pattern/sch:rule 
-        return ' ' || compile:function-name($rule) || '#0', ',') || ')' ||
-        (if($pattern/self::sch:group) then () else ', ()') ||
-        ')')
+        return ' ' || compile:function-name($rule) || '#0', ',') || '), ())')
       ),
       $pattern/sch:rule ! 
+      (compile:rule(., $phase), compile:rule-context(., $phase))
+    )
+};
+
+(:~ Compile a group to a function.
+ : local:rules() takes two arguments for groups:
+ : - a sequence of functions representing its rules
+ : - a sequence of functions to compute the context for each rule.
+ : On each recursion, the rule context is calculated (via _rule-function_#0).
+ : The contexts matched so far and the rule context are passed to
+ : _rule-function_#1, whose body is executed.
+ :)
+declare function compile:group(
+  $group as element(sch:group),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := (utils:check-duplicate-variable-names($group/sch:let),
+    utils:check-duplicate-variable-names($phase/sch:let))
+  return
+  if($group/@documents)
+  then compile:group-documents($group, $phase)
+  else
+    (compile:declare-function(
+      compile:function-name($group),
+      (),
+      (
+        <svrl:active-group>{$group/(@id, @name, @role)}</svrl:active-group>,
+        ', local:rules((' ||
+        string-join(for $rule in $group/sch:rule 
+        return ' ' || compile:function-name($rule) || '#1', ',') || '), (' ||
+        string-join(for $rule in $group/sch:rule 
+        return ' ' || compile:function-name($rule) || '#0', ',') || '))')
+      ),
+      $group/sch:rule ! 
       (compile:rule(., $phase), compile:rule-context(., $phase))
     )
 };
@@ -318,6 +352,55 @@ declare function compile:pattern-documents(
     )
   ),
     $pattern/sch:rule ! 
+    (
+      compile:rule-documents(., $phase), 
+      compile:rule-context-documents(., $phase)
+    )
+};
+
+(:~ Creates a function to process a group which specifies subordinate 
+ : documents. 
+ : This implementation resolves the URIs of subordinate documents
+ : against the base URI of the instance document.
+ : @param group the group[@documents]
+ : @param phase optional phase
+ :)
+declare function compile:group-documents(
+  $group as element(sch:group),
+  $phase as element(sch:phase)?
+)
+{
+  compile:declare-function(
+    compile:function-name($group), 
+    '',
+    (
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOC_URIS,
+        $compile:INSTANCE_DOC || '/(' || $group/@documents => utils:escape() || ')'
+      ) ||
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOCS,
+        $compile:SUBORDINATE_DOC_URIS || 
+          '! doc(resolve-uri(., ' || $compile:INSTANCE_DOC || '/base-uri()))',
+        'document-node()*'
+      ) ||
+      ' return (',
+      <svrl:active-pattern 
+        documents='{{string-join({$compile:SUBORDINATE_DOCS} ! base-uri(.))}}'>
+      {$group/(@id, @name, @role)}
+      </svrl:active-pattern>, 
+      ', ' || $compile:SUBORDINATE_DOCS || ' ! local:rules((' ||
+      string-join(
+        for $rule in $group/sch:rule 
+        return compile:function-name($rule) || '#3',
+        ','
+      ) || '), (' ||
+      string-join(for $rule in $group/sch:rule 
+      return ' ' || compile:function-name($rule) || '#1', ',') ||
+      '), (), .))'
+    )
+  ),
+    $group/sch:rule ! 
     (
       compile:rule-documents(., $phase), 
       compile:rule-context-documents(., $phase)
