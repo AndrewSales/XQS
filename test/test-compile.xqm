@@ -633,6 +633,39 @@ declare %unit:test function _:pattern-documents()
   )
 };
 
+(:~ if-then-else behaviour still works with @documents :)
+declare %unit:test function _:pattern-documents-halt-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-pattern/@documents),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
 declare %unit:test function _:pattern-documents-multiple()
 {
   let $compiled := compile:schema(
@@ -707,6 +740,39 @@ declare %unit:test function _:group-documents()
     unit:assert-equals(
       count($result/svrl:successful-report),
       1
+    )
+  )
+};
+
+(:~ if-then-else behaviour disabled for group/@documents :)
+declare %unit:test function _:group-documents-halt-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-group/@documents),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
     )
   )
 };
