@@ -176,6 +176,21 @@ declare %unit:test function _:process-extends-recursive()
   )
 };
 
+(:~ element library
+ :)
+declare %unit:test function _:element-library()
+{
+  let $doc := doc('test-cases/extends-library.sch')
+  let $schema := ie:process-includes($doc/*)
+  return
+  (
+    unit:assert(not($schema//sch:extends)),
+    unit:assert(count($schema/sch:pattern) = 5)
+  )
+};
+
 (:TODO 
+library
+rules
 detect circular references
 :)

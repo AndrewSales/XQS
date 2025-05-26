@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schema xmlns="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2">
     
-    <extends href="lib2.sch"/>
+    <extends href="library.sch"/>
     
     <let name="some-global" value="'blort'"/>
     
