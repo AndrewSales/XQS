@@ -333,6 +333,32 @@ declare %unit:test function _:get-context-patterns()
   )
 };
 
+(:~ retrieve active groups from validation context map :)
+declare %unit:test function _:get-context-groups()
+{
+    let $schema := <schema xmlns="http://purl.oclc.org/dsdl/schematron">
+      <phase id='phase1'>
+        <active pattern='foo'/>
+        <active pattern='bar'/>
+      </phase>
+      <group id='foo'><rule/></group>
+      <group id='bar'><rule/></group>
+      <group id='blort'><rule/></group>
+    </schema>
+  
+  let $groups := c:get-context(
+    <foo/>,
+    $schema,
+    'phase1',
+    map{}
+  )?groups
+  
+  return unit:assert-equals(
+    count($groups),
+    2
+  )
+};
+
 (:~ retrieve active phase from validation context map :)
 declare %unit:test function _:get-context-active-phase()
 {
