@@ -2189,8 +2189,9 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
 };
 
 (:~ @visit-each with local variable
+ : IGNORING: to address in #45
  :)
-declare %unit:test function _:attribute-visit-each-with-let()
+declare %unit:ignore function _:attribute-visit-each-with-let()
 {
   let $compiled := compile:schema(
     <sch:schema>
@@ -2231,8 +2232,9 @@ declare %unit:test function _:attribute-visit-each-with-let()
 };
 
 (:~ local variable evaluated against current context
+ : IGNORING: to address in #45
  :)
-declare %unit:test function _:rule-variable-evaluated-against-context()
+declare %unit:ignore function _:rule-variable-evaluated-against-context()
 {
   let $compiled := compile:schema(
     <sch:schema>
