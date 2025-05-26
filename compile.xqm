@@ -305,7 +305,7 @@ declare function compile:group(
         return ' ' || compile:function-name($rule) || '#0', ',') || '))')
       ),
       $group/sch:rule ! 
-      (compile:rule(., $phase), compile:rule-context(., $phase))
+      (compile:group-rule(., $phase), compile:rule-context(., $phase))
     )
 };
 
@@ -402,7 +402,7 @@ declare function compile:group-documents(
   ),
     $group/sch:rule ! 
     (
-      compile:rule-documents(., $phase), 
+      compile:group-rule-documents(., $phase), 
       compile:rule-context-documents(., $phase)
     )
 };
@@ -426,9 +426,43 @@ declare function compile:rule-documents(
         $compile:RULE_CONTEXT_NAME,
         $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
-      ' return if(exists(' || $compile:RULE_CONTEXT || ')' ||      
-      (if($rule/../self::sch:pattern) then (' and empty(' || $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')') else ())
-      || ') then (',
+      ' return if(exists(' || $compile:RULE_CONTEXT || ') and empty(' || 
+      $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+      <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
+      {$rule/(@id, @name, @context, @role, @flag)}
+      </svrl:fired-rule>,
+      ', ' || $compile:RULE_CONTEXT || '! (',
+      string-join(
+        for $assertion in $assertions
+        return compile:function-name($assertion, true()) || '(.)', 
+        ','
+      ) 
+      || ')) else ()'
+      )
+  ) || string-join($assertions ! compile:assertion(., $phase, true()))
+  )
+};
+
+(:~ group-specific version of compile:rule-documents. :)
+declare function compile:group-rule-documents(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $function-name := compile:function-name($rule)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return (
+    compile:declare-function(
+      $function-name, 
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED, $compile:SUBORDINATE_DOCS),      (
+      string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
+      (if($rule/sch:let) then ' return ' else ()) ||
+      utils:declare-variable(
+        $compile:RULE_CONTEXT_NAME,
+        $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
+      ) ||
+      ' return if(exists(' || $compile:RULE_CONTEXT || ')) then (',
       <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
       {$rule/(@id, @name, @context, @role, @flag)}
       </svrl:fired-rule>,
@@ -492,6 +526,10 @@ as xs:string
   || (if($rule/@visit-each) then '/(' || $rule/@visit-each || ')' else ())
 };
 
+(:~ Compile a rule.
+ : @param rule the rule to compile
+ : @param phase optional phase
+ :) 
 declare function compile:rule(
   $rule as element(sch:rule),
   $phase as element(sch:phase)?
@@ -502,12 +540,42 @@ declare function compile:rule(
   return (
     compile:declare-function(
       compile:function-name($rule),
-      ($compile:RULE_CONTEXT, 
-      if($rule/../self::sch:pattern) then $compile:RULE_MATCHED else ()),
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED),
       (
-        'if(exists(' || $compile:RULE_CONTEXT || ')' ||
-        (if($rule/../self::sch:pattern) then (' and empty(' || $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')') else ()) || 
-        ') then (',
+        'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' || 
+        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+        <svrl:fired-rule>
+        {$rule/(@id, @name, @context, @role, @flag)}
+        </svrl:fired-rule>,
+        ', ' || $compile:RULE_CONTEXT || '! (' ||
+        string-join(
+          for $assertion in $assertions
+          return compile:function-name($assertion) || '(.)', 
+          ','
+        ) 
+        || ')) else ()'
+      )
+    ) || string-join($assertions ! compile:assertion(., $phase, false()))
+  )
+};
+
+(:~ group-specific version of compile-rule.
+ : @param rule the rule to compile
+ : @param phase optional phase
+ :) 
+declare function compile:group-rule(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return (
+    compile:declare-function(
+      compile:function-name($rule),
+      ($compile:RULE_CONTEXT, ()),
+      (
+        'if(exists(' || $compile:RULE_CONTEXT || ')) then (',
         <svrl:fired-rule>
         {$rule/(@id, @name, @context, @role, @flag)}
         </svrl:fired-rule>,
