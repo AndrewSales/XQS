@@ -385,10 +385,10 @@ declare function compile:group-documents(
         'document-node()*'
       ) ||
       ' return (',
-      <svrl:active-pattern 
+      <svrl:active-group 
         documents='{{string-join({$compile:SUBORDINATE_DOCS} ! base-uri(.))}}'>
       {$group/(@id, @name, @role)}
-      </svrl:active-pattern>, 
+      </svrl:active-group>, 
       ', ' || $compile:SUBORDINATE_DOCS || ' ! local:rules((' ||
       string-join(
         for $rule in $group/sch:rule 
@@ -426,8 +426,9 @@ declare function compile:rule-documents(
         $compile:RULE_CONTEXT_NAME,
         $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
-      ' return if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
-        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+      ' return if(exists(' || $compile:RULE_CONTEXT || ')' ||      
+      (if($rule/../self::sch:pattern) then (' and empty(' || $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')') else ())
+      || ') then (',
       <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
       {$rule/(@id, @name, @context, @role, @flag)}
       </svrl:fired-rule>,
