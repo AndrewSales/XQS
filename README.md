@@ -57,6 +57,18 @@ The output from `compile.bxs` is an XQuery main module, which contains two exter
 
 **CAUTION** When compiling, avoid using the XQS namespace (`http://www.andrewsales.com/ns/xqs`) in your schema, which XQS uses for variables internal to the application.
 
+### Reporting the Schematron edition
+
+Both evaluation and compile scripts support the `report-edition` option, which  is a new conformance requirement for implementations. In XQS, it can be invoked by passing one of the values `y`, `true`, `yes` or `1` in any combination of case to the `report-edition` option:
+
+    basex -buri=myDoc.xml -bschema=mySchema.sch -breport-edition=Y evaluate.bxs
+    
+When this option is enabled and your schema includes the optional attribute `schematronEdition`, XQS reports this via an empty `schema` root element as the first item returned, e.g.
+
+    <schema xmlns='http://purl.oclc.org/dsdl/schematron' schematronEdition='2025'/>
+    
+Output from evaluating or compiling the schema will be the second item returned in this scenario.    
+
 ### Validate
 
 For convenience, if you have compiled a schema using `compile.bxs`, you can run `validate.bxs`, passing the schema and document locations:
@@ -82,6 +94,13 @@ If you use phases, you can pass them in like so:
 or
 
     xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
+    
+where `myPhase` is the ID of the selected phase. 
+
+Here you may also use the reserved values:
+- `#ALL` - to indicate that all patterns are active;
+- `#ANY` - to choose the phase dynamically based on evaluating `phase/@when` against the instance document (new in Schematron 2025); or
+- `#DEFAULT` to select the default phase.     
     
 ## Inclusion and expansion
 
