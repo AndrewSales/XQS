@@ -67,6 +67,23 @@ declare %unit:test function _:abstract-rule()
   )
 };
 
+(:~ New element rules introduced by ISO2025 :)
+declare %unit:test function _:abstract-rules()
+{
+  let $schema := doc('test-cases/abstract-rules.sch')
+  let $result := ie:include-expand($schema/*)
+  return
+  (
+    unit:assert(not($result//sch:extends)),
+    unit:assert(not($result//sch:rules)),
+    unit:assert-equals(count($result//sch:rule), 2),
+    unit:assert($result//sch:rule[@context eq 'element']),
+    unit:assert($result//sch:rule[@context eq '*']),
+    unit:assert($result//sch:rule/sch:report[@test eq 'self::element']),
+    unit:assert($result//sch:rule/sch:report[@test eq 'name()'])
+  )
+};
+
 declare %unit:test function _:abstract-pattern()
 {
   let $schema := doc('test-cases/abstract-pattern.sch')
