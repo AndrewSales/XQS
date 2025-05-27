@@ -51,7 +51,12 @@ declare function output:assertion-message(
         $rule-context,
         $context
       )},
-      $assertion/(@id, @role, @flag, @test, @severity),
+      $assertion/(@id, @test),
+      output:dynamic-attributes(
+        $assertion/(@role, @flag, @severity),
+        $prolog,
+        $context
+      ),
       output:diagnostics(
         $context?diagnostics[@id = tokenize($assertion/@diagnostics)],
         $prolog,
@@ -71,6 +76,29 @@ declare function output:assertion-message(
         $context
       )
     }
+};
+
+(:~ If the value of flag, role or severity is a variable reference, its value 
+ : is dynamically evaluated.
+ : This implementation returns the attribute with a dynamically evaluated value, 
+ : or as-is if its value is not a variable reference.
+ : @param atts the attributes to dynamically evaluate
+ : @param prolog the query prolog
+ : @param context the validation context
+ : @see ISO2025 5.6.6, 5.6.14 & 5.6.16
+ :)
+declare %private function output:dynamic-attributes(
+  $atts as attribute()*,
+  $prolog as xs:string?,
+  $context as map(*)
+)
+as attribute()*
+{
+  for $att in $atts
+  return 
+  if(starts-with($att, '$')) 
+  then attribute{$att/name()}{xquery:eval($prolog || $att, $context?globals)}
+  else $att
 };
 
 (:~ Transforms SCH namespace to SVRL. (Not attempting to address inconsistencies
