@@ -2124,6 +2124,94 @@ declare %unit:test function _:attribute-visit-each-with-let()
   )
 };
 
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-role()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-role' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' role='$dynamic-role'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@role/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-flag()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-flag' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' flag='$dynamic-flag'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@flag/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-severity()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-severity' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' severity='$dynamic-severity'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@severity/data(),
+      'bar'
+    )
+  )
+};
+
 (:TODO
 @when with @from
 @visit-each
