@@ -630,7 +630,8 @@ as element()
       then '{path(($Q{http://www.andrewsales.com/ns/xqs}context)/' ||
         ($assertion/@subject, $assertion/../@subject)[1] || ')}'
       else '{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
-    $assertion/(@id, @role, @flag, @severity),
+    $assertion/(@id),
+    compile:dynamic-attributes($assertion/(@role, @flag, @severity)),
     attribute{'test'}{$assertion/@test => replace('\{', '{{') => replace('\}', '}}')},
     $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]
     !
@@ -645,6 +646,15 @@ as element()
     </svrl:property-reference>,
     compile:assertion-message-content($assertion/node())
   }
+};
+
+declare %private function compile:dynamic-attributes($atts as attribute()*)
+{
+  for $att in $atts
+  return 
+  if(starts-with($att, '$')) 
+  then attribute{$att/name()}{'{' || $att || '}'}
+  else $att
 };
 
 declare %private function compile:variables(
