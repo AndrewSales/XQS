@@ -184,7 +184,7 @@ declare %unit:test function _:process-extends()
 
 declare %unit:test function _:process-extends-recursive()
 {
-  let $doc := doc('test-cases/extends-recursive.sch')
+  let $doc := doc('test-cases/extends-recursive-2.sch')
   let $schema := ie:process-includes($doc/*)
   return
   (

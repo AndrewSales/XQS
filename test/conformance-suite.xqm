@@ -32,7 +32,7 @@ declare %unit:test function _:extends-baseuri-fixup1()
 (:~ Extends is recursive 
 :)
 declare %unit:test function _:extends-recursive1(){
-  let $schema := ie:process-includes(doc('extends-recursive.sch')/*)
+  let $schema := ie:process-includes(doc('test-cases/extends-recursive.sch')/*)
   let $result := 
   eval:schema(
     document{<element/>},
