@@ -477,26 +477,25 @@ as element()
  : @param phase the optional phase
  :)
 declare %private function compile:variables(
-  $context as element(),
+  $context as element(sch:*),
   $phase as element(sch:phase)?
 )
 as xs:string?
 {
   string-join(
     (compile:root-context-variables($context, $phase),  
-    utils:local-variable-decls(
-        if($context/self::sch:rule)
-        then ()
-        else $context/../sch:let
-    )), 
+    if($context/self::sch:rule)
+    then ()
+    else compile:local-variable-decls($context/../sch:let)
+    ), 
     ' '
   )
 };
 
 (:~ Builds the string of local variable declarations.
- : This is a compilation-specific version, used to include the rule context variable. 
+ : This is a compilation-specific version, used to include the rule context variable
+ : when evaluating assertions. 
  : @param locals the variables to declare
- : @see $compile:RULE_CONTEXT_NAME
  :)
 declare function compile:local-variable-decls($locals as element(sch:let)*)
 as xs:string
@@ -508,7 +507,7 @@ as xs:string
     for $var in $locals
     return utils:declare-variable(
         $var/@name, 
-        (:$compile:RULE_CONTEXT_NAME || '/(' ||:) utils:variable-value($var)(: || ')':),
+        compile:function-name($var/..) || '()/(' || utils:variable-value($var) || ')',
         $var/@as
     ),
     ' '
