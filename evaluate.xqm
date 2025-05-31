@@ -108,6 +108,41 @@ declare function eval:pattern(
   )
 };
 
+(:~ Evaluates a group.
+ : @param group the group to evaluate
+ : @param context the validation context
+ :)
+declare function eval:group(
+  $group as element(sch:group),
+  $context as map(*)
+)
+{
+  let $_ := utils:check-duplicate-variable-names($group/sch:let)
+  
+  (:update context in light of @documents:)
+  let $context as map(*) := context:evaluate-pattern-documents($group/@documents, $context)
+  
+  (:evaluate pattern variables against global context:)
+  let $globals as map(*) := context:evaluate-root-context-variables(
+        $group/sch:let,
+        $context?instance,
+        $context?ns-decls,
+        $group/../sch:ns,
+        $context?globals,
+        map{'dry-run':$context?dry-run}
+      )
+
+  let $context := map:put($context, 'globals', $globals)
+  
+  return	(
+    <svrl:active-group>
+    {$group/(@id, @name, @role), 
+    if($group/@documents) then attribute{'documents'}{$context?instance ! base-uri(.)} else()}
+    </svrl:active-group>, 
+    eval:all-rules($group/sch:rule, $context)
+  )
+};
+
 (:~ Evaluates all the rules in a pattern.
  : Initially added for use in dry-run mode, to check for syntax errors.
  : N.B. we don't need to map the instance each time for this purpose, since we 

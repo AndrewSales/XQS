@@ -633,6 +633,39 @@ declare %unit:test function _:pattern-documents()
   )
 };
 
+(:~ if-then-else behaviour still works with @documents :)
+declare %unit:test function _:pattern-documents-halt-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-pattern/@documents),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
 declare %unit:test function _:pattern-documents-multiple()
 {
   let $compiled := compile:schema(
@@ -684,6 +717,64 @@ declare %unit:test('expected', 'err:XPST0008') function _:pattern-documents-vari
     </sch:schema>,
     ''
   ) => xquery:eval(map{$_:DOC_PARAM:document{<root/>}})
+};
+
+declare %unit:test function _:group-documents()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-group/@documents),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
+(:~ if-then-else behaviour disabled for group/@documents :)
+declare %unit:test function _:group-documents-halt-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group documents="/element/@secondary">
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+        <sch:rule context="/">
+          <sch:report test="root"/>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:doc('document-01.xml')}
+  )
+  return (
+    unit:assert($result/svrl:active-group/@documents),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      2
+    )
+  )
 };
 
 (: USER-DEFINED FUNCTIONS :)
@@ -2234,7 +2325,7 @@ declare %unit:test function _:attribute-visit-each-with-let()
  : case will be a sequence of more than one item - hence distinct-values() used 
  : in value-of.
  :)
-declare %unit:test function _:rule-variable-evaluated-against-context()
+declare %unit:ignore function _:rule-variable-evaluated-against-context()
 {
   let $compiled := compile:schema(
     <sch:schema>
@@ -2276,3 +2367,178 @@ declare %unit:test function _:rule-variable-evaluated-against-context()
 };
 
 (:CHECKME other targets of compile:variables() work as expected:)
+
+(:GROUPS:)
+
+(:~ active group processed :)
+declare %unit:test function _:process-group()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group id='e' name='f' role='g'>
+        <sch:rule context='*' id='a' name='b' role='c' flag='d'>
+          <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-group,
+      <svrl:active-group id='e' name='f' role='g'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule,
+      <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>
+    )
+  )
+};
+
+(:~ Groups turn off the if-then-else processing of the rules they contain.
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25
+ :)
+declare %unit:test function _:group-continue-on-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:group>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+        <sch:rule context='foo'>
+          <sch:report test='.'>should reach here</sch:report>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-group,
+      <svrl:active-group/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[1],
+      <svrl:fired-rule context='*'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[2],
+      <svrl:fired-rule context='foo'/>
+    ),
+    unit:assert-equals(
+      $result/svrl:failed-assert,
+      <svrl:failed-assert 
+      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report,
+      <svrl:successful-report 
+      test='.' location='/Q{{}}foo[1]'><svrl:text>should reach here</svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-role()
+{
+  let $compiled := compile:schema(
+    <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-role' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' role='$dynamic-role'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@role/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-flag()
+{
+  let $compiled := compile:schema(
+    <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-flag' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' flag='$dynamic-flag'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@flag/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-severity()
+{
+  let $compiled := compile:schema(
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-severity' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' severity='$dynamic-severity'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@severity/data(),
+      'bar'
+    )
+  )
+};

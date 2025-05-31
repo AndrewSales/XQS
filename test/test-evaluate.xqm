@@ -173,6 +173,22 @@ declare %unit:test function _:process-pattern()
   )
 };
 
+(:~ active group processed :)
+declare %unit:test function _:process-group()
+{
+  let $result := eval:group(
+    <sch:group id='e' name='f' role='g'>
+      <sch:rule context='*' id='a' name='b' role='c' flag='d'/>
+    </sch:group>,
+    map{'instance':document{<foo/>}, 'globals':map{}}
+  )
+  return unit:assert-equals(
+    $result,
+    (<svrl:active-group id='e' name='f' role='g'/>,
+    <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>)
+  )
+};
+
 (:~ rule in active pattern processed :)
 declare %unit:test function _:process-rule()
 {
@@ -597,6 +613,37 @@ declare %unit:test function _:rule-processing()
       <svrl:fired-rule context='/article/section/@role'/>,
       <svrl:successful-report
       test='.' location='/Q{{}}article[1]/Q{{}}section[1]/@role'><svrl:text>@role</svrl:text></svrl:successful-report>
+    )
+  )
+};
+
+(:~ Groups turn off the if-then-else processing of the rules they contain.
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25
+ :)
+declare %unit:test function _:group-continue-on-match()
+{
+  let $result := eval:group(
+    <sch:group>
+      <sch:rule context='*'>
+        <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+      </sch:rule>
+      <sch:rule context='foo'>
+        <sch:report test='.'>should reach here</sch:report>
+      </sch:rule>
+    </sch:group>,
+    map{'instance':document{<foo/>}, 'globals':map{}}
+  )
+  return
+  unit:assert-equals(
+    $result,
+    (
+      <svrl:active-group/>,
+      <svrl:fired-rule context='*'/>,
+      <svrl:failed-assert 
+      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>,
+      <svrl:fired-rule context='foo'/>,
+      <svrl:successful-report 
+      test='.' location='/Q{{}}foo[1]'><svrl:text>should reach here</svrl:text></svrl:successful-report>
     )
   )
 };
@@ -2077,12 +2124,97 @@ declare %unit:test function _:attribute-visit-each-with-let()
   )
 };
 
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-role()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-role' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' role='$dynamic-role'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@role/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-flag()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-flag' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' flag='$dynamic-flag'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@flag/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/64 :)
+declare %unit:test function _:dynamic-severity()
+{
+  let $result := eval:schema(
+    document{<root/>},
+     <sch:schema defaultPhase='phase'>
+      <sch:ns prefix='a' uri='b'/>
+      <sch:let name='c' value='d'/>
+      <sch:phase id='phase'>
+        <sch:let name='dynamic-severity' value='"bar"'/>
+        <sch:active pattern='foo'/>
+      </sch:phase>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()' severity='$dynamic-severity'></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/@severity/data(),
+      'bar'
+    )
+  )
+};
+
 (:TODO
 @when with @from
 @visit-each
 @visit-each in SVRL?
 @visit-each and @subject?
-group
-library
-rules
 :)

@@ -54,6 +54,21 @@ as element()*
         local:rules(tail($rules), tail($contexts), $matched | $context, $doc))
       )
 }; ' => normalize-space();  
+declare variable $compile:ALL_RULES_FUNCTION := 'declare function local:rules(
+  $rules as function(*)*,
+  $contexts as function(*)*
+)(:evaluate all rules (within a group):)
+as element()*
+{
+    if (empty($rules))
+    then
+        ()
+    else
+        let $context := head($contexts)()
+        return
+        (head($rules)($context),
+        local:rules(tail($rules), tail($contexts)))
+}; ' => normalize-space();
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
@@ -84,7 +99,9 @@ declare function compile:schema(
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
-  let $_ := (utils:check-duplicate-variable-names($schema/sch:let), utils:check-duplicate-variable-names($active-phase/sch:let))
+  let $active-groups := context:get-active-groups($schema, $active-phase)
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let), 
+    utils:check-duplicate-variable-names($active-phase/sch:let))
   return
   (utils:report-edition($schema, $options),
   (
@@ -92,6 +109,7 @@ declare function compile:schema(
     compile:user-defined-functions($schema/xqy:function),
     compile:any-phase($schema, $phase),
     $active-patterns ! compile:pattern(., $active-phase),
+    $active-groups ! compile:group(., $active-phase),
     compile:declare-function(
       'local:schema',
       (),
@@ -101,10 +119,12 @@ declare function compile:schema(
         {$schema/@schematronEdition}
         {compile:active-phase($active-phase, $phase)}
         {output:namespace-decls-as-svrl($schema/sch:ns)}
-      {'{', compile:active-patterns($active-patterns, $phase), '}'}
+      {'{', compile:active-patterns-groups($active-patterns | $active-groups, $phase), '}'}
       </svrl:schematron-output>
     )
     || $compile:RULES_FUNCTION || $compile:RULES_FUNCTION_WITH_CONTEXT ||
+    (if(exists($active-groups) or $phase eq $compile:ANY_PHASE) 
+    then $compile:ALL_RULES_FUNCTION else ()) ||
     compile:choose-phase($schema, $phase) ||
     'local:schema()'
   ) => serialize(map{'method':'basex'}))
@@ -148,13 +168,14 @@ declare function compile:any-phase(
   else ()
 };
 
-(:~ Compile invocations of the active patterns in the schema, based on the active : phase. The active phase can only be determined dynamically when #ANY is used,
- : so this implementation includes that decision logic.
+(:~ Compile invocations of the active patterns and groups in the schema, based 
+ : on the active phase. The active phase can only be determined dynamically when
+ : #ANY is used, so this implementation includes that decision logic.
  : @param patterns active patterns
  : @param phase the selected phase
  :)
-declare function compile:active-patterns(
-  $patterns as element(sch:pattern)+,
+declare function compile:active-patterns-groups(
+  $patterns as element(sch:*)+,
   $phase as xs:string?
 )
 as xs:string?
@@ -167,14 +188,14 @@ as xs:string?
     || string-join(
         for $phase in $schema/sch:phase[@when] return 'case "' || $phase/@id 
         || '" return ' 
-        || compile:invoke-patterns($patterns[@id = $phase/sch:active/@pattern], $phase) || ' '
+        || compile:invoke-patterns-groups($patterns[@id = $phase/sch:active/@pattern], $phase) || ' '
       )
-    || 'default return ' || compile:invoke-patterns($patterns, $phase)
-  else compile:invoke-patterns($patterns, $phase)
+    || 'default return ' || compile:invoke-patterns-groups($patterns, $phase)
+  else compile:invoke-patterns-groups($patterns, $phase)
 };
 
-declare %private function compile:invoke-patterns(
-  $patterns as element(sch:pattern)+,
+declare %private function compile:invoke-patterns-groups(
+  $patterns as element(sch:*)+,
   $phase as xs:string?
 )
 as xs:string?
@@ -241,9 +262,8 @@ declare function compile:pattern(
       compile:function-name($pattern),
       (),
       (
-        <svrl:active-pattern>
-        {$pattern/(@id, @name, @role)}
-        </svrl:active-pattern>, ', local:rules((' ||
+        element{'svrl:active-'||$pattern/local-name()}
+        {$pattern/(@id, @name, @role)}, ', local:rules((' ||
         string-join(for $rule in $pattern/sch:rule 
         return ' ' || compile:function-name($rule) || '#2', ',') || '), (' ||
         string-join(for $rule in $pattern/sch:rule 
@@ -251,6 +271,41 @@ declare function compile:pattern(
       ),
       $pattern/sch:rule ! 
       (compile:rule(., $phase), compile:rule-context(., $phase))
+    )
+};
+
+(:~ Compile a group to a function.
+ : local:rules() takes two arguments for groups:
+ : - a sequence of functions representing its rules
+ : - a sequence of functions to compute the context for each rule.
+ : On each recursion, the rule context is calculated (via _rule-function_#0).
+ : The contexts matched so far and the rule context are passed to
+ : _rule-function_#1, whose body is executed.
+ :)
+declare function compile:group(
+  $group as element(sch:group),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := (utils:check-duplicate-variable-names($group/sch:let),
+    utils:check-duplicate-variable-names($phase/sch:let))
+  return
+  if($group/@documents)
+  then compile:group-documents($group, $phase)
+  else
+    (compile:declare-function(
+      compile:function-name($group),
+      (),
+      (
+        <svrl:active-group>{$group/(@id, @name, @role)}</svrl:active-group>,
+        ', local:rules((' ||
+        string-join(for $rule in $group/sch:rule 
+        return ' ' || compile:function-name($rule) || '#1', ',') || '), (' ||
+        string-join(for $rule in $group/sch:rule 
+        return ' ' || compile:function-name($rule) || '#0', ',') || '))')
+      ),
+      $group/sch:rule ! 
+      (compile:group-rule(., $phase), compile:rule-context(., $phase))
     )
 };
 
@@ -303,6 +358,55 @@ declare function compile:pattern-documents(
     )
 };
 
+(:~ Creates a function to process a group which specifies subordinate 
+ : documents. 
+ : This implementation resolves the URIs of subordinate documents
+ : against the base URI of the instance document.
+ : @param group the group[@documents]
+ : @param phase optional phase
+ :)
+declare function compile:group-documents(
+  $group as element(sch:group),
+  $phase as element(sch:phase)?
+)
+{
+  compile:declare-function(
+    compile:function-name($group), 
+    '',
+    (
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOC_URIS,
+        $compile:INSTANCE_DOC || '/(' || $group/@documents => utils:escape() || ')'
+      ) ||
+      compile:declare-variable(
+        $compile:SUBORDINATE_DOCS,
+        $compile:SUBORDINATE_DOC_URIS || 
+          '! doc(resolve-uri(., ' || $compile:INSTANCE_DOC || '/base-uri()))',
+        'document-node()*'
+      ) ||
+      ' return (',
+      <svrl:active-group 
+        documents='{{string-join({$compile:SUBORDINATE_DOCS} ! base-uri(.))}}'>
+      {$group/(@id, @name, @role)}
+      </svrl:active-group>, 
+      ', ' || $compile:SUBORDINATE_DOCS || ' ! local:rules((' ||
+      string-join(
+        for $rule in $group/sch:rule 
+        return compile:function-name($rule) || '#3',
+        ','
+      ) || '), (' ||
+      string-join(for $rule in $group/sch:rule 
+      return ' ' || compile:function-name($rule) || '#1', ',') ||
+      '), (), .))'
+    )
+  ),
+    $group/sch:rule ! 
+    (
+      compile:group-rule-documents(., $phase), 
+      compile:rule-context-documents(., $phase)
+    )
+};
+
 (:~ Creates a function for a rule to process a subordinate document. :)
 declare function compile:rule-documents(
   $rule as element(sch:rule),
@@ -322,8 +426,43 @@ declare function compile:rule-documents(
         $compile:RULE_CONTEXT_NAME,
         $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
       ) ||
-      ' return if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
-        $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+      ' return if(exists(' || $compile:RULE_CONTEXT || ') and empty(' || 
+      $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+      <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
+      {$rule/(@id, @name, @context, @role, @flag)}
+      </svrl:fired-rule>,
+      ', ' || $compile:RULE_CONTEXT || '! (',
+      string-join(
+        for $assertion in $assertions
+        return compile:function-name($assertion, true()) || '(.)', 
+        ','
+      ) 
+      || ')) else ()'
+      )
+  ) || string-join($assertions ! compile:assertion(., $phase, true()))
+  )
+};
+
+(:~ group-specific version of compile:rule-documents. :)
+declare function compile:group-rule-documents(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $function-name := compile:function-name($rule)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return (
+    compile:declare-function(
+      $function-name, 
+      ($compile:RULE_CONTEXT, $compile:RULE_MATCHED, $compile:SUBORDINATE_DOCS),      (
+      string-join(utils:local-variable-decls($rule/sch:let), ' ') ||
+      (if($rule/sch:let) then ' return ' else ()) ||
+      utils:declare-variable(
+        $compile:RULE_CONTEXT_NAME,
+        $compile:SUBORDINATE_DOCS || '/(' || $rule/@context => utils:escape() || ')'
+      ) ||
+      ' return if(exists(' || $compile:RULE_CONTEXT || ')) then (',
       <svrl:fired-rule document='{{base-uri({$compile:SUBORDINATE_DOCS})}}'>
       {$rule/(@id, @name, @context, @role, @flag)}
       </svrl:fired-rule>,
@@ -387,6 +526,10 @@ as xs:string
   || (if($rule/@visit-each) then '/(' || $rule/@visit-each || ')' else ())
 };
 
+(:~ Compile a rule.
+ : @param rule the rule to compile
+ : @param phase optional phase
+ :) 
 declare function compile:rule(
   $rule as element(sch:rule),
   $phase as element(sch:phase)?
@@ -399,8 +542,40 @@ declare function compile:rule(
       compile:function-name($rule),
       ($compile:RULE_CONTEXT, $compile:RULE_MATCHED),
       (
-        'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' ||
+        'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' || 
         $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
+        <svrl:fired-rule>
+        {$rule/(@id, @name, @context, @role, @flag)}
+        </svrl:fired-rule>,
+        ', ' || $compile:RULE_CONTEXT || '! (' ||
+        string-join(
+          for $assertion in $assertions
+          return compile:function-name($assertion) || '(.)', 
+          ','
+        ) 
+        || ')) else ()'
+      )
+    ) || string-join($assertions ! compile:assertion(., $phase, false()))
+  )
+};
+
+(:~ group-specific version of compile-rule.
+ : @param rule the rule to compile
+ : @param phase optional phase
+ :) 
+declare function compile:group-rule(
+  $rule as element(sch:rule),
+  $phase as element(sch:phase)?
+)
+{
+  let $_ := utils:check-duplicate-variable-names($rule/sch:let)
+  let $assertions as element()+ := $rule/(sch:assert|sch:report)
+  return (
+    compile:declare-function(
+      compile:function-name($rule),
+      ($compile:RULE_CONTEXT, ()),
+      (
+        'if(exists(' || $compile:RULE_CONTEXT || ')) then (',
         <svrl:fired-rule>
         {$rule/(@id, @name, @context, @role, @flag)}
         </svrl:fired-rule>,
@@ -455,7 +630,8 @@ as element()
       then '{path(($Q{http://www.andrewsales.com/ns/xqs}context)/' ||
         ($assertion/@subject, $assertion/../@subject)[1] || ')}'
       else '{path($Q{http://www.andrewsales.com/ns/xqs}context)}'},
-    $assertion/(@id, @role, @flag, @severity),
+    $assertion/(@id),
+    compile:dynamic-attributes($assertion/(@role, @flag, @severity)),
     attribute{'test'}{$assertion/@test => replace('\{', '{{') => replace('\}', '}}')},
     $assertion/root()//sch:diagnostic[@id = tokenize($assertion/@diagnostics)]
     !
@@ -470,6 +646,15 @@ as element()
     </svrl:property-reference>,
     compile:assertion-message-content($assertion/node())
   }
+};
+
+declare %private function compile:dynamic-attributes($atts as attribute()*)
+{
+  for $att in $atts
+  return 
+  if(starts-with($att, '$')) 
+  then attribute{$att/name()}{'{' || $att || '}'}
+  else $att
 };
 
 (:~ Compile in-scope variables :
@@ -544,7 +729,8 @@ declare %private function compile:function-name($element as element())
 as xs:string
 {
   'local:' ||
-  $element/ancestor-or-self::*[ancestor-or-self::sch:pattern] ! 
+  $element/ancestor-or-self::*
+  [ancestor-or-self::sch:pattern or ancestor-or-self::sch:group] ! 
   (local-name(.) || compile:function-id(.))
   => string-join('-')
 };

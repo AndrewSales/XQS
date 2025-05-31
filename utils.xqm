@@ -262,7 +262,7 @@ declare function utils:report-edition(
   $options as map(*)?
 )
 {
-  if($options?report-edition = ('true', 'y', 'yes', '1'))
+  if(lower-case($options?report-edition) = ('true', 'y', 'yes', '1'))
   then 
   trace(<sch:schema>{$schema/@schematronEdition}</sch:schema>)    
   else ()

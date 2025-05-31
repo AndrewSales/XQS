@@ -1,20 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schema xmlns="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2">
+<library xmlns="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2">
     
-    <extends href="library.sch"/>
-    
-    <let name="some-global" value="'blort'"/>
-    
-    <pattern id='foo'>
-        <rule context="foo">
+    <pattern id='blort'>
+        <rule context="blort">
             <assert test="@wibble">Element <name/> must have attribute 'wibble'</assert>
         </rule>
     </pattern>
     
-    <pattern id='bar'>
-        <rule context="bar">
+    <pattern id='wibble'>
+        <rule context="wibble">
             <assert test=". = $some-global">Element <name/> must have value '<value-of select="$some-global"/>'</assert>
         </rule>
     </pattern>
     
-</schema>
+</library>

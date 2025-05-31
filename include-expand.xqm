@@ -103,7 +103,8 @@ as element(sch:schema)
   modify
     (for $extends in $copy//sch:extends[@rule]
     return replace node $extends with ie:expand-rule($extends, $schema),
-    delete node $copy//sch:rule[@abstract eq 'true'])
+    delete node $copy//(sch:rule[@abstract eq 'true']|sch:rules)
+    )
   return $copy
 };
 

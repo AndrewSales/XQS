@@ -45,7 +45,8 @@ as map(*)
     else map{}
     
   let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase, $instance, $globals, $options)
-  let $active-patterns as element(sch:pattern)+ := c:get-active-patterns($schema, $active-phase)
+  let $active-patterns as element(sch:pattern)* := c:get-active-patterns($schema, $active-phase)
+  let $active-groups as element(sch:group)* := c:get-active-groups($schema, $active-phase)
       
   return 
   map:merge(
@@ -54,6 +55,7 @@ as map(*)
       map{
       'phase' : $active-phase,
       'patterns' : $active-patterns,
+      'groups' : $active-groups,
       'ns-decls' : $namespaces,
       'globals' : $globals,
       'instance' : $instance,
@@ -178,9 +180,26 @@ declare function c:get-active-patterns(
   $schema as element(sch:schema), 
   $active-phase as element(sch:phase)?
 )
-as element(sch:pattern)+
+as element(sch:pattern)*
 {
   $schema/sch:pattern[sch:rule][
+    if($active-phase) then @id = $active-phase/sch:active/@pattern else true()
+  ]  
+};
+
+(:~ Determines the active groups.
+ : @see https://github.com/Schematron/schematron-enhancement-proposals/issues/25#issuecomment-1178553154
+ : @param schema the Schematron schema
+ : @param the active phase
+ : @return the active groups
+ :)
+declare function c:get-active-groups(
+  $schema as element(sch:schema), 
+  $active-phase as element(sch:phase)?
+)
+as element(sch:group)*
+{
+  $schema/sch:group[sch:rule][
     if($active-phase) then @id = $active-phase/sch:active/@pattern else true()
   ]  
 };

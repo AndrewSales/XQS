@@ -152,6 +152,20 @@ declare %unit:test function _:report-schematron-edition()
 };
 
 (:~ First item reported will be to stderr. :)
+declare %unit:test function _:report-schematron-edition-case-insensitive()
+{
+  let $result := xqs:validate(
+    document{<element/>},
+    <sch:schema queryBinding='xquery31' schematronEdition='2025'>
+      <sch:pattern><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
+    </sch:schema>,
+    map{'report-edition':'YES'}
+  )
+  return
+  unit:assert-equals($result[1], <sch:schema schematronEdition="2025"/>)
+};
+
+(:~ First item reported will be to stderr. :)
 declare %unit:test function _:report-schematron-edition-none()
 {
   let $result := xqs:validate(
