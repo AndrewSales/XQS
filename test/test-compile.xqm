@@ -2279,10 +2279,8 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
   )
 };
 
-(:~ @visit-each with local variable
- : IGNORING: to address in #45
- :)
-declare %unit:ignore function _:attribute-visit-each-with-let()
+(:~ @visit-each with local variable :)
+declare %unit:test function _:attribute-visit-each-with-let()
 {
   let $compiled := compile:schema(
     <sch:schema>
@@ -2323,16 +2321,19 @@ declare %unit:ignore function _:attribute-visit-each-with-let()
 };
 
 (:~ local variable evaluated against current context
- : IGNORING: to address in #45
+ : N.B. without rule/@visit-each, the result of each evaluated report in this 
+ : case will be a sequence of more than one item - hence distinct-values() used 
+ : in value-of.
  :)
 declare %unit:ignore function _:rule-variable-evaluated-against-context()
 {
   let $compiled := compile:schema(
     <sch:schema>
       <sch:pattern id='wibble'>
-        <sch:rule context='//bar'>
+        <sch:rule context='//bar' id='bar'>
           <sch:let name='context' value='blort'/>
-          <sch:report test='$context/@wibble'><sch:value-of select='$context/@wibble'/></sch:report>
+          <sch:report test='$context/@wibble[. eq "2"]'><sch:value-of select='distinct-values($context/@wibble[. eq "2"])'/></sch:report>
+          <sch:report test='$context/@wibble[. eq "3"]'><sch:value-of select='distinct-values($context/@wibble[. eq "3"])'/></sch:report>
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
@@ -2364,6 +2365,8 @@ declare %unit:ignore function _:rule-variable-evaluated-against-context()
     )
   )
 };
+
+(:CHECKME other targets of compile:variables() work as expected:)
 
 (:GROUPS:)
 

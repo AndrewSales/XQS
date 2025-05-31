@@ -519,7 +519,7 @@ declare %private function compile:rule-context-body(
 as xs:string
 {
   compile:variables($rule, $phase) ||
-  (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
+  (if(($phase|$rule/..)/sch:let) then ' return ' else ()) ||
   $doc ||
   (if($phase/@from) then '/(' || $phase/@from => utils:escape() || ')' else ())
   || '/(' || $rule/@context => utils:escape() || ')'
@@ -657,15 +657,44 @@ declare %private function compile:dynamic-attributes($atts as attribute()*)
   else $att
 };
 
+(:~ Compile in-scope variables :
+ : @param context the schema element context, i.e. a rule or assertion 
+ : @param phase the optional phase
+ :)
 declare %private function compile:variables(
-  $context as element(),
+  $context as element(sch:*),
   $phase as element(sch:phase)?
 )
 as xs:string?
 {
   string-join(
     (compile:root-context-variables($context, $phase),  
-    utils:local-variable-decls($context/ancestor-or-self::sch:rule/sch:let)), 
+    if($context/self::sch:rule)
+    then ()
+    else compile:local-variable-decls($context/../sch:let)
+    ), 
+    ' '
+  )
+};
+
+(:~ Builds the string of local variable declarations.
+ : This is a compilation-specific version, used to include the rule context variable
+ : when evaluating assertions. 
+ : @param locals the variables to declare
+ :)
+declare function compile:local-variable-decls($locals as element(sch:let)*)
+as xs:string
+{
+  '
+(:LOCALS:)
+  '||
+  string-join(
+    for $var in $locals
+    return utils:declare-variable(
+        $var/@name, 
+        compile:function-name($var/..) || '()/(' || utils:variable-value($var) || ')',
+        $var/@as
+    ),
     ' '
   )
 };
