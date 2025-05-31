@@ -12,7 +12,7 @@ declare namespace xqy = 'http://www.w3.org/2012/xquery';
  : evaluation.
  : @param globals the global variables
  :)
-declare function utils:global-variable-decls($globals as element(sch:let)*)
+declare function utils:global-variable-decls($globals as element(sch:*)*)
 as xs:string?
 {
   string-join(
@@ -53,7 +53,7 @@ as xs:string
  : current context. If no value attribute is specified, the value of the 
  : attribute is the element content of the let element."
  :)
-declare function utils:variable-value($var as element(sch:let))
+declare function utils:variable-value($var as element(sch:*))
 as xs:string
 {
   if($var/@as => normalize-space() => matches('^map\([^\)]+\)')) 
@@ -126,8 +126,10 @@ as xs:string
 (:~ @see ISO2020, 7.2: "A Schematron schema shall have one definition only in 
  : scope for any global variable name in the global context and any local 
  : variable name in the local context." 
+ : @see ISO2025: "Parameter names shall be distinct within the scope of a 
+ : pattern or schema."
  :)
-declare function utils:check-duplicate-variable-names($decls as element(sch:let)*)
+declare function utils:check-duplicate-variable-names($decls as element(sch:*)*)
 {
   let $names as xs:string* := $decls/@name/string()
   return
