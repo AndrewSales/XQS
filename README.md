@@ -1,5 +1,12 @@
 # XQS
-XQuery implementation of Schematron
+XQuery for Schematron (XQS) (pron. /ɛksˈkju&#x2D0;z/) is an XQuery implementation of Schematron.
+
+The development version is a highly conformant implementation of the forthcoming 2025 edition of the international standard, ISO/IEC 19757-3:2025.
+
+# Limitations
+The only known area of non-conformance is XInclude-like language fixup, which is mandated by Clause 6.7 _Localization and language fixup_.
+
+See also https://github.com/AndrewSales/XQS/issues/29.
 
 # Pre-requisites
 Tested under [BaseX](https://basex.org/) 10.x.
@@ -63,7 +70,7 @@ Both evaluation and compile scripts support the `report-edition` option, which  
 
     basex -buri=myDoc.xml -bschema=mySchema.sch -breport-edition=Y evaluate.bxs
     
-When this option is enabled and your schema includes the optional attribute `schematronEdition`, XQS reports this via an empty `schema` root element as the first item returned, e.g.
+When this option is enabled, XQS reports this via an empty `schema` root element as the first item returned, including the attribute `schematronEdition` if specified in the schema e.g.
 
     <schema xmlns='http://purl.oclc.org/dsdl/schematron' schematronEdition='2025'/>
     
