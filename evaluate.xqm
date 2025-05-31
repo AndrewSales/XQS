@@ -28,7 +28,7 @@ declare function eval:schema(
   $instance as node(),
   $schema as element(sch:schema),
   $phase as xs:string?,
-  $options as map(xs:string, xs:string)?
+  $options as map(xs:string, item())?
 )
 {
   utils:report-edition($schema, $options),

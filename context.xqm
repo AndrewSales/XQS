@@ -15,8 +15,8 @@ declare variable $c:DEFAULT_PHASE as xs:string := '#DEFAULT';
 declare variable $c:ALL_PATTERNS as xs:string := '#ALL';
 declare variable $c:ANY_PHASE as xs:string := '#ANY';
 
-(:~ Sets up the validation context: namespaces, global variables, active phase 
- : (if configured) and patterns.
+(:~ Sets up the validation context: namespaces, global variables, parameters,
+ : active phase (if configured) and patterns.
  : @param instance the document instance
  : @param schema the Schematron schema
  : @param phase the active phase
@@ -32,10 +32,12 @@ as map(*)
 {
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := $schema/sch:let
-  let $_ := utils:check-duplicate-variable-names($schema/sch:let)
-  let $globals as map(*) := if($globals) 
+  let $params as element(sch:param)* := $schema/sch:param
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
+    utils:check-duplicate-variable-names($schema/sch:param))
+  let $globals as map(*) := if($globals|$params) 
     then c:evaluate-global-variables(
-      $globals, 
+      $globals|$params, 
       $instance, 
       $namespaces, 
       $schema/sch:ns, 
@@ -235,7 +237,7 @@ as element(sch:let)*
  : @param options map of options
  :)
 declare function c:evaluate-global-variables(
-  $variables as element(sch:let)*,
+  $variables as element(sch:*)*,
   $instance as node(),
   $namespaces as xs:string?,
   $ns-elems as element(sch:ns)*,
@@ -339,7 +341,7 @@ as map(*)
  : @param options map of options
  :)
 declare function c:evaluate-global-variable(
-  $variable as element(sch:let),
+  $variable as element(sch:*),
   $instance as node(),
   $query as xs:string?,
   $ns-elems as element(sch:ns)*,

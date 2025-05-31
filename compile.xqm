@@ -94,14 +94,15 @@ declare function compile:schema(
 declare function compile:schema(
   $schema as element(sch:schema),
   $phase as xs:string?,
-  $options as map(xs:string, xs:string)?
+  $options as map(xs:string, item())?
 )
 {
   let $active-phase := context:get-active-phase($schema, $phase)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
   let $active-groups := context:get-active-groups($schema, $active-phase)
   let $_ := (utils:check-duplicate-variable-names($schema/sch:let), 
-    utils:check-duplicate-variable-names($active-phase/sch:let))
+    utils:check-duplicate-variable-names($active-phase/sch:let),
+    utils:check-duplicate-variable-names($schema/sch:param))
   return
   (utils:report-edition($schema, $options),
   (
@@ -233,7 +234,7 @@ as xs:string*
   string-join($schema/sch:ns ! context:make-ns-decls(.)) => utils:escape() ||
   $compile:EXTERNAL_VARIABLES ||
   string-join(
-    $schema/sch:let => compile:global-variable-decls()
+    $schema/(sch:let|sch:param) => compile:global-variable-decls()
   )
 };
 
@@ -783,7 +784,7 @@ as element(svrl:text)
  : evaluation.
  : @param globals the global variables
  :)
-declare function compile:global-variable-decls($globals as element(sch:let)*)
+declare function compile:global-variable-decls($globals as element(sch:*)*)
 as xs:string?
 {
   string-join(

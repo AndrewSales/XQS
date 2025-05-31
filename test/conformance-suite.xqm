@@ -765,3 +765,25 @@ declare %unit:test function _:svrl-value-of-011(){let $result:=eval:schema(docum
         </sch:rule>
       </sch:pattern>
     </sch:schema>, '') return unit:assert(not(_:is-valid($result)))};
+
+(:~ duplicate declaration of schema/@param
+ : @see ISO2025: "Parameter names shall be distinct within the scope of a 
+ : pattern or schema."
+ :)
+declare %unit:test('expected', 'xqs:multiply-defined-variable') 
+function _:schema-param-name-collision-error()
+{
+  eval:schema(
+    document{<root/>},
+     <sch:schema>
+      <sch:param name='myParam' value='"bar"'/>
+      <sch:param name='myParam'/>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()'><sch:value-of select='$myParam'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+};
