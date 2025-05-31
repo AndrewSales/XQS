@@ -2236,8 +2236,10 @@ declare %unit:test function _:schema-param()
   )
 };
 
-(:~ override schema/param, re https://github.com/Schematron/schematron-enhancement-proposals/issues/34 :)
-declare %unit:test function _:schema-param-override()
+(:~ override schema/param, re https://github.com/Schematron/schematron-enhancement-proposals/issues/34 
+: to address via https://github.com/AndrewSales/XQS/issues/54
+:)
+declare %unit:ignore function _:schema-param-override()
 {
   let $result := eval:schema(
     document{<root/>},

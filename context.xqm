@@ -32,9 +32,9 @@ as map(*)
 {
   let $namespaces as xs:string? := c:make-ns-decls($schema/sch:ns)
   let $globals as element(sch:let)* := $schema/sch:let
-  let $_ := utils:check-duplicate-variable-names($schema/sch:let)
   let $params as element(sch:param)* := $schema/sch:param
-  let $_ := utils:check-duplicate-variable-names($schema/sch:param)
+  let $_ := (utils:check-duplicate-variable-names($schema/sch:let),
+    utils:check-duplicate-variable-names($schema/sch:param))
   let $globals as map(*) := if($globals|$params) 
     then c:evaluate-global-variables(
       $globals|$params, 

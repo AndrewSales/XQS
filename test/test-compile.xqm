@@ -2542,3 +2542,62 @@ declare %unit:test function _:dynamic-severity()
     )
   )
 };
+
+(:~ schema/param, re https://github.com/Schematron/schematron-enhancement-proposals/issues/34 :)
+declare %unit:test function _:schema-param()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:param name='myParam' value='"bar"'/>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()'><sch:value-of select='$myParam'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+   let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/data(),
+      'bar'
+    )
+  )
+};
+
+(:~ override schema/param, re https://github.com/Schematron/schematron-enhancement-proposals/issues/34 
+: to address via https://github.com/AndrewSales/XQS/issues/54
+:)
+declare %unit:ignore function _:schema-param-override()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:param name='myParam' value='"bar"'/>
+      <sch:pattern id='foo'>
+        <sch:rule context='*'>
+          <sch:assert test='false()'><sch:value-of select='$myParam'/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    '',
+    map{
+      'params':map{'myParam':'blort'}
+    }	(:params passed in should override schema-declared values:)
+  )
+   let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return (
+    unit:assert($result/svrl:failed-assert),
+    unit:assert-equals(
+      $result/svrl:failed-assert/data(),
+      'blort'
+    )
+  )
+};
