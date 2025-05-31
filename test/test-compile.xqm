@@ -2239,7 +2239,7 @@ declare %unit:test function _:rule-variable-evaluated-against-context()
   let $compiled := compile:schema(
     <sch:schema>
       <sch:pattern id='wibble'>
-        <sch:rule context='//bar'>
+        <sch:rule context='//bar' id='bar'>
           <sch:let name='context' value='blort'/>
           <sch:report test='$context/@wibble'><sch:value-of select='$context/@wibble'/></sch:report>
         </sch:rule>

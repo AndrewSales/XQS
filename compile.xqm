@@ -380,7 +380,7 @@ declare %private function compile:rule-context-body(
 as xs:string
 {
   compile:variables($rule, $phase) ||
-  (if(($rule|$phase|$rule/..)/sch:let) then ' return ' else ()) ||
+  (if(($phase|$rule/..)/sch:let) then ' return ' else ()) ||
   $doc ||
   (if($phase/@from) then '/(' || $phase/@from => utils:escape() || ')' else ())
   || '/(' || $rule/@context => utils:escape() || ')'
@@ -472,6 +472,10 @@ as element()
   }
 };
 
+(:~ Compile in-scope variables :
+ : @param context the schema element context, i.e. a rule or assertion 
+ : @param phase the optional phase
+ :)
 declare %private function compile:variables(
   $context as element(),
   $phase as element(sch:phase)?
@@ -480,7 +484,11 @@ as xs:string?
 {
   string-join(
     (compile:root-context-variables($context, $phase),  
-    utils:local-variable-decls($context/ancestor-or-self::sch:rule/sch:let)), 
+    utils:local-variable-decls(
+        if($context/self::sch:rule)
+        then ()
+        else $context/../sch:let
+    )), 
     ' '
   )
 };
