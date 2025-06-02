@@ -546,7 +546,7 @@ declare function compile:rule(
         'if(exists(' || $compile:RULE_CONTEXT || ') and empty(' || 
         $compile:RULE_CONTEXT || ' intersect ' || $compile:RULE_MATCHED || ')) then (',
         <svrl:fired-rule>
-        {$rule/(@id, @name, @context, @role, @flag)}
+        {$rule/(@id, @name, @context, @visit-each, @role, @flag)}
         </svrl:fired-rule>,
         ', ' || $compile:RULE_CONTEXT || '! (' ||
         string-join(
@@ -612,14 +612,14 @@ declare function compile:assertion(
     ' return if(' || $compile:RESULT || ') then ' ||
     (
       if($assertion/self::sch:assert) 
-      then '() else ' || compile:assertion-message($assertion) => serialize()
-      else compile:assertion-message($assertion) => serialize() || ' else ()'
+      then '() else ' || compile:assertion-message($assertion)
+      else compile:assertion-message($assertion) || ' else ()'
     )
   )
 };
 
 declare %private function compile:assertion-message($assertion as element())
-as element()
+as xs:string
 {
   element{
     QName("http://purl.oclc.org/dsdl/svrl", 
@@ -646,7 +646,7 @@ as element()
     {compile:assertion-message-content(./node())}
     </svrl:property-reference>,
     compile:assertion-message-content($assertion/node())
-  }
+  } => serialize()
 };
 
 declare %private function compile:dynamic-attributes($atts as attribute()*)

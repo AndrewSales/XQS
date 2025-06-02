@@ -2244,6 +2244,44 @@ declare %unit:test function _:attribute-visit-each()
   )
 };
 
+(:~ @visit-each: SVRL output
+ :)
+declare %unit:test function _:attribute-visit-each-svrl()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='wibble'>
+        <sch:rule context='//bar' visit-each='blort'>
+          <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>,
+    ''
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>}}
+  )
+  return (
+    unit:assert-equals(
+      $result/svrl:active-pattern/@id/data(),
+      'wibble'
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule/@context/data(),
+      '//bar'
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule/@visit-each/data(),
+      'blort'
+    )
+  )
+};
+
+
 (:~ @visit-each
  :)
 declare %unit:test function _:attribute-visit-each-analyze-string()

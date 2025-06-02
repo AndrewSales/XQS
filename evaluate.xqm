@@ -266,7 +266,7 @@ declare function eval:process-rule(
   if(exists($rule-context) and empty($rule-context intersect $context?matched))
   then
   (<svrl:fired-rule>
-      {$rule/(@id, @name, @context, @role, @flag),
+      {$rule/(@id, @name, @context, @visit-each, @role, @flag),
       if($rule/../@documents) then attribute{'document'}{$context?instance/base-uri()} else ()}
       </svrl:fired-rule>,
       eval:assertions($rule, $prolog, $rule-context, $context))
