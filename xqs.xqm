@@ -11,19 +11,17 @@ import module namespace ie = 'http://www.andrewsales.com/ns/xqs-include-expand'
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 
-(:~ Validates a document against a Schematron schema, without applying a phase.
+(:~ Validates a document against a Schematron schema, without options.
  : @param instance the instance document
  : @param schema the Schematron schema
- : @param options map of options
  :)
 declare function xqs:validate(
   $instance as node(),
-  $schema as element(sch:schema),
-  $options as map(xs:string, xs:string)?
+  $schema as element(sch:schema)
 )
 {
   xqs:check-query-binding($schema),
-  eval:schema($instance, ie:include-expand($schema), '', $options)
+  eval:schema($instance, ie:include-expand($schema), map{})
 };
 
 (:~ Validates a document against a Schematron schema, applying an optional phase.
@@ -35,42 +33,26 @@ declare function xqs:validate(
 declare function xqs:validate(
   $instance as node(),
   $schema as element(sch:schema),
-  $phase as xs:string,
   $options as map(xs:string, xs:string)?
 )
 {
   xqs:check-query-binding($schema),
-  eval:schema($instance, ie:include-expand($schema), $phase, $options)
+  eval:schema($instance, ie:include-expand($schema), $options)
 };
 
-(:~ Compiles a Schematron schema, without applying a phase.
- : @param schema the Schematron schema
- : @param options map of options
- :)
-declare function xqs:compile(
-  $schema as element(sch:schema),
-  $options as map(xs:string, xs:string)?
-)
-as item()+
-{
-  xqs:check-query-binding($schema),
-  compile:schema(ie:include-expand($schema), '')
-};
-
-(:~ Compiles a Schematron schema, applying an optional phase.
+(:~ Compiles a Schematron schema.
  : @param schema the Schematron schema
  : @param phase the active phase
  : @param options map of options
  :)
 declare function xqs:compile(
   $schema as element(sch:schema),
-  $phase as xs:string,
   $options as map(xs:string, xs:string)?
 )
 as item()+
 {
   xqs:check-query-binding($schema),
-  compile:schema(ie:include-expand($schema), $phase, $options)
+  compile:schema(ie:include-expand($schema), $options)
 };
 
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)

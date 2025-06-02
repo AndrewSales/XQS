@@ -72,32 +72,29 @@ as element()*
 declare variable $compile:EXTERNAL_VARIABLES := 'declare variable ' || $compile:INSTANCE_PARAM || ' external;
     declare variable ' || $compile:INSTANCE_DOC || ' as document-node() external := doc(' || $compile:INSTANCE_PARAM || ');';  
 
-(:~ Compile a schema.
+(:~ Compile a schema without configuration options.
  : @param schema the schema to compile
- : @param phase the active phase, if any
  : @return the compiled schema
  :)
 declare function compile:schema(
-  $schema as element(sch:schema),
-  $phase as xs:string?
+  $schema as element(sch:schema)
 )
 {
-  compile:schema($schema, $phase, map{})
+  compile:schema($schema, map{})
 };
 
 (:~ Compile a schema, passing any configuration options.
  : @param schema the schema to compile
- : @param phase the active phase, if any
  : @param options a map of options
  : @return the Schematron edition, at user option; the compiled schema
  :)
 declare function compile:schema(
   $schema as element(sch:schema),
-  $phase as xs:string?,
   $options as map(xs:string, item())?
 )
 {
-  let $active-phase := context:get-active-phase($schema, $phase)
+  let $phase := $options?phase
+  let $active-phase := context:get-active-phase($schema, $options)
   let $active-patterns := context:get-active-patterns($schema, $active-phase)
   let $active-groups := context:get-active-groups($schema, $active-phase)
   let $_ := (utils:check-duplicate-variable-names($schema/sch:let), 

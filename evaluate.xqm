@@ -17,17 +17,27 @@ declare namespace xqy = 'http://www.w3.org/2012/xquery';
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
+(:~ Evaluates the schema to produce SVRL output, without processing options.
+ : @param instance the document instance
+ : @param schema the Schematron schema
+ :)
+declare function eval:schema(
+  $instance as node(),
+  $schema as element(sch:schema)
+)
+{
+  eval:schema($instance, $schema, map{})
+};
+
 (:~ Evaluates the schema to produce SVRL output, applying the processing options
  : specified.
  : @param instance the document instance
  : @param schema the Schematron schema
- : @param phase the active phase
  : @param options map of processing options
  :)
 declare function eval:schema(
   $instance as node(),
   $schema as element(sch:schema),
-  $phase as xs:string?,
   $options as map(xs:string, item())?
 )
 {
@@ -35,22 +45,7 @@ declare function eval:schema(
   if($options?dry-run eq 'true')
   then dr:schema($instance, $schema, $options)  
   else
-  eval:schema($instance, $schema, $phase)
-};
-
-(:~ Evaluates the schema to produce SVRL output.
- : @param instance the document instance
- : @param schema the Schematron schema
- : @param phase the active phase
- :)
-declare function eval:schema(
-  $instance as node(),
-  $schema as element(sch:schema),
-  $phase as xs:string?
-)
-{
-  let $context as map(*) := context:get-context($instance, $schema, $phase, map{})
-  
+  let $context as map(*) := context:get-context($instance, $schema, $options)  
   return 
   <svrl:schematron-output>
   {output:schema-title($schema/sch:title)}

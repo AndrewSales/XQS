@@ -24,7 +24,7 @@ declare %unit:ignore function _:extends-baseuri-fixup1(){let $compiled:=compile:
           <sch:extends href="subdir/include-1.sch"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Extends is recursive 
 :)
 declare %unit:ignore function _:extends-recursive1(){let $compiled:=compile:schema(
@@ -34,7 +34,7 @@ declare %unit:ignore function _:extends-recursive1(){let $compiled:=compile:sche
           <sch:extends href="include.sch"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Include performs base URI fixup
 : @see XML Inclusions (XInclude) Version 1.1, Section 4.7.5. 
 :)
@@ -43,14 +43,14 @@ declare %unit:ignore function _:include-baseuri-fixup1(){let $compiled:=compile:
       <sch:pattern>
         <sch:include href="subdir/include-1.sch"/>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Include is recursive 
 :)
 declare %unit:ignore function _:include-recursive1(){let $compiled:=compile:schema(
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
       <sch:include href="pattern.sch"/>
       <sch:pattern/>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error for a variable to be multiply defined in the current rule
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -66,7 +66,7 @@ function _:let-name-collision-error-011(){
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '')
+    </sch:schema>)
   };
 (:~ It is an error for a variable to be multiply defined in the current pattern
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
@@ -81,7 +81,7 @@ function _:let-name-collision-error-021(){compile:schema(
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '')
+    </sch:schema>)
   };
 (:~ It is an error for a variable to be multiply defined in the current schema
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
@@ -96,7 +96,7 @@ function _:let-name-collision-error-031(){compile:schema(
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '')
+    </sch:schema>)
   };
 (:~ It is an error for a variable to be multiply defined in the current phase
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
@@ -115,7 +115,7 @@ function _:let-name-collision-error-041(){compile:schema(
         </sch:rule>
       </sch:pattern>
     </sch:schema>, 
-    'phase')};
+    map{'phase':'phase'})};
 (:~ It is an error for a variable to be multiply defined globally, BUT pattern
 : variables should be local in scope.
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
@@ -129,7 +129,7 @@ declare %unit:test function _:let-name-collision-error-051(){let $compiled:=comp
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ It is *NOT* an error to define a pattern variable with the same name as a 
 : global variable - N.B. this differs from the conformance suite.
 : @see ISO Schematron 2016: Section 5.4.5 clause 3 
@@ -148,7 +148,7 @@ declare %unit:test function _:let-name-collision-error-061(){let $compiled:=comp
           <sch:assert test="$foobar = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ A pattern variable *DOES NOT* have global scope - N.B. this differs from the 
 : conformance suite.
 : @error XPST0008 (undeclared variable)
@@ -168,7 +168,7 @@ declare %unit:test('expected', 'err:XPST0008') function _:let-pattern-global-011
           <sch:assert test="$foobar = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '')
+    </sch:schema>)
     return xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   )
   
 };
@@ -183,7 +183,7 @@ function _:let-reference-undefined-011(){let $compiled:=compile:schema(
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference a variable in an assert test expression that has not been defined globally
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -195,7 +195,7 @@ function _:let-reference-undefined-021(){let $compiled:=compile:schema(
           <sch:assert test="$variable = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference a variable in an report test expression that has not been defined globally
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -207,7 +207,7 @@ function _:let-reference-undefined-031(){let $compiled:=compile:schema(
           <sch:report test="$variable = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference a variable in an rule variable that has not been defined globally
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -220,7 +220,7 @@ function _:let-reference-undefined-041(){let $compiled:=compile:schema(
           <sch:assert test="$ruleVariable"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference a variable in the @select expression of a sch:value-of element that has not been defined globally
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -234,7 +234,7 @@ function _:let-reference-undefined-051(){let $compiled:=compile:schema(
           </sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference a variable in the @path expression of a sch:name element that has not been defined globally
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -248,7 +248,7 @@ function _:let-reference-undefined-061(){let $compiled:=compile:schema(
           </sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to reference an undefined variable in the @documents expression of a sch:pattern element
 : @see ISO Schematron 2016: Section 5.4.5 Clause 3 
 :)
@@ -260,7 +260,7 @@ function _:let-reference-undefined-071(){let $compiled:=compile:schema(
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ A rule variable can use a schema variable
 : @see ISO Schematron 2016: Section 6.5 clause 6 
 :)
@@ -273,7 +273,7 @@ declare %unit:test function _:let-rule-global-011(){let $compiled:=compile:schem
           <sch:assert test="$rule-var = 2"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ A rule variable can use a phase variable
 : @see ISO Schematron 2016: Section 6.5 clause 6 
 :)
@@ -290,7 +290,7 @@ declare %unit:test function _:let-rule-global-021(){let $compiled:=compile:schem
         </sch:rule>
       </sch:pattern>
     </sch:schema>, 
-    'phase') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    map{'phase':'phase'}) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Pattern-variable is scoped to the pattern
 : @see ISO Schematron 2016: Section 3.26 
 :)
@@ -308,7 +308,7 @@ declare %unit:test function _:let-scope-pattern-011(){let $compiled:=compile:sch
           <sch:assert test="$foo = 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Phase-variable is scoped to the phase
 : @see ISO Schematron 2016: Section 3.26 
 :)
@@ -325,7 +325,7 @@ declare %unit:test function _:let-scope-phase-011(){let $compiled:=compile:schem
         </sch:rule>
       </sch:pattern>
     </sch:schema>, 
-    'phase') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    map{'phase':'phase'}) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Rule-variable is scoped to the rule
 : @see ISO Schematron 2016: Section 3.26 
 :)
@@ -341,7 +341,7 @@ declare %unit:test function _:let-scope-rule-011(){let $compiled:=compile:schema
           <sch:assert test="$foo = 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Let uses the element content as value
 : N.B. this differs from the conformance suite, possibly because of the way XSLT
 : impls create variables with element content
@@ -358,7 +358,7 @@ declare %unit:test function _:let-value-element-content-011(){let $compiled:=com
           <sch:assert test="count($foobar) = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') 
+    </sch:schema>) 
     let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))
   };
 (:~ Let uses the element content as value
@@ -375,7 +375,7 @@ declare %unit:test function _:let-value-element-content-012(){let $compiled:=com
           <sch:assert test="contains($foobar, 'paragraph')"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ An abstract pattern is instantiated
 : @see ISO Schematron 2016: Section 6.3 
 :)
@@ -390,7 +390,7 @@ declare %unit:ignore function _:pattern-abstract-011(){let $compiled:=compile:sc
         <sch:param name="context" value="element"/>
         <sch:param name="placeholder" value="1"/>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Pattern in a subordinate document
 : @see ISO Schematron 2016: Section 5.4.9 clause 2 
 :)
@@ -402,7 +402,7 @@ declare %unit:test function _:pattern-subordinate-document-011(){
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') 
+    </sch:schema>) 
     let $result := xquery:eval(     
     $compiled,     
     map{$_:DOC_PARAM:doc('document-01.xml')})
@@ -418,7 +418,7 @@ declare %unit:test function _:pattern-subordinate-document-021(){
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:doc('document.xml')}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:doc('document.xml')}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ An abstract rule is instantiated
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
@@ -432,7 +432,7 @@ declare %unit:ignore function _:rule-abstract-011(){let $compiled:=compile:schem
           <sch:extends rule="abstract-rule"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ It is an error to extend an abstract rule that is defined in a different pattern
 : @see ISO Schematron 2016: Section 5.4.12 clause 5 
 :)
@@ -448,7 +448,7 @@ declare %unit:ignore function _:rule-abstract-021(){let $compiled:=compile:schem
           <sch:extends rule="abstract-rule"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is an attribute node
 : @see ISO Schematron 2016: Annex C Clause 2 (xslt), Annex H Clause 2 (xslt2), Annex I Clause 2 (xpath2) 
 :)
@@ -459,7 +459,7 @@ declare %unit:test function _:rule-context-attribute-011(){let $compiled:=compil
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite" attribute="value"/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite" attribute="value"/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is a comment node
 : @see ISO Schematron 2016: Annex C Clause 2 (xslt), Annex H Clause 2 (xslt2), Annex I Clause 2 (xpath2) 
 :)
@@ -470,7 +470,7 @@ declare %unit:test function _:rule-context-comment-011(){let $compiled:=compile:
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
         <!-- Comment! -->
       </root>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is an element node
@@ -483,7 +483,7 @@ declare %unit:test function _:rule-context-element-011(){let $compiled:=compile:
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is a processing instruction node
 : @see ISO Schematron 2016: Annex C Clause 2 (xslt), Annex H Clause 2 (xslt2), Annex I Clause 2 (xpath2) 
 :)
@@ -494,7 +494,7 @@ declare %unit:test function _:rule-context-pi-011(){let $compiled:=compile:schem
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">
         <?processing-instruction foobar ?>
       </root>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is the root node
@@ -507,7 +507,7 @@ declare %unit:test function _:rule-context-root-011(){let $compiled:=compile:sch
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite"/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite"/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Context node is a text node
 : @see ISO Schematron 2016: Annex C Clause 2 (xslt), Annex H Clause 2 (xslt2) 
 :)
@@ -518,7 +518,7 @@ declare %unit:test function _:rule-context-text-011(){let $compiled:=compile:sch
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">Content</root>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<root xmlns="tag:dmaus@dmaus.name,2019:Schematron:Testsuite">Content</root>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Rule context expression uses a pattern variable
 : @see  
 :)
@@ -533,7 +533,7 @@ declare %unit:test function _:rule-context-variable-011(){let $compiled:=compile
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Rule context expression uses a phase variable
 : @see  
 :)
@@ -552,7 +552,7 @@ declare %unit:test function _:rule-context-variable-021(){let $compiled:=compile
         </sch:rule>
       </sch:pattern>
     </sch:schema>, 
-    'phase') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    map{'phase':'phase'}) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Rule context expression uses a schema variable
 : @see  
 :)
@@ -567,7 +567,7 @@ declare %unit:test function _:rule-context-variable-031(){let $compiled:=compile
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ Lexical order of rules is significant
 : @see ISO Schematron 2016: Section 6.5 Clause 5 
 :)
@@ -581,7 +581,7 @@ declare %unit:test function _:rule-order-011(){let $compiled:=compile:schema(
           <sch:assert test="false()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ When no phase is given, the processor uses the phase given in @defaultPhase
 : @see ISO Schematron 2016: Section 5.4.13 clause 3 
 :)
@@ -600,7 +600,7 @@ declare %unit:test function _:schema-default-phase-011(){let $compiled:=compile:
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ When a phase named '#DEFAULT' is given, the processor uses the phase given in @defaultPhase 
 :)
 declare %unit:test function _:schema-default-phase-021(){let $compiled:=compile:schema(
@@ -618,7 +618,7 @@ declare %unit:test function _:schema-default-phase-021(){let $compiled:=compile:
           <sch:assert test="true()"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ The XSLT key element may be used before the pattern elements
 : @see ISO Schematron 2020: Annex C Clause 10 (xslt), Annex H Clause 11 (xslt2), Annex J Clause 11 (xslt3) 
 :)
@@ -630,7 +630,7 @@ declare %unit:ignore function _:xslt-key-011(){let $compiled:=compile:schema(
           <sch:assert test="count(key('index', 'key')) &gt; 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 (:~ An xsl:key element can have element content
 : @see ISO Schematron 2016: Annex H, XSLT 2.0 Section 16.3.1 
 :)
@@ -644,7 +644,7 @@ declare %unit:ignore function _:xslt-key-element-content-011(){let $compiled:=co
           <sch:assert test="count(key('key', 'key')) = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<document/>}}   ) return unit:assert(_:is-valid($result))};
 
 (: SVRL :)
 
@@ -665,7 +665,7 @@ declare %unit:test function _:svrl-diagnostic-011(){let $compiled:=compile:schem
           Context: <sch:value-of select="name()"/>
         </sch:diagnostic>
       </sch:diagnostics>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Language tag of diagnostic is preserved in SVRL output 
 :)
 declare %unit:test function _:svrl-diagnostic-021(){let $compiled:=compile:schema(
@@ -680,7 +680,7 @@ declare %unit:test function _:svrl-diagnostic-021(){let $compiled:=compile:schem
           Context: <sch:value-of select="name()"/>
         </sch:diagnostic>
       </sch:diagnostics>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ The sch:name element expands into the name of the context node if no @path is present
 : @see ISO Schematron 2016: Section 5.4.6, Annex C clause 4 (xslt), Annex H clause 4 (xslt2), Annex I clause 4 (xpath2) 
 :)
@@ -693,7 +693,7 @@ declare %unit:test function _:svrl-name-nopath-011(){let $compiled:=compile:sche
           </sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ The sch:name element expands into the value of evaluating the expression in @path
 : @see ISO Schematron 2016: Section 5.4.6, Annex C clause 4 (xslt), Annex H clause 4 (xslt2), Annex I clause 4 (xpath2) 
 :)
@@ -706,7 +706,7 @@ declare %unit:test function _:svrl-name-path-011(){let $compiled:=compile:schema
           </sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element attribute="value"/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element attribute="value"/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ Property references are copied to SVRL output 
 :)
 declare %unit:test function _:svrl-property-011(){let $compiled:=compile:schema(
@@ -724,7 +724,7 @@ declare %unit:test function _:svrl-property-011(){let $compiled:=compile:schema(
           Context: <sch:value-of select="name()"/>
         </sch:property>
       </sch:properties>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ A xsl:copy-of inside a sch:property is executed
 : @see ISO Schematron 2016: Annex C Clause 11 (xslt), Annex H Clause 11 (xslt2) 
 :)
@@ -740,7 +740,7 @@ declare %unit:test function _:svrl-property-copy-of1(){let $compiled:=compile:sc
           <xsl:copy-of select="."/>
         </sch:property>
       </sch:properties>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element/>}}   ) return unit:assert(not(_:is-valid($result)))};
 (:~ The sch:value-of element expands into the value of evaluating the expression in @select
 : @see ISO Schematron 2016: Section 5.4.14, Annex C clause 5 (xslt), Annex H clause 5 (xslt2), Annex I clause 5 (xpath2) 
 :)
@@ -753,7 +753,7 @@ declare %unit:test function _:svrl-value-of-011(){let $compiled:=compile:schema(
           </sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>, '') let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element>Text content</element>}}   ) return unit:assert(not(_:is-valid($result)))};
+    </sch:schema>) let $result := xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element>Text content</element>}}   ) return unit:assert(not(_:is-valid($result)))};
 
 (:~ duplicate declaration of schema/@param
  : @see ISO2025: "Parameter names shall be distinct within the scope of a 
@@ -771,8 +771,7 @@ function _:schema-param-name-collision-error()
           <sch:assert test='false()'><sch:value-of select='$myParam'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(     $compiled,     map{$_:DOC_PARAM:document{<element>Text content</element>}}   )
 };

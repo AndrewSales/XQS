@@ -25,7 +25,6 @@ declare variable $c:ANY_PHASE as xs:string := '#ANY';
 declare function c:get-context(
   $instance as node(),
   $schema as element(sch:schema),
-  $phase as xs:string?,
   $options as map(*)?
 )
 as map(*)
@@ -46,7 +45,7 @@ as map(*)
     )
     else map{}
     
-  let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $phase, $instance, $globals, $options)
+  let $active-phase as element(sch:phase)? := c:get-active-phase($schema, $instance, $globals, $options)
   let $active-patterns as element(sch:pattern)* := c:get-active-patterns($schema, $active-phase)
   let $active-groups as element(sch:group)* := c:get-active-groups($schema, $active-phase)
       
@@ -65,7 +64,8 @@ as map(*)
       'properties' : $schema/sch:properties/sch:property,
       'functions' : $schema/xqy:function
       }
-    )
+    ),
+    map{'duplicates':'use-last'}    (:ensure existing keys are overwritten:)
   )
 };
 
@@ -98,12 +98,12 @@ as xs:string
  :)
 declare function c:get-active-phase(
   $schema as element(sch:schema), 
-  $phase as xs:string
+  $options as map(*)?
 )
 as element(sch:phase)?
 {
-  if($phase eq $c:ANY_PHASE) then ()	(:#ANY:)
-  else c:get-active-phase($schema, $phase, (), map{}, map{})
+  if($options?phase eq $c:ANY_PHASE) then ()	(:#ANY:)
+  else c:get-active-phase($schema, (), map{}, $options)
 };
 
 (:~ Determines the active phase.
@@ -116,14 +116,15 @@ as element(sch:phase)?
  :)
 declare function c:get-active-phase(
   $schema as element(sch:schema), 
-  $phase as xs:string,
   $instance as node()?,
   $globals as map(*)?,
   $options as map(*)
 )
 as element(sch:phase)?
 {
-  if($phase = ('', $c:DEFAULT_PHASE)) 
+  let $phase := $options?phase
+  return
+  if(empty($phase) or $phase eq $c:DEFAULT_PHASE)
   then
     if($schema/@defaultPhase)
     then $schema/sch:phase[@id eq $schema/@defaultPhase]	(:default phase:)
@@ -131,10 +132,10 @@ as element(sch:phase)?
   else
     if($phase eq $c:ALL_PATTERNS)
     then ()
-  else
-    if($phase eq $c:ANY_PHASE)
-    then c:get-active-phase-by-when($schema/sch:phase/@when, $instance, $globals, $options)
-    else $schema/sch:phase[@id eq $phase]	(:TODO report if none?:)
+    else
+      if($phase eq $c:ANY_PHASE)
+      then c:get-active-phase-by-when($schema/sch:phase/@when, $instance, $globals, $options)
+      else $schema/sch:phase[@id eq $phase]	(:TODO report if none?:)
 };
 
 (:~ Evaluate phase/@when against then document instance, 
