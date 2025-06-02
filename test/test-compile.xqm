@@ -41,7 +41,7 @@ declare %unit:test function _:compile-schema()
       </sch:pattern>
     </sch:schema>
     
-  let $compiled := compile:schema($schema, '')
+  let $compiled := compile:schema($schema)
   let $result := xquery:eval(
     $compiled,
     map{$_:URI_PARAM:'foo.xml'}
@@ -74,7 +74,7 @@ declare %unit:test function _:assertion-message-elements()
     </sch:rule></sch:pattern>
     </sch:schema>
     
-  let $compiled := compile:schema($schema, '')
+  let $compiled := compile:schema($schema)
   let $result := xquery:eval(
     $compiled,
     map{$_:DOC_PARAM:document{<foo><bar/></foo>}}
@@ -105,8 +105,7 @@ declare %unit:test function _:process-report-with-pattern-variable()
           <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed: <sch:value-of select='$allowed'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    '')
+    </sch:schema>)
   let $result := xquery:eval(
     $compiled,
     map{$_:DOC_PARAM:document{<foo allowed='bar'/>}}
@@ -132,8 +131,7 @@ declare %unit:test function _:process-report-with-global-variable-element-node()
           <sch:report test='$allowed/self::allowed'></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    '')
+    </sch:schema>)
   let $result := xquery:eval(
     $compiled,
     map{$_:DOC_PARAM:document{<foo/>}}
@@ -165,8 +163,7 @@ declare %unit:test function _:diagnostics()
       <sch:diagnostics>
         <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'>wrong</sch:diagnostic>
       </sch:diagnostics>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -207,8 +204,7 @@ declare %unit:test function _:diagnostics-mixed-content()
       <sch:diagnostics>
         <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'><foreign/><sch:emph/><sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span>wrong=<sch:value-of select='$root-name'/></sch:diagnostic>
       </sch:diagnostics>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -238,8 +234,7 @@ declare %unit:test function _:diagnostics-multiple()
         <sch:diagnostic id='d1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'>wrong</sch:diagnostic>
         <sch:diagnostic id='d2'>more here</sch:diagnostic>
       </sch:diagnostics>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -283,8 +278,7 @@ declare %unit:test function _:properties()
       <sch:properties>
         <sch:property id='p1' scheme='abc' role='def'>wrong=<sch:value-of select='$root-name'/></sch:property>
       </sch:properties>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -326,8 +320,7 @@ declare %unit:test function _:properties-multiple()
         <sch:property id='p1' scheme='abc' role='def'>wrong</sch:property>
         <sch:property id='p2' scheme='ghi' role='jkl'>still wrong</sch:property>
       </sch:properties>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -364,8 +357,7 @@ declare %unit:test function _:properties-mixed-content()
       <sch:properties>
         <sch:property id='p1' role='warning' icon='abc' see='def' fpi='xyz' xml:lang='en' xml:space='preserve'><sch:name/><foreign/><sch:emph/><sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span>wrong</sch:property>
       </sch:properties>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -432,8 +424,7 @@ declare %unit:test function _:built-in-entities-rule-assert()
           <sch:report test="contains(., '&quot;')"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -460,8 +451,7 @@ declare %unit:test function _:built-in-entities-global-variable()
           <sch:report test='$foo'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -488,8 +478,7 @@ declare %unit:test function _:built-in-entities-namespaces()
           <sch:report test='$x:foo'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -511,8 +500,7 @@ declare %unit:test function _:xml-ns-decls()
           <sch:report test="."/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -534,8 +522,7 @@ declare %unit:test function _:assertion-message-braces()
           <sch:report test="*">}}</sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -549,8 +536,7 @@ declare %unit:test function _:assertion-message-braces()
 declare %unit:test function _:assertion-message-braces-from-file()
 {
   let $compiled := compile:schema(
-    doc('assertion-message-braces.xml')/*,
-    ''
+    doc('assertion-message-braces.xml')/*
   )
   let $result := xquery:eval(
     $compiled,
@@ -571,8 +557,7 @@ declare %unit:test function _:test-message-braces()
           <sch:report test="contains(., '}}')"></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -590,8 +575,7 @@ declare %unit:test function _:test-message-braces()
 declare %unit:test function _:test-message-braces-from-file()
 {
   let $compiled := compile:schema(
-    doc('message-braces.xml')/*,
-    ''
+    doc('message-braces.xml')/*
   )
   let $result := xquery:eval(
     $compiled,
@@ -617,8 +601,7 @@ declare %unit:test function _:pattern-documents()
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -646,8 +629,7 @@ declare %unit:test function _:pattern-documents-halt-on-match()
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -675,8 +657,7 @@ declare %unit:test function _:pattern-documents-multiple()
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -714,8 +695,7 @@ declare %unit:test('expected', 'err:XPST0008') function _:pattern-documents-vari
           <sch:report test="root"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   ) => xquery:eval(map{$_:DOC_PARAM:document{<root/>}})
 };
 
@@ -728,8 +708,7 @@ declare %unit:test function _:group-documents()
           <sch:report test="root"/>
         </sch:rule>
       </sch:group>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -757,8 +736,7 @@ declare %unit:test function _:group-documents-halt-on-match()
           <sch:report test="root"/>
         </sch:rule>
       </sch:group>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -792,8 +770,7 @@ declare %unit:test function _:user-defined-function()
           <sch:report test="root"><sch:value-of select='myfunc:test(name(root))'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -814,8 +791,7 @@ declare %unit:test function _:user-defined-function()
 declare %unit:test function _:user-defined-function-from-file()
 {
   let $compiled := compile:schema(
-    doc('user-defined-function.xml')/*,
-    ''
+    doc('user-defined-function.xml')/*
   )
   let $result := xquery:eval(
     $compiled,
@@ -846,8 +822,7 @@ declare %unit:test function _:map-global-variable()
           <sch:report test="not($foo instance of map(*))"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -870,8 +845,7 @@ declare %unit:test function _:map-pattern-variable()
           <sch:report test="not($foo instance of map(*))"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -894,8 +868,7 @@ declare %unit:test function _:map-rule-variable()
           <sch:report test="not($foo instance of map(*))"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -923,8 +896,7 @@ declare %unit:test function _:compile-schema-title()
           <sch:assert test='.'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -954,8 +926,7 @@ declare %unit:test function _:compile-schema-no-title()
           <sch:assert test='.'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -986,8 +957,7 @@ declare %unit:test function _:compile-schema-default-phase()
           <sch:assert test='.'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1019,7 +989,7 @@ declare %unit:test function _:compile-schema-explicit-phase()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'phase'
+    map{'phase':'phase'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -1050,8 +1020,7 @@ declare %unit:test function _:compile-schema-no-phase()
           <sch:assert test='.'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1082,8 +1051,7 @@ declare %unit:test function _:compile-schema-namespaces()
           <sch:assert test='.'/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1211,8 +1179,7 @@ declare %unit:test function _:process-report-with-global-variable()
         <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed</sch:report>
       </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1239,8 +1206,7 @@ declare %unit:test function _:global-variable-in-value-of()
         <sch:report test='$allowed/self::allowed'><sch:value-of select='$allowed/name()'/></sch:report>
       </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1267,8 +1233,7 @@ declare %unit:test function _:global-variable-in-name()
         <sch:report test='$allowed/self::allowed'><sch:name path='$allowed/name()'/></sch:report>
       </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1454,8 +1419,7 @@ declare %unit:test function _:rule-processing()
         <rule context="/article/section/@role"><report test=".">@role</report></rule>
          <rule context="/article/section/@role[.='foo']"><report test=".">@role = 'foo'</report></rule>
       </pattern>
-    </schema>,
-    ''
+    </schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1521,8 +1485,7 @@ declare %unit:test function _:global-variable-relies-on-previous()
         <sch:report test='not(name(.) = $allowed)'>name <sch:name/> is not allowed, as defined in <sch:value-of select='$allowed-name'/></sch:report>
       </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1557,8 +1520,7 @@ declare %unit:test function _:pattern-variable-scope()
           <sch:assert test="$foo = 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1592,8 +1554,7 @@ declare %unit:test function _:rule-variable-scope()
           <sch:assert test="$foo = 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1629,8 +1590,7 @@ declare %unit:test function _:pattern-variable-scope-with-nss()
           <sch:assert test="$x:foo = 0"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1658,8 +1618,7 @@ declare %unit:test function _:rule-variable-with-nss()
           <sch:assert test="$x:foo = 1"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1684,8 +1643,7 @@ declare %unit:test function _:subject-assert()
           <sch:assert test='@bar eq "bar"' subject='@bar'>expected 'bar'; got <sch:value-of select='@bar'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1708,8 +1666,7 @@ declare %unit:test function _:subject-report()
           <sch:report test='@bar ne "bar"' subject='@bar'>expected 'bar'; got <sch:value-of select='@bar'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1732,8 +1689,7 @@ declare %unit:test function _:subject-rule()
           <sch:assert test='@bar eq "bar"'>expected 'bar'; got <sch:value-of select='@bar'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1762,8 +1718,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:typed-global-variable(
           <sch:assert test="$foo instance of map(*)"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1786,8 +1741,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-global-v
           <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>          
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1809,8 +1763,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:typed-pattern-variable
           <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1833,8 +1786,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-pattern-
           <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1855,8 +1807,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:typed-rule-variable()
           <sch:assert test="$foo instance of map(*)"/>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1879,8 +1830,7 @@ declare %unit:test('expected', 'err:XPTY0004') function _:element-typed-rule-var
           <sch:assert test="false()"><sch:value-of select='$foo'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   return xquery:eval(
     $compiled,
@@ -1904,7 +1854,7 @@ declare %unit:test function _:phase-from-attribute()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'wibble'
+    map{'phase':'wibble'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -1935,8 +1885,7 @@ declare %unit:test function _:phase-from-attribute-no-phase()
           <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -1968,7 +1917,7 @@ declare %unit:test function _:phase-from-attribute-evaluates-empty()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    'wibble'
+    map{'phase':'wibble'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -1999,8 +1948,7 @@ declare %unit:test function _:schematron-edition()
           <sch:report test='true()'><sch:name/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2026,8 +1974,7 @@ declare %unit:test function _:attribute-severity()
           <sch:assert test='false()' severity='warning'><sch:name/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2071,7 +2018,7 @@ declare %unit:test function _:phase-when-attribute()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    '#ANY'
+    map{'phase':'#ANY'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -2122,7 +2069,7 @@ declare %unit:test function _:phase-when-attribute-first-match()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    '#ANY'
+    map{'phase':'#ANY'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -2179,7 +2126,7 @@ declare %unit:test function _:phase-when-attribute-no-match()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    '#ANY'
+    map{'phase':'#ANY'}
   )
   let $result := xquery:eval(
     $compiled,
@@ -2218,8 +2165,7 @@ declare %unit:test function _:attribute-visit-each()
           <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2255,8 +2201,7 @@ declare %unit:test function _:attribute-visit-each-svrl()
           <sch:report test='@wibble'><sch:value-of select='@wibble'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2294,8 +2239,7 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
             string-join(preceding-sibling::fn:*))+1'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2328,8 +2272,7 @@ declare %unit:test function _:attribute-visit-each-with-let()
           <sch:report test='$context/@wibble'><sch:value-of select='$context/@wibble'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2374,8 +2317,7 @@ declare %unit:ignore function _:rule-variable-evaluated-against-context()
           <sch:report test='$context/@wibble[. eq "3"]'><sch:value-of select='distinct-values($context/@wibble[. eq "3"])'/></sch:report>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2418,8 +2360,7 @@ declare %unit:test function _:process-group()
           <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
         </sch:rule>
       </sch:group>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2452,8 +2393,7 @@ declare %unit:test function _:group-continue-on-match()
           <sch:report test='.'>should reach here</sch:report>
         </sch:rule>
       </sch:group>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2501,8 +2441,7 @@ declare %unit:test function _:dynamic-role()
           <sch:assert test='false()' role='$dynamic-role'></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2533,8 +2472,7 @@ declare %unit:test function _:dynamic-flag()
           <sch:assert test='false()' flag='$dynamic-flag'></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2565,8 +2503,7 @@ declare %unit:test function _:dynamic-severity()
           <sch:assert test='false()' severity='$dynamic-severity'></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
   let $result := xquery:eval(
     $compiled,
@@ -2592,8 +2529,7 @@ declare %unit:test function _:schema-param()
           <sch:assert test='false()'><sch:value-of select='$myParam'/></sch:assert>
         </sch:rule>
       </sch:pattern>
-    </sch:schema>,
-    ''
+    </sch:schema>
   )
    let $result := xquery:eval(
     $compiled,
@@ -2622,7 +2558,6 @@ declare %unit:ignore function _:schema-param-override()
         </sch:rule>
       </sch:pattern>
     </sch:schema>,
-    '',
     map{
       'params':map{'myParam':'blort'}
     }	(:params passed in should override schema-declared values:)

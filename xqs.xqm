@@ -40,34 +40,19 @@ declare function xqs:validate(
   eval:schema($instance, ie:include-expand($schema), $options)
 };
 
-(:~ Compiles a Schematron schema, without applying a phase.
- : @param schema the Schematron schema
- : @param options map of options
- :)
-declare function xqs:compile(
-  $schema as element(sch:schema),
-  $options as map(xs:string, xs:string)?
-)
-as item()+
-{
-  xqs:check-query-binding($schema),
-  compile:schema(ie:include-expand($schema), '')
-};
-
-(:~ Compiles a Schematron schema, applying an optional phase.
+(:~ Compiles a Schematron schema.
  : @param schema the Schematron schema
  : @param phase the active phase
  : @param options map of options
  :)
 declare function xqs:compile(
   $schema as element(sch:schema),
-  $phase as xs:string,
   $options as map(xs:string, xs:string)?
 )
 as item()+
 {
   xqs:check-query-binding($schema),
-  compile:schema(ie:include-expand($schema), $phase, $options)
+  compile:schema(ie:include-expand($schema), $options)
 };
 
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)

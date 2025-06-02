@@ -98,12 +98,12 @@ as xs:string
  :)
 declare function c:get-active-phase(
   $schema as element(sch:schema), 
-  $phase as xs:string
+  $options as map(*)?
 )
 as element(sch:phase)?
 {
-  if($phase eq $c:ANY_PHASE) then ()	(:#ANY:)
-  else c:get-active-phase($schema, (), map{}, map{})
+  if($options?phase eq $c:ANY_PHASE) then ()	(:#ANY:)
+  else c:get-active-phase($schema, (), map{}, $options)
 };
 
 (:~ Determines the active phase.

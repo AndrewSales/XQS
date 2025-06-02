@@ -203,7 +203,6 @@ declare %unit:test function _:report-schematron-edition-compile()
     <sch:schema queryBinding='xquery31' schematronEdition='2025'>
       <sch:pattern><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
     </sch:schema>,
-    '',
     map{'report-edition':'true'}
   )
   return
@@ -217,7 +216,6 @@ declare %unit:test function _:report-schematron-edition-none-compile()
     <sch:schema queryBinding='xquery31' >
       <sch:pattern><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
     </sch:schema>,
-    '',
     map{'report-edition':'true'}
   )
   return
@@ -234,8 +232,7 @@ declare %unit:test function _:report-schematron-edition-with-phase-compile()
       </sch:phase>
       <sch:pattern id='p1'><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
     </sch:schema>,
-    'myPhase',
-    map{'report-edition':'true'}
+    map{'report-edition':'true', 'phase':'myPhase'}
   )
   return
   unit:assert-equals($result[1], <sch:schema schematronEdition="2025"/>)
