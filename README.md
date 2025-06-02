@@ -96,11 +96,11 @@ or
     
 If you use phases, you can pass them in like so:
 
-    xqs:compile(doc('mySchema.xml)/*, 'myPhase')
+    xqs:compile(doc('mySchema.xml)/*, map{'phase':'myPhase'})
     
 or
 
-    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, 'myPhase')
+    xqs:validate(doc('myDoc.xml'), doc('mySchema.xml)/*, map{'phase':'myPhase'})
     
 where `myPhase` is the ID of the selected phase. 
 
