@@ -19,7 +19,6 @@ declare %unit:test function _:active-phase-none()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    '',
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
     $_:EMPTY_MAP
@@ -37,10 +36,9 @@ declare %unit:test function _:active-phase-default()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron" defaultPhase='foo'>
       <phase id='foo'/>
     </schema>,
-    $c:DEFAULT_PHASE,
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
-    $_:EMPTY_MAP
+    map{'phase':$c:DEFAULT_PHASE}
   )
   return unit:assert-equals(
     $active-phase, 
@@ -53,10 +51,9 @@ declare %unit:test function _:active-phase-no-default()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    $c:DEFAULT_PHASE,
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
-    $_:EMPTY_MAP
+    map{'phase':$c:DEFAULT_PHASE}
   )
   return unit:assert-equals(
     $active-phase, 
@@ -71,7 +68,6 @@ declare %unit:test function _:active-phase-schema-default()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron" defaultPhase='phase'>
       <phase id='phase'/>
     </schema>,
-    '',
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
     $_:EMPTY_MAP
@@ -87,10 +83,9 @@ declare %unit:test function _:active-phase-all()
 {
   let $active-phase := c:get-active-phase(
     <schema xmlns="http://purl.oclc.org/dsdl/schematron"/>,
-    $c:ALL_PATTERNS,
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
-    $_:EMPTY_MAP
+    map{'phase':$c:ALL_PATTERNS}
   )
   return unit:assert-equals(
     $active-phase, 
@@ -105,10 +100,9 @@ declare %unit:test function _:active-phase-by-id()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron">
       <phase id='foo'/>
     </schema>,
-    'foo',
     $_:DUMMY_DOC,
     $_:EMPTY_MAP,
-    $_:EMPTY_MAP
+    map{'phase':'foo'}
   )
   return unit:assert-equals(
     $active-phase, 
@@ -122,12 +116,11 @@ declare %unit:test function _:active-phase-when()
     <schema xmlns="http://purl.oclc.org/dsdl/schematron">
       <phase id='foo' when='//@wibble'/>
     </schema>,
-    $c:ANY_PHASE,
     document{<foo>
     <blort wibble='1'/>
     <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>},
     $_:EMPTY_MAP,
-    $_:EMPTY_MAP
+    map{'phase':$c:ANY_PHASE}
   )
   return unit:assert-equals(
     $active-phase, 
@@ -147,7 +140,6 @@ declare %unit:test function _:get-active-patterns-no-phases()
     $schema,
     c:get-active-phase(
       $schema,
-      '',
       $_:DUMMY_DOC,
     $_:EMPTY_MAP,
     $_:EMPTY_MAP
@@ -173,10 +165,9 @@ declare %unit:test function _:get-active-patterns-all()
     $schema,
     c:get-active-phase(
       $schema,
-      $c:ALL_PATTERNS,
       $_:DUMMY_DOC,
       $_:EMPTY_MAP,
-      $_:EMPTY_MAP
+      map{'phase':$c:ALL_PATTERNS}
     )
   )
   return unit:assert-equals(
@@ -199,10 +190,9 @@ declare %unit:test function _:get-active-patterns-default-phase()
     $schema,
     c:get-active-phase(
       $schema,
-      $c:DEFAULT_PHASE,
       $_:DUMMY_DOC,
       $_:EMPTY_MAP,
-      $_:EMPTY_MAP
+      map{'phase':$c:DEFAULT_PHASE}
     )
   )
   return unit:assert-equals(
@@ -223,10 +213,9 @@ declare %unit:test function _:get-active-patterns-by-phase-id()
     
   let $active-phase := c:get-active-phase(
       $schema,
-      'phase1',
       $_:DUMMY_DOC,
       $_:EMPTY_MAP,
-      $_:EMPTY_MAP
+      map{'phase':'phase1'}
     )
     
   let $active-patterns := c:get-active-patterns(
@@ -323,8 +312,7 @@ declare %unit:test function _:get-context-patterns()
   let $patterns := c:get-context(
     <foo/>,
     $schema,
-    'phase1',
-    map{}
+    map{'phase':'phase1'}
   )?patterns
   
   return unit:assert-equals(
@@ -349,8 +337,7 @@ declare %unit:test function _:get-context-groups()
   let $groups := c:get-context(
     <foo/>,
     $schema,
-    'phase1',
-    map{}
+    map{'phase':'phase1'}
   )?groups
   
   return unit:assert-equals(
@@ -375,8 +362,7 @@ declare %unit:test function _:get-context-active-phase()
   let $phase := c:get-context(
     <foo/>,
     $schema,
-    'phase1',
-    map{}
+    map{'phase':'phase1'}
   )?phase
   
   return unit:assert-equals(
@@ -402,7 +388,6 @@ declare %unit:test function _:get-context-namespaces()
   let $ns-decls := c:get-context(
     <foo/>,
     $schema,
-    '',
     map{}
   )?ns-decls
   
@@ -431,8 +416,7 @@ declare %unit:test function _:get-context-globals()
   let $globals := c:get-context(
     <foo/>,
     $schema,
-    'phase1',
-    map{}
+    map{'phase':'phase1'}
   )?globals
   
   return unit:assert-equals(

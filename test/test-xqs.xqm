@@ -190,8 +190,7 @@ declare %unit:test function _:report-schematron-edition-with-phase()
       </sch:phase>
       <sch:pattern id='p1'><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
     </sch:schema>,
-    'myPhase',
-    map{'report-edition':'true'}
+    map{'report-edition':'true', 'phase':'myPhase'}
   )
   return
   unit:assert-equals($result[1], <sch:schema schematronEdition="2025"/>)

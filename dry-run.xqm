@@ -32,7 +32,7 @@ declare function dr:schema(
   <svrl:active-pattern name='XQS Syntax Error Summary' documents='{$schema/base-uri()}'/>
   {$schema/xqy:function ! utils:parse-function(., $options)[self::svrl:*]}
   {for $phase in ($schema/sch:phase/@id, '')
-  let $context as map(*) := context:get-context($instance, $schema, $phase, $options)
+  let $context as map(*) := context:get-context($instance, $schema, $options)
   return eval:phase($context)}
   </svrl:schematron-output>
 };
