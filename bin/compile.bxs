@@ -1,6 +1,6 @@
 <commands>
 <xquery>import module namespace xqs = 'http://www.andrewsales.com/ns/xqs' at
-'./xqs.xqm';
+'../xqs.xqm';
 
 declare variable $schema external;
 declare variable $phase external := '';
