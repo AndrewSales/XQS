@@ -27,7 +27,7 @@ Basic [command scripts](https://docs.basex.org/wiki/Commands#Command_Scripts) ar
 
 The `-b` options given below simply bind a variable; their order is not significant.
 
-The named example files used in the commands below are also included in this repository, alongside the command scripts.
+The named example files used in the commands below are also included in this repository, in `examples/`.
 
 ### Evaluate
 
