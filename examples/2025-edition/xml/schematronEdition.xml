@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<foo>
+    <blort wibble='1'/>
+    <bar><blort wibble='2'/><blort wibble='3'/></bar></foo>
