@@ -638,6 +638,39 @@ declare %unit:test function _:group-continue-on-match()
   )
 };
 
+declare %unit:test function _:schema-group-continue-on-match()
+{
+  let $result := eval:schema(
+    document{<foo/>},
+    <sch:schema><sch:group>
+      <sch:rule context='*'>
+        <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+      </sch:rule>
+      <sch:rule context='foo'>
+        <sch:report test='.'>should reach here</sch:report>
+      </sch:rule>
+    </sch:group></sch:schema>
+  )
+  return (
+    unit:assert-equals(
+      count($result/svrl:active-group),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule),
+      2
+    ),
+    unit:assert-equals(
+      count($result/svrl:failed-assert),
+      1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report),
+      1
+    )
+  )
+};
+
 (: DIAGNOSTICS :)
 
 (:~ diagnostics reported correctly in SVRL :)
