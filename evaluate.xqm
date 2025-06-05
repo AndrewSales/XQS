@@ -381,7 +381,10 @@ declare function eval:phase($context as map(*))
   let $_:= map:merge(($context, $dry-run))
     
   return
-  $context?patterns ! 
+  ($context?patterns ! 
   eval:pattern(., if($phase/@from) then map:put($context, 'from', $phase/@from)
-   else $context)
+   else $context),
+   $context?groups ! 
+  eval:group(., if($phase/@from) then map:put($context, 'from', $phase/@from)
+   else $context))
 };
