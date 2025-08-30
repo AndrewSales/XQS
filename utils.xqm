@@ -202,7 +202,15 @@ declare function utils:eval(
       test='xquery:parse(.)'>
       <svrl:text>{$err:description}{' @'||$node/name()}='{$node/data()}'</svrl:text></svrl:failed-assert>
     })
-  else xquery:eval($query, $bindings, map{'pass':if($options?pass) then $options?pass else true()})
+  else 
+  xquery:eval(
+    $query, 
+    $bindings, 
+    map{
+      'pass':if($options?pass) then $options?pass else true(),
+      'base-uri':$node/base-uri()
+    }
+  )
 };
 
 (:~ Obtain the (XPath) location of a node which has failed an assertion.

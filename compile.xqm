@@ -228,6 +228,7 @@ declare function compile:active-phase(
 declare function compile:prolog($schema as element(sch:schema))
 as xs:string*
 {
+  'declare base-uri "' || $schema/base-uri() || '";' ||
   string-join($schema/sch:ns ! context:make-ns-decls(.)) => utils:escape() ||
   $compile:EXTERNAL_VARIABLES ||
   string-join(
