@@ -356,7 +356,7 @@ as map(*)
     then utils:eval(
       $query => utils:escape(),
       map:merge(($bindings, map{'':$instance})),
-      map:merge($options, map{'pass':'true'}),
+      map:merge(($options, map{'pass':true()})),
       $variable/@value
     )
     else $variable/*
@@ -392,7 +392,7 @@ as map(*)
     let $uris := utils:eval(
       utils:make-query-prolog($context) || $documents => utils:escape(),
       map:merge(($context?globals, map{'':$context?instance})),
-      map{'pass':'true'},       (:report exception details:)
+      map{'pass':true()},       (:report exception details:)
       $documents
     )
     return map:put(

@@ -234,6 +234,22 @@ declare %unit:test function _:get-active-patterns-by-phase-id()
   )
 };
 
+(:~ @see https://github.com/AndrewSales/XQS/issues/61 :)
+declare 
+%unit:test('expected', 'XPST0003') 
+function _:evaluate-pattern-documents()
+{
+  let $context := map{
+    'instance':document{<foo/>},
+    'globals':map{}
+  }
+  return
+  c:evaluate-pattern-documents(
+    attribute{'documents'}{''},	(:results in an empty query:)
+    $context
+  )
+};
+
 (: GLOBAL VARIABLES :)
 
 (:~ no global variables declared :)
