@@ -497,6 +497,7 @@ declare %unit:test function _:multiple-results()
       <svrl:fired-rule context='//bar'/>,
       <svrl:successful-report 
       test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found, child of foo</svrl:text></svrl:successful-report>,
+      <svrl:fired-rule context='//bar'/>,
       <svrl:successful-report 
       test='.' location='/Q{{}}foo[1]/Q{{}}bar[2]'><svrl:text>bar found, child of foo</svrl:text></svrl:successful-report>
     )
@@ -1895,7 +1896,7 @@ declare %unit:test function _:phase-when-attribute()
   return (
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      3
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -1941,7 +1942,7 @@ declare %unit:test function _:phase-when-attribute-first-match()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      3
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -1992,7 +1993,7 @@ declare %unit:test function _:phase-when-attribute-no-match()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      2
+      4
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2025,7 +2026,7 @@ declare %unit:test function _:attribute-visit-each()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      4
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2057,11 +2058,19 @@ declare %unit:test function _:attribute-visit-each-svrl()
       'wibble'
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule/@context/data(),
+      $result/svrl:fired-rule[1]/@context/data(),
       '//bar'
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule/@visit-each/data(),
+      $result/svrl:fired-rule[2]/@context/data(),
+      '//bar'
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[1]/@visit-each/data(),
+      'blort'
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[2]/@visit-each/data(),
       'blort'
     )
   )
@@ -2089,7 +2098,7 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      2
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2123,7 +2132,7 @@ declare %unit:test function _:attribute-visit-each-with-let()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      4
     ),
     unit:assert-equals(
       count($result/svrl:successful-report[. eq '2']),
