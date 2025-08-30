@@ -239,13 +239,14 @@ declare
 %unit:test('expected', 'XPST0003') 
 function _:evaluate-pattern-documents()
 {
+  let $pattern := <pattern documents=''/>
   let $context := map{
     'instance':document{<foo/>},
     'globals':map{}
   }
   return
   c:evaluate-pattern-documents(
-    attribute{'documents'}{''},	(:results in an empty query:)
+    $pattern/@documents,	(:results in an empty query:)
     $context
   )
 };

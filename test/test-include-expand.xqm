@@ -206,8 +206,16 @@ declare %unit:test function _:element-library()
   )
 };
 
+(:~ retain schema base URI after processing includes, re 
+https://github.com/AndrewSales/XQS/issues/63 :)
+declare %unit:test function _:schema-base-URI-retained()
+{
+  let $schema:= doc('test-cases/xml-base.sch')
+  let $base-uri := $schema/base-uri()
+  let $included as element(sch:schema) := ie:include-expand($schema/*)
+  return unit:assert-equals($included/base-uri(), $base-uri)
+};
+
 (:TODO 
-library
-rules
 detect circular references
 :)

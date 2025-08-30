@@ -44,7 +44,7 @@ declare %unit:test function _:compile-schema()
   let $compiled := compile:schema($schema)
   let $result := xquery:eval(
     $compiled,
-    map{$_:URI_PARAM:'foo.xml'}
+    map{$_:URI_PARAM:resolve-uri('foo.xml', static-base-uri())}
   )
     
   return (
@@ -2572,5 +2572,21 @@ declare %unit:ignore function _:schema-param-override()
       $result/svrl:failed-assert/data(),
       'blort'
     )
+  )
+};
+
+declare %unit:test function _:resolve-relative-URI()
+{
+  let $compiled := compile:schema(
+    doc('test-cases/xml-base.sch')/*
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}  
+  )
+  let $resolved-uri := resolve-uri('test-cases/xml-base.sch', static-base-uri())
+  return unit:assert-equals(
+    $result/svrl:successful-report[2]/svrl:text/data(),
+    'base-uri is ' || $resolved-uri
   )
 };

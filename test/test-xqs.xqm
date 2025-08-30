@@ -237,3 +237,19 @@ declare %unit:test function _:report-schematron-edition-with-phase-compile()
   return
   unit:assert-equals($result[1], <sch:schema schematronEdition="2025"/>)
 };
+
+(:~ re https://github.com/AndrewSales/XQS/issues/63 :)
+declare %unit:test function _:resolve-relative-URI()
+{
+  let $instance := document{ <foo/> }
+  let $svrl :=
+  xqs:validate(
+    $instance,
+    doc('test-cases/xml-base.sch')/*
+  )
+  let $resolved-uri := resolve-uri('test-cases/xml-base.sch', static-base-uri())
+  return unit:assert-equals(
+    $svrl/svrl:successful-report[2]/svrl:text/data(),
+    'base-uri is ' || $resolved-uri
+  )
+};
