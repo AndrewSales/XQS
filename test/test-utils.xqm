@@ -52,3 +52,18 @@ declare %unit:test function _:local-typed-variable-decls()
     'let $foo as xs:string :=bar let $blort as xs:integer :=1'
   )
 };
+
+(:~ re https://github.com/AndrewSales/XQS/issues/61 - this test only proves the
+ : the exception is not caught
+ :)
+declare 
+%unit:test('expected', 'XPST0003')
+function _:eval()
+{
+  util:eval(
+    '',	(:empty query:)
+    map{},
+    map{'pass':true()},
+    <foo/>
+  )
+};
