@@ -2281,7 +2281,25 @@ declare %unit:ignore function _:schema-param-override()
   )
 };
 
-
+(:~ discrete test re https://github.com/AndrewSales/XQS/issues/64
+ : (one svrl:fired-rule per context match) 
+ :)
+declare %unit:test function _:one-fired-rule-per-context-match()
+{
+  let $result := eval:schema(
+    document{<top><a><foo/></a><b><foo><foo/></foo></b></top>},
+     <sch:schema>
+      <sch:pattern id='foo'>
+        <sch:rule context='//foo'>
+          <sch:report test='.'>Hello, XQS world!</sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
+  )
+  return (
+    unit:assert-equals(count($result/svrl:fired-rule), 3)
+  )
+};
 
 (:TODO
 @when with @from
