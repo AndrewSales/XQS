@@ -50,16 +50,18 @@ declare %unit:test function _:compile-schema()
   return (
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      2
+      4
     ),
     unit:assert-equals(
       count($result/svrl:failed-assert),
       0
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule/@id/data(),
-      ('rule-1', 'rule-3')
-    )
+      count($result/svrl:fired-rule[@id eq 'rule-1']), 2
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule[@id eq 'rule-3']), 2
+    )      
   )
 };
 
@@ -638,8 +640,12 @@ declare %unit:test function _:pattern-documents-halt-on-match()
   return (
     unit:assert($result/svrl:active-pattern/@documents),
     unit:assert-equals(
-      count($result/svrl:fired-rule),
+      count($result/svrl:fired-rule[@document]),
       1
+    ),
+    unit:assert-equals(
+      $result/svrl:fired-rule[@document][1]/@document/data(),
+      resolve-uri('document-02.xml', static-base-uri())
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -669,16 +675,17 @@ declare %unit:test function _:pattern-documents-multiple()
       count($result/svrl:successful-report),
       2
     ),
+    unit:assert-equals(count($result/svrl:fired-rule), 3),
     unit:assert-equals(
-      $result/svrl:fired-rule[1]/@document/data(),
+      $result/svrl:fired-rule[@document][1]/@document/data(),
       resolve-uri('document-04.xml', static-base-uri())
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule[2]/@document/data(),
+      $result/svrl:fired-rule[@document][2]/@document/data(),
       resolve-uri('document-05.xml', static-base-uri())
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule[3]/@document/data(),
+      $result/svrl:fired-rule[@document][3]/@document/data(),
       resolve-uri('document-06.xml', static-base-uri())
     )
   )
@@ -745,7 +752,7 @@ declare %unit:test function _:group-documents-halt-on-match()
   return (
     unit:assert($result/svrl:active-group/@documents),
     unit:assert-equals(
-      count($result/svrl:fired-rule),
+      count($result/svrl:fired-rule[@document]),
       2
     ),
     unit:assert-equals(
@@ -1317,23 +1324,22 @@ declare %unit:test function _:name-path()
 (:~ multiple assertion matches reported correctly :)
 declare %unit:test function _:multiple-results()
 {
-  let $result := eval:rule(
-    <sch:rule context='//bar'>
-      <sch:report test='.'>bar found, child of <sch:name path='name(..)'/></sch:report>
-    </sch:rule>,
-    (),
-    map{'instance':document{<foo><bar/><bar/></foo>}}
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='//bar'>
+          <sch:report test='.'>bar found, child of <sch:name path='name(..)'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
   )
-  return
-  unit:assert-equals(
-    $result,
-    (
-      <svrl:fired-rule context='//bar'/>,
-      <svrl:successful-report 
-      test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found, child of foo</svrl:text></svrl:successful-report>,
-      <svrl:successful-report 
-      test='.' location='/Q{{}}foo[1]/Q{{}}bar[2]'><svrl:text>bar found, child of foo</svrl:text></svrl:successful-report>
-    )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo><bar/><bar/></foo>}}  
+  )
+  return (
+    unit:assert-equals(count($result/svrl:successful-report), 2),
+    unit:assert-equals(count($result//svrl:fired-rule), 2)
   )
 };
 
@@ -1343,26 +1349,26 @@ declare %unit:test function _:multiple-results()
  :)
 declare %unit:test function _:rule-halt-on-match()
 {
-  let $result := eval:pattern(
-    <sch:pattern>
-      <sch:rule context='*'>
-        <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
-      </sch:rule>
-      <sch:rule context='foo'>
-        <sch:report test='.'>should not reach here</sch:report>
-      </sch:rule>
-    </sch:pattern>,
-    map{'instance':document{<foo/>}, 'globals':map{}}
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+        <sch:rule context='foo'>
+          <sch:report test='.'>should not reach here</sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
   )
-  return
-  unit:assert-equals(
-    $result,
-    (
-      <svrl:active-pattern/>,
-      <svrl:fired-rule context='*'/>,
-      <svrl:failed-assert 
-      test='name() eq "bar"' location='/Q{{}}foo[1]'><svrl:text>root element is foo</svrl:text></svrl:failed-assert>
-    )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo/>}}  
+  )    
+  return (
+    unit:assert-equals(count($result/svrl:active-pattern), 1),
+    unit:assert-equals(count($result/svrl:fired-rule), 1),
+    unit:assert($result/svrl:failed-assert[@test eq 'name() eq "bar"'])
   )
 };
 
@@ -2029,7 +2035,7 @@ declare %unit:test function _:phase-when-attribute()
   return (
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      3
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2089,7 +2095,7 @@ declare %unit:test function _:phase-when-attribute-first-match()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      3
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2145,7 +2151,7 @@ declare %unit:test function _:phase-when-attribute-no-match()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      2
+      4
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2181,7 +2187,7 @@ declare %unit:test function _:attribute-visit-each()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      4
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2216,12 +2222,16 @@ declare %unit:test function _:attribute-visit-each-svrl()
       'wibble'
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule/@context/data(),
-      '//bar'
+      count($result/svrl:fired-rule),
+      4
     ),
     unit:assert-equals(
-      $result/svrl:fired-rule/@visit-each/data(),
-      'blort'
+      count($result/svrl:fired-rule[@context eq '//bar']),
+      4
+    ),
+    unit:assert-equals(
+      count($result/svrl:fired-rule[@visit-each eq 'blort']),
+      4
     )
   )
 };
@@ -2252,7 +2262,7 @@ declare %unit:test function _:attribute-visit-each-analyze-string()
     ),
     unit:assert-equals(
       count($result/svrl:fired-rule),
-      1
+      2
     ),
     unit:assert-equals(
       count($result/svrl:successful-report),
@@ -2588,5 +2598,29 @@ declare %unit:test function _:resolve-relative-URI()
   return unit:assert-equals(
     $result/svrl:successful-report[2]/svrl:text/data(),
     'base-uri is ' || $resolved-uri
+  )
+};
+
+(:~ discrete test re https://github.com/AndrewSales/XQS/issues/64
+ : (one svrl:fired-rule per context match) 
+ :)
+declare %unit:test function _:one-fired-rule-per-context-match()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern id='foo'>
+        <sch:rule context='//foo'>
+          <sch:report test='.'>Hello, XQS world!</sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM : document{<top><a><foo/></a><b><foo><foo/></foo></b></top>}}  
+  )
+  
+  return (
+    unit:assert-equals(count($result/svrl:fired-rule), 3)
   )
 };
