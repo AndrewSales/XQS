@@ -108,7 +108,7 @@ declare function output:assertion-child-elements($element as element())
 as element()
 {
   element{QName("http://purl.oclc.org/dsdl/svrl", local-name($element))}
-  {$element/@*, $element/node()}
+  {$element/@*, utils:escape-literal-braces($element/node())}
 };
 
 declare function output:diagnostics(

@@ -766,6 +766,8 @@ as element(svrl:text)
         return output:assertion-child-elements($node)
       case element(sch:span)
         return output:assertion-child-elements($node)
+      case text()
+        return utils:escape-literal-braces($node)
     default return $node
   }</svrl:text>
 };

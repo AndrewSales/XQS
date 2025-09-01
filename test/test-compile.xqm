@@ -535,6 +535,69 @@ declare %unit:test function _:assertion-message-braces()
   )
 };
 
+declare %unit:test function _:assertion-message-braces-emph()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*"><sch:emph>{{</sch:emph></sch:report>
+          <sch:report test="*"><sch:emph>}}</sch:emph></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};
+
+declare %unit:test function _:assertion-message-braces-dir()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*"><sch:dir>{{</sch:dir></sch:report>
+          <sch:report test="*"><sch:dir>}}</sch:dir></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};
+
+declare %unit:test function _:assertion-message-braces-span()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context="/">
+          <sch:report test="*"><sch:span>{{</sch:span></sch:report>
+          <sch:report test="*"><sch:span>}}</sch:span></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo>{{}}</foo>}}
+  )
+  return (
+    unit:assert(count($result/svrl:successful-report) = 2)
+  )
+};
+
 declare %unit:test function _:assertion-message-braces-from-file()
 {
   let $compiled := compile:schema(
