@@ -101,6 +101,20 @@ as xs:string
   => replace('\}', '&amp;#x7D;') :)
 };
 
+(:~ Escape literal braces (in compiled schemas).
+ : @param nodes nodes to escape
+ :)
+declare function utils:escape-literal-braces($nodes as node()*)
+as node()*
+{
+    for $node in $nodes
+    return
+    typeswitch($node)
+      case text()
+        return text{replace($node, '\{', '{{') => replace('\}', '}}')}  (:CHECKME node constructor required, else padded with space:)
+    default return $node
+};
+
 declare function utils:declare-variable(
   $name as xs:string,
   $value as item()+
