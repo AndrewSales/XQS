@@ -12,6 +12,7 @@ import module namespace xqs = 'http://www.andrewsales.com/ns/xqs' at
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 
 declare variable $_:EMPTY_MAP as map(*) := map{};
+declare variable $_:DOC_PARAM := 'Q{http://www.andrewsales.com/ns/xqs}doc';
 
 declare 
 %unit:test('expected', 'xqs:invalid-query-binding') 
@@ -251,5 +252,47 @@ declare %unit:test function _:resolve-relative-URI()
   return unit:assert-equals(
     $svrl/svrl:successful-report[2]/svrl:text/data(),
     'base-uri is ' || $resolved-uri
+  )
+};
+
+(:~ EXPERIMENTAL: handle expression-containing elements as attributes :)
+declare %unit:test function _:attributes-as-elements-validate()
+{
+  let $result :=
+  xqs:validate(
+    document{<foo>bar</foo>},
+    <schema xmlns="http://purl.oclc.org/dsdl/schematron" queryBinding="xquery" schematronEdition="2025">
+    <pattern>
+        <rule><context>*</context>
+            <assert><test>false()</test>value=<value-of><select>.</select></value-of>;name=<value-of select='name()'/></assert>
+        </rule>
+    </pattern>    
+</schema>
+  )
+  return unit:assert-equals(
+    $result/svrl:failed-assert/svrl:text, <svrl:text>value=bar;name=foo</svrl:text>
+  )
+};
+
+(:~ EXPERIMENTAL: handle expression-containing elements as attributes :)
+declare %unit:test function _:attributes-as-elements-compile()
+{
+  let $compiled :=
+  xqs:compile(
+    <schema xmlns="http://purl.oclc.org/dsdl/schematron" queryBinding="xquery" schematronEdition="2025">
+      <pattern>
+          <rule><context>*</context>
+              <assert><test>false()</test>value=<value-of><select>.</select></value-of>;name=<value-of select='name()'/></assert>
+          </rule>
+      </pattern>    
+    </schema>,
+    map{}
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM : document{<foo>bar</foo>}}  
+  )
+  return unit:assert-equals(
+    $result/svrl:failed-assert/svrl:text, <svrl:text>value=bar;name=foo</svrl:text>
   )
 };
