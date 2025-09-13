@@ -462,8 +462,8 @@ declare %unit:test function _:assertion-message-elements()
 {
   let $result := eval:rule(
     <sch:rule context='//bar'>
-      <sch:report test='.'>bar found <foreign>hello</foreign>: <sch:emph>emph</sch:emph>,
-      <sch:dir value='ltr'>dir<foreign/></sch:dir> and <sch:span class='blort'>span<foreign/></sch:span></sch:report>
+      <sch:report test='.'>bar found <foreign>hello</foreign>: <sch:emph>emph<sch:name/><sch:value-of select='name(..)'/></sch:emph>,
+      <sch:dir value='ltr'><sch:name path='name(..)'/>dir<foreign/><sch:value-of select='count(.)'/></sch:dir> and <sch:span class='blort'>span<sch:value-of select='name()'/><foreign/><sch:name path='name(..)'/></sch:span></sch:report>
     </sch:rule>,
     (),
     map{'instance':document{<foo><bar/></foo>}}
@@ -474,8 +474,8 @@ declare %unit:test function _:assertion-message-elements()
     (
       <svrl:fired-rule context='//bar'/>,
       <svrl:successful-report 
-      test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found <foreign>hello</foreign>: <svrl:emph>emph</svrl:emph>,
-      <svrl:dir value='ltr'>dir<foreign/></svrl:dir> and <svrl:span class='blort'>span<foreign/></svrl:span></svrl:text></svrl:successful-report>
+      test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found <foreign>hello</foreign>: <svrl:emph>emphbarfoo</svrl:emph>,
+      <svrl:dir value='ltr'>foodir<foreign/>1</svrl:dir> and <svrl:span class='blort'>spanbar<foreign/>foo</svrl:span></svrl:text></svrl:successful-report>
     )
   )
 };
