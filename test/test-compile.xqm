@@ -1366,20 +1366,28 @@ declare %unit:test function _:value-of()
 (:~ name/@path handled in assertion message :)
 declare %unit:test function _:name-path()
 {
-  let $result := eval:rule(
-    <sch:rule context='//bar'>
-      <sch:report test='.'>bar found, child of <sch:name path='name(..)'/></sch:report>
-    </sch:rule>,
-    (),
-    map{'instance':document{<foo><bar/></foo>}}
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:pattern>
+        <sch:rule context='//bar'>
+          <sch:report test='.'>bar found, child of <sch:name path='name(..)'/></sch:report>
+        </sch:rule>
+      </sch:pattern>
+    </sch:schema>
   )
-  return
-  unit:assert-equals(
-    $result,
-    (
-      <svrl:fired-rule context='//bar'/>,
-      <svrl:successful-report 
-      test='.' location='/Q{{}}foo[1]/Q{{}}bar[1]'><svrl:text>bar found, child of foo</svrl:text></svrl:successful-report>
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo><bar/></foo>}}  
+  )  
+  return (
+    unit:assert-equals(
+      count($result/svrl:fired-rule[@context eq '//bar']), 1
+    ),
+    unit:assert-equals(
+      count($result/svrl:successful-report), 1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/svrl:text, <svrl:text>bar found, child of foo</svrl:text>
     )
   )
 };
