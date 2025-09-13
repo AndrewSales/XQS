@@ -67,3 +67,25 @@ function _:eval()
     <foo/>
   )
 };
+
+(:~ expression-containing attributes convert successfully to lone first child 
+ : elements of that type
+ :)
+declare %unit:test function _:attributes-to-elements()
+{
+  let $result := util:attributes-to-elements(doc('test-cases/attributes-to-elements.sch')/*)
+  return unit:assert-equals(
+    $result, doc('test-cases/elements-to-attributes.sch')/*
+  )
+};
+
+(:~ expression-containing lone first child elements of a given type convert 
+ : successfully to attributes 
+ :)
+declare %unit:test function _:elements-to-attributes()
+{
+  let $result := util:elements-to-attributes(doc('test-cases/elements-to-attributes.sch')/*)
+  return unit:assert-equals(
+    $result, doc('test-cases/attributes-to-elements.sch')/*
+  )
+};
