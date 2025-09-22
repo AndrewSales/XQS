@@ -243,7 +243,7 @@ declare %unit:test function _:process-assert-with-variable()
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
       <svrl:failed-assert 
-      test='name(.) = $allowed' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:failed-assert>
+      test='name(.) = $allowed' location='/Q{{}}foo[1]' ruleId='a'><svrl:text>name foo is not allowed</svrl:text></svrl:failed-assert>
     )
   )
 };
@@ -264,7 +264,7 @@ declare %unit:test function _:process-report-with-variable()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -288,7 +288,7 @@ declare %unit:test function _:process-report-with-global-variable()
   unit:assert-equals(
     $result/svrl:successful-report,
     (
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -336,9 +336,9 @@ declare %unit:test function _:process-report-with-global-variable-element-node()
   unit:assert-equals(
     $result/svrl:successful-report,
     (
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text></svrl:text></svrl:successful-report>
     )
   )
@@ -362,7 +362,7 @@ declare %unit:test function _:global-variable-in-value-of()
   unit:assert-equals(
     $result/svrl:successful-report,
     (
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -386,7 +386,7 @@ declare %unit:test function _:global-variable-in-name()
   unit:assert-equals(
     $result/svrl:successful-report,
     (
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='$allowed/self::allowed' location='/Q{{}}foo[1]'><svrl:text>allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -408,7 +408,7 @@ declare %unit:test function _:process-report-with-variable-element-node()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -430,7 +430,7 @@ declare %unit:test function _:value-of()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed; bar=blort</svrl:text></svrl:successful-report>
     )
   )
@@ -960,7 +960,7 @@ declare %unit:test function _:global-variable-relies-on-previous()
   unit:assert-equals(
     $result/svrl:successful-report,
     (
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed, as defined in allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -2298,6 +2298,42 @@ declare %unit:test function _:one-fired-rule-per-context-match()
   )
   return (
     unit:assert-equals(count($result/svrl:fired-rule), 3)
+  )
+};
+
+(:~ re https://github.com/Schematron/schematron-enhancement-proposals/issues/82
+ :)
+declare %unit:test function _:svrl-pattern-rule-ids()
+{
+  let $result := eval:schema(
+    document{<top><a><foo/></a><b><foo><foo/></foo></b></top>},
+     <sch:schema>
+      <sch:pattern id='foo'>
+        <sch:rule context='//foo' id='bar'>
+          <sch:report test='.' id='bar-report'>element <sch:name/></sch:report>
+          <sch:assert test='not(.)' id='bar-assert'>no element <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:group id='blort'>
+        <sch:rule context='/top' id='wibble'>
+          <sch:report test='.' id='wibble-report'>element <sch:name/></sch:report>
+          <sch:assert test='not(.)' id='wibble-assert'>no element <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:group>
+    </sch:schema>
+  )
+  return (
+    unit:assert-equals(count($result/svrl:fired-rule), 4),
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'bar-assert']), 3),
+    unit:assert-equals(count($result/svrl:successful-report[@id eq 'bar-report']), 3),
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'bar-assert'][@patternId eq 'foo']), 3),
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'bar-assert'][@ruleId eq 'bar']), 3),
+    unit:assert-equals(count($result/svrl:successful-report[@id eq 'bar-report'][@patternId eq 'foo']), 3),
+    unit:assert-equals(count($result/svrl:successful-report[@id eq 'bar-report'][@ruleId eq 'bar']), 3),
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'wibble-assert'][@groupId eq 'blort']), 1),
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'wibble-assert'][@ruleId eq 'wibble']), 1),
+    unit:assert-equals(count($result/svrl:successful-report[@id eq 'wibble-report'][@groupId eq 'blort']), 1),
+    unit:assert-equals(count($result/svrl:successful-report[@id eq 'wibble-report'][@ruleId eq 'wibble']), 1)
   )
 };
 

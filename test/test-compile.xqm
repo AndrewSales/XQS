@@ -1210,7 +1210,7 @@ declare %unit:test function _:process-assert-with-variable()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:failed-assert 
+      <svrl:failed-assert ruleId='a'
       test='name(.) = $allowed' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:failed-assert>
     )
   )
@@ -1232,7 +1232,7 @@ declare %unit:test function _:process-report-with-variable()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -1335,7 +1335,7 @@ declare %unit:test function _:process-report-with-variable-element-node()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed</svrl:text></svrl:successful-report>
     )
   )
@@ -1357,7 +1357,7 @@ declare %unit:test function _:value-of()
     $result,
     (
       <svrl:fired-rule context='*' id='a' name='b' role='c' flag='d'/>,
-      <svrl:successful-report 
+      <svrl:successful-report ruleId='a'
       test='not(name(.) = $allowed)' location='/Q{{}}foo[1]'><svrl:text>name foo is not allowed; bar=blort</svrl:text></svrl:successful-report>
     )
   )
