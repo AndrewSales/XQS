@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Use external XML file for validation context because this
+  document's base URI is needed in the definition of the
+  'topic-source-uri' Schematron variable. -->
+<link href="target-topic.html#some-target-id"/>

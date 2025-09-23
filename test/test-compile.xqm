@@ -2695,3 +2695,23 @@ declare %unit:test function _:one-fired-rule-per-context-match()
     unit:assert-equals(count($result/svrl:fired-rule), 3)
   )
 };
+
+(:~ re https://github.com/AndrewSales/XQS/issues/76
+ : (BaseX 12.0 errors because a user-defined function is evaluated in the 
+ : document instance context) 
+ :)
+declare %unit:test function _:rule-variables-omitted-from-rule-context-evaluation()
+{
+  let $doc := doc('test-cases/sample-link.xml')
+  let $compiled := compile:schema(doc('test-cases/mySchema-with-xqueryfcns-error.sch')/*)
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM : $doc}  
+  )
+  return (
+    unit:assert-equals(count($result/svrl:failed-assert[@id eq 'temp']), 1),
+    unit:assert-equals(
+      $result/svrl:failed-assert[@id eq 'temp']/svrl:text/data(), 
+      resolve-uri('foo.xml', base-uri($doc/*)))
+  )
+};
