@@ -6,6 +6,7 @@ module namespace _ = 'http://www.andrewsales.com/ns/xqs-compile-tests';
 
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
+declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 
 import module namespace eval = 'http://www.andrewsales.com/ns/xqs-evaluate' 
   at '../evaluate.xqm';
@@ -2713,5 +2714,40 @@ declare %unit:test function _:rule-variables-omitted-from-rule-context-evaluatio
     unit:assert-equals(
       $result/svrl:failed-assert[@id eq 'temp']/svrl:text/data(), 
       resolve-uri('foo.xml', base-uri($doc/*)))
+  )
+};
+
+(:~ EXPERIMENTAL feature re https://github.com/AndrewSales/XQS/issues/78
+ : (support for an analogue of <xsl:copy-of/> in properties)
+ :)
+declare %unit:test function _:property-copy-of()
+{
+  let $compiled := compile:schema(
+    <sch:schema>
+      <sch:let name='root-name' value='name(*)'/>
+      <sch:pattern>
+        <sch:rule context='*'>
+          <sch:assert test='name() eq "bar"' properties='p1'>root element is <sch:name/></sch:assert>
+        </sch:rule>
+      </sch:pattern>
+      <sch:properties>
+        <sch:property id='p1' scheme='abc' role='def'>wrong=<xqs:copy-of select='.'/></sch:property>
+      </sch:properties>
+    </sch:schema>
+  )
+  
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<foo some='value'/>}}
+  )
+  
+  return (
+    unit:assert-equals(count($result/svrl:failed-assert), 1),
+    unit:assert-equals(
+      $result/svrl:failed-assert/svrl:property-reference,
+      (
+        <svrl:property-reference property='p1' scheme='abc' role='def'><svrl:text>wrong=<foo some='value'/></svrl:text></svrl:property-reference>
+      )
+    )
   )
 };
