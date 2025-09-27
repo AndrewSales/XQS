@@ -10,6 +10,7 @@ See also https://github.com/AndrewSales/XQS/issues/29.
 
 # Pre-requisites
 Tested under [BaseX](https://basex.org/) 10.x.
+Note that the codebase is now also tested against BaseX 12.0.
 
 # Installation
 1. Install [BaseX](https://basex.org/download/) version 10 or later.
@@ -135,6 +136,10 @@ Please refer to the issues for a list of known bugs and planned enhancements.
 
 ## Query language binding
 Your schema should specify a `queryBinding` value of : `xquery`, `xquery3` or `xquery31`, in any combination of upper or lower case.
+
+## Implementation-specific extensions
+1. Attributes which contain expressions to be evaluated may be represented by elements instead (see https://github.com/AndrewSales/XQS/issues/71).
+2. Element `xqs:copy-of` (by analogy with `xsl:copy`) is allowed in schemas wherever there is dynamic evaluation of messages for SVRL output - its `select` attribute is evaluated against the relevant context (see https://github.com/AndrewSales/XQS/issues/78 and https://github.com/Schematron/schematron-enhancement-proposals/issues/86).
 
 # Troubleshooting
 
