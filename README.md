@@ -162,3 +162,11 @@ XQS is a pure XQuery implementation and doesn't recognize these, so they need to
       $i * $i
     };
     </function>
+
+## Is there an equivalent to `xsl:copy-of` for use within a `property`?
+
+Yes: the XQS extension `xqs:copy-of` behaves in the same way, allowing e.g.
+
+    <sch:property id='p1' scheme='abc' role='def'>wrong=<xqs:copy-of select='.'/></sch:property>
+
+The instruction is not limited to use in that context alone, so is also permitted within assertion messages.
