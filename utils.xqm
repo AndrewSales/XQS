@@ -69,7 +69,8 @@ declare function utils:make-query-prolog($context as map(*))
 as xs:string?
 {
   ($context?ns-decls || utils:global-variable-external-decls($context?globals))
-  => utils:escape() || $context?functions ! string(.)
+  => utils:escape() || $context?prolog => string() || 
+  $context?functions ! string(.)
 };
 
 (:~ Creates a QName from a prefixed variable name, looking up any URI from the

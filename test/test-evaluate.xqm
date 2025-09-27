@@ -2388,6 +2388,26 @@ declare %unit:test function _:property-copy-of()
   )
 };
 
+declare %unit:test function _:xquery-module-import()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+    doc('test-cases/xquery-module-import.sch')/*
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:successful-report)[1],
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/svrl:text/data(),
+      'root=true'
+    )
+  )
+};
+
 (:TODO
 @when with @from
 @visit-each
