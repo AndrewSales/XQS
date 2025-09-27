@@ -9,6 +9,7 @@ import module namespace output = 'http://www.andrewsales.com/ns/xqs-output' at
 declare namespace sch = "http://purl.oclc.org/dsdl/schematron";
 declare namespace svrl = "http://purl.oclc.org/dsdl/svrl";
 declare namespace xqy = 'http://www.w3.org/2012/xquery';
+declare namespace xqs = 'http://www.andrewsales.com/ns/xqs';
 
 declare variable $compile:INSTANCE_PARAM := '$Q{http://www.andrewsales.com/ns/xqs}uri';
 declare variable $compile:INSTANCE_DOC := '$Q{http://www.andrewsales.com/ns/xqs}doc';
@@ -651,6 +652,8 @@ as element(svrl:text)
         return output:assertion-child-elements($node)
       case element(sch:span)
         return output:assertion-child-elements($node)
+      case element(xqs:copy-of)
+        return '{(' || $compile:RULE_CONTEXT || ')/' || $node/@select || '}'
       case text()
         return utils:escape-literal-braces($node)
     default return $node
