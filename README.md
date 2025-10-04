@@ -157,3 +157,15 @@ XQS is a pure XQuery implementation and doesn't recognize these, so they need to
       $i * $i
     };
     </function>
+    
+## How do I import XQuery modules?    
+
+You can use the XQS extension `<xqy:prolog>` to do this, e.g.
+
+    <prolog xmlns='http://www.w3.org/2012/xquery'>
+    import module namespace fun = 'my-functions' at '../fun.xqm';
+    </prolog>
+
+A working example is shown in https://github.com/AndrewSales/XQS/tree/main/test/test-cases/xquery-module-import.sch.
+
+Imports will be resolved against the base URI of the schema.    
