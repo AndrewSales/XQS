@@ -2388,6 +2388,30 @@ declare %unit:test function _:property-copy-of()
   )
 };
 
+(:~ EXPERIMENTAL feature re https://github.com/AndrewSales/XQS/issues/79
+ : (support for <xqs:prolog> to include XQuery initial declarations, options &
+ : imports)
+ :)
+declare %unit:test function _:xquery-module-import()
+{
+  let $result :=
+  eval:schema(
+    document{<root/>},
+    doc('test-cases/xquery-module-import.sch')/*
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:successful-report)[1],
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/svrl:text/data(),
+      'root=true'
+    )
+  )
+};
+
 (:TODO
 @when with @from
 @visit-each
