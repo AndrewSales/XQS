@@ -233,6 +233,7 @@ as xs:string*
 {
   'declare base-uri "' || $schema/base-uri() || '";' ||
   string-join($schema/sch:ns ! context:make-ns-decls(.)) => utils:escape() ||
+  compile:user-defined-prolog($schema/xqy:prolog) ||
   $compile:EXTERNAL_VARIABLES ||
   string-join(
     $schema/(sch:let|sch:param) => compile:global-variable-decls()
@@ -686,6 +687,13 @@ declare function compile:user-defined-functions($functions as element(xqy:functi
 as xs:string*
 {
   $functions ! string(.)
+};
+
+(:~ Adds user-defined prolog declared in the schema. :)
+declare function compile:user-defined-prolog($prolog as element(xqy:prolog)?)
+as xs:string?
+{
+  $prolog ! string(.)
 };
 
 (:~ Declare a function.

@@ -2388,6 +2388,10 @@ declare %unit:test function _:property-copy-of()
   )
 };
 
+(:~ EXPERIMENTAL feature re https://github.com/AndrewSales/XQS/issues/79
+ : (support for <xqs:prolog> to include XQuery initial declarations, options &
+ : imports)
+ :)
 declare %unit:test function _:xquery-module-import()
 {
   let $result :=
