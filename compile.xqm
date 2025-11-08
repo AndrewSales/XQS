@@ -224,7 +224,7 @@ declare function compile:active-phase(
 {
   if($phase eq $context:ANY_PHASE)
   then '{if(exists(' || $compile:ANY_PHASE || ')) then attribute{"phase"}{' 
-  || $compile:ANY_PHASE || '}}'
+  || $compile:ANY_PHASE || '} else ()}'
   else if($active-phase) then attribute{'phase'}{$active-phase/@id} else ()
 };
 
