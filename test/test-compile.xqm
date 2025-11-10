@@ -2232,6 +2232,71 @@ declare %unit:test function _:phase-when-attribute-no-match()
   )
 };
 
+(:~ phase/@when variable, @see https://github.com/AndrewSales/XQS/issues/82 :)
+declare %unit:test function _:phase-when-variable()
+{
+  let $compiled := compile:schema(
+    <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="XQuery"
+    xmlns:sqf="http://www.schematron-quickfix.com/validator/process">
+    
+    <sch:let name="my_phase" value="'phase0'"/>
+    
+    <sch:phase id="phase1" when="/root[@phase = 'phase1']">
+        <sch:let name="my_phase" value="'phase1'"/>
+        <sch:active pattern="pattern1"/>
+    </sch:phase>
+    
+    <sch:phase id="phase2" when="/root[@phase = 'phase2']">
+        <sch:let name="my_phase" value="'phase2'"/>
+        <sch:active pattern="pattern1"/>
+    </sch:phase>
+    
+    <sch:pattern id="pattern1">
+        <sch:rule context="/root">
+            <sch:report test="$my_phase = 'phase1'">phase1!</sch:report>
+            <sch:report test="$my_phase = 'phase0'">phase0!</sch:report>
+        </sch:rule>
+    </sch:pattern>
+</sch:schema>,
+    map{'phase':'#ANY'}
+  )
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root phase="phase1"/>}}
+  )
+  return(
+    unit:assert-equals($result/svrl:successful-report/svrl:text, <svrl:text>phase1!</svrl:text>)
+  )
+};
+
+(:~ phase variable scope: should override global of same name :)
+declare %unit:test function _:phase-variable()
+{
+  let $compiled := compile:schema(
+    <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xquery31" defaultPhase='phase1'>
+    
+    <sch:let name="my_phase" value="'phase0'"/>
+    
+    <sch:phase id="phase1">
+        <sch:let name="my_phase" value="'phase1'"/>
+        <sch:active pattern="pattern1"/>
+    </sch:phase>
+    
+    <sch:pattern id="pattern1">
+        <sch:rule context="/root">
+            <sch:report test="$my_phase = 'phase1'">phase1!</sch:report>
+        </sch:rule>
+    </sch:pattern>
+</sch:schema>)
+  let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root/>}}
+  )
+  return(
+    unit:assert-equals($result/svrl:successful-report/svrl:text, <svrl:text>phase1!</svrl:text>)
+  )
+};
+
 (:~ @visit-each
  :)
 declare %unit:test function _:attribute-visit-each()
