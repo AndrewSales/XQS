@@ -516,11 +516,11 @@ as xs:string
       then '() else ' || compile:assertion-message($assertion)
       else compile:assertion-message($assertion) || ' else ()')
       
-    let $phase-variables as element(sch:let)* := $assertion/ancestor::sch:schema/sch:phase/sch:let
+    let $phases-with-variables as element(sch:phase)* := $assertion/ancestor::sch:schema/sch:phase[sch:let]
     return
-        if($any-phase and exists($phase-variables))
+        if($any-phase and exists($phases-with-variables))
         then 'switch(' || $compile:ANY_PHASE || ')' ||
-            $phase-variables/.. ! compile:any-phase(., $result, $default) ||
+            $phases-with-variables ! compile:any-phase(., $result, $default) ||
             ' default return ' || $default
         else $default
 };
