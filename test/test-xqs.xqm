@@ -296,3 +296,14 @@ declare %unit:test function _:attributes-as-elements-compile()
     $result/svrl:failed-assert/svrl:text, <svrl:text>value=bar;name=foo</svrl:text>
   )
 };
+
+(:~ @see https://github.com/AndrewSales/XQS/issues/85 :)
+declare %unit:test function _:xqs-compile-optionless()
+{
+  xqs:compile(
+    <sch:schema queryBinding='xquery31' schematronEdition='2025'>
+      <sch:pattern><sch:rule context='*'><sch:assert test='.'/></sch:rule></sch:pattern>
+    </sch:schema>
+    (:no options:)
+  )
+};

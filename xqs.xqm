@@ -53,6 +53,17 @@ as item()+
   compile:schema(ie:include-expand($schema), $options)
 };
 
+(:~ Compiles a Schematron schema, without options.
+ : @param schema the Schematron schema
+ :)
+declare function xqs:compile(
+  $schema as element(sch:schema)
+)
+{
+  xqs:check-query-binding($schema),
+  compile:schema(ie:include-expand($schema), map{})
+};
+
 (:~ Mandate one of the reserved names for the XQuery query language binding. :)
 declare function xqs:check-query-binding($schema as element(sch:schema))
 {
