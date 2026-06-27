@@ -2842,3 +2842,29 @@ declare %unit:test function _:xquery-module-import()
     )
   )
 };
+
+(:~ EXPERIMENTAL feature: support for CREPDL validation :)
+declare %unit:test function _:crepdl-validation()
+{
+  let $compiled :=
+  compile:schema(
+    doc('../examples/crepdl/validate-string.sch')/*
+  )
+  
+   let $result := xquery:eval(
+    $compiled,
+    map{$_:DOC_PARAM:document{<root>Hello, world!</root>}}
+  )
+  
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:successful-report)[1],
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/svrl:text/data(),
+      "unknown=''; not included=', !'"
+    )
+  )
+};

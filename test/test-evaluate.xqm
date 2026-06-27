@@ -2412,6 +2412,27 @@ declare %unit:test function _:xquery-module-import()
   )
 };
 
+(:~ EXPERIMENTAL feature: support for CREPDL validation :)
+declare %unit:test function _:crepdl-validation()
+{
+  let $result :=
+  eval:schema(
+    document{<root>Hello, world!</root>},
+    doc('../examples/crepdl/validate-string.sch')/*
+  )
+  return
+  (
+    unit:assert-equals(
+      count($result/svrl:successful-report)[1],
+      1
+    ),
+    unit:assert-equals(
+      $result/svrl:successful-report/svrl:text/data(),
+      "unknown=''; not included=', !'"
+    )
+  )
+};
+
 (:TODO
 @when with @from
 @visit-each

@@ -6,8 +6,8 @@ xmlns:xqy = 'http://www.w3.org/2012/xquery'>
   <sch:pattern>
     <sch:rule context='*'>
       <sch:let name='crepdl-schema' value='resolve-uri("basic-latin.crepdl", base-uri())'/>
-      <sch:let name='crepdl-result' value='crepdl:validate-string(., $crepdl-schema)' as='element()+'/>
-      <sch:report test='string-join($crepdl-result) ne ""'>unknown='<sch:value-of select='$crepdl-result[2]'/>'; not included='<sch:value-of select='$crepdl-result[1]'/>'</sch:report>
+      <sch:let name='crepdl-result' value='crepdl:validate-string(., $crepdl-schema)' as='element(c:result)'/>
+      <sch:report test='$crepdl-result/c:*'>unknown='<sch:value-of select='$crepdl-result/c:unknown'/>'; not included='<sch:value-of select='$crepdl-result/c:notIncluded'/>'</sch:report>
     </sch:rule>
   </sch:pattern>
 </sch:schema>

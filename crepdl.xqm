@@ -38,16 +38,16 @@ declare %private function crepdl:load-schema($schema as item()) as item()
  : @param path path to file to validate
  : @param schema the CREPDL schema 
  : @param encoding optional explicit encoding, defaulting to UTF-8
- : @return a pair of elements in the CREPDL v2 namespace, <pre>notIncluded</pre> 
- : and <pre>unknowns</pre>, representing each class of character(s) identified. The
- : element content is a string of the characters identified. If none are identified
- : the respective element is empty.
+ : @return a <pre>result</pre> in the CREPDL v2 namespace, with <pre>notIncluded</pre> 
+ : and <pre>unknowns</pre> child elements representing each class of character(s),
+ : where identified. The element content of these child elements is a string of the 
+ : characters identified. If none are identified, the respective element is absent.
  :)
 declare function crepdl:validate-file(
   $path as xs:string,
   $schema as item(),
   $encoding as xs:string?
-) as element()+
+) as element(c:result)
 {
   let $schema := crepdl:load-schema($schema)
   let $validator := Validator:create($schema)
@@ -55,32 +55,41 @@ declare function crepdl:validate-file(
   let $file := File:new($path)
   let $result := Validator:validateFile($validator, $file, $encoding)
   return 
-  (
-   <c:notIncluded>{Result:notIncluded($result)=>string-join()}</c:notIncluded>,
-   <c:unknown>{Result:unknowns($result)=>string-join()}</c:unknown> 
-  )
+  <c:result>{
+     if(exists(Result:notIncluded($result))) 
+     then <c:notIncluded>{Result:notIncluded($result)=>string-join()}</c:notIncluded>
+     else (),
+     if(exists(Result:unknowns($result))) 
+     then <c:unknown>{Result:unknowns($result)=>string-join()}</c:unknown>
+     else ()
+   }</c:result> 
 };
 
 (:~ 
  : Validate a string against a CREPDL schema.
  : @param string the string to validate
  : @param schema the CREPDL schema 
- : @return a pair of elements in the CREPDL v2 namespace, <pre>notIncluded</pre> 
- : and <pre>unknowns</pre>, representing each class of character(s) identified. The
- : element content is a string of the characters identified. If none are identified
- : the respective element is empty.
+ : @return a <pre>result</pre> in the CREPDL v2 namespace, with <pre>notIncluded</pre> 
+ : and <pre>unknowns</pre> child elements representing each class of character(s),
+ : where identified. The element content of these child elements is a string of the 
+ : characters identified. If none are identified, the respective element is absent.
  :)
 declare function crepdl:validate-string(
   $string as xs:string,
   $schema as item()
-) as element()+
+) as element(c:result)
 {
   let $schema := crepdl:load-schema($schema)
   let $validator := Validator:create($schema)
   let $result := Validator:validateString($validator, $string)
   return 
-  (
-   <c:notIncluded>{Result:notIncluded($result)=>string-join()}</c:notIncluded>,
-   <c:unknown>{Result:unknowns($result)=>string-join()}</c:unknown> 
-  )
+  <c:result>{
+     if(exists(Result:notIncluded($result))) 
+     then <c:notIncluded>{Result:notIncluded($result)=>string-join()}</c:notIncluded>
+     else (),
+     if(exists(Result:unknowns($result))) 
+     then <c:unknown>{Result:unknowns($result)=>string-join()}</c:unknown>
+     else ()
+   }</c:result> 
+  
 };

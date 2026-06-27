@@ -4,7 +4,7 @@ import module namespace crepdl = 'http://www.andrewsales.com/ns/crepdl' at '../c
 
 declare namespace c = "http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0";
 
-declare %unit:test function _:test-validate-filename()
+declare %unit:test function _:test-validate-filename-notIncluded()
 {
   let $result := crepdl:validate-string(
     'Hello, world!',
@@ -12,10 +12,38 @@ declare %unit:test function _:test-validate-filename()
   )
   return unit:assert-equals(
     $result,
-    (
-      <c:notIncluded>, !</c:notIncluded>,
-      <c:unknown/>
-    )
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+    </c:result>
+  )
+};
+
+declare %unit:test function _:test-validate-filename-unknowns()
+{
+  let $result := crepdl:validate-string(
+    'Hello, world!',
+    resolve-uri('test-cases/atoz.crepdl', static-base-uri())
+  )
+  return unit:assert-equals(
+    $result,
+    <c:result>
+      <c:unknown>ello, world!</c:unknown>
+    </c:result>
+  )
+};
+
+declare %unit:test function _:test-validate-filename-both()
+{
+  let $result := crepdl:validate-string(
+    'Hello, world!',
+    resolve-uri('test-cases/kernel-hull.crepdl', static-base-uri())
+  )
+  return unit:assert-equals(
+    $result,
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+      <c:unknown>elloworld</c:unknown>
+    </c:result>
   )
 };
 
@@ -49,10 +77,9 @@ declare %unit:test function _:test-validate-file-uri()
   )
   return unit:assert-equals(
     $result,
-    (
-      <c:notIncluded>, !</c:notIncluded>,
-      <c:unknown/>
-    )
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+    </c:result>
   )
 };
 
@@ -77,10 +104,9 @@ declare %unit:test function _:test-validate-schema-doc()
   let $result := crepdl:validate-string('Hello, world!', document{<char xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">[\p{{Alpha}}]</char>})
   return unit:assert-equals(
     $result,
-    (
-      <c:notIncluded>, !</c:notIncluded>,
-      <c:unknown/>
-    )
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+    </c:result>
   )
 };
 
@@ -89,10 +115,9 @@ declare %unit:test function _:test-validate-schema-element()
   let $result := crepdl:validate-string('Hello, world!', <char xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">[\p{{Alpha}}]</char>)
   return unit:assert-equals(
     $result,
-    (
-      <c:notIncluded>, !</c:notIncluded>,
-      <c:unknown/>
-    )
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+    </c:result>
   )
 };
 
@@ -115,9 +140,8 @@ declare %unit:test function _:test-validate-file()
   )
   return unit:assert-equals(
     $result,
-    (
-      <c:notIncluded>, !</c:notIncluded>,
-      <c:unknown/>
-    )
+    <c:result>
+      <c:notIncluded>, !</c:notIncluded>
+    </c:result>
   )
 };
