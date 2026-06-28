@@ -1,5 +1,5 @@
 <sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron"
-xmlns:xqy = 'http://www.w3.org/2012/xquery'>
+xmlns:xqy = 'http://www.w3.org/2012/xquery' schematronEdition='2025' queryBinding='xquery31'>
   <xqy:prolog>import module namespace xqs-crepdl = 'http://www.andrewsales.com/ns/crepdl' at '../../crepdl.xqm';</xqy:prolog>
   <sch:ns prefix='c' uri='http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0'/>
   <sch:ns prefix='crepdl' uri='http://www.andrewsales.com/ns/crepdl'/>

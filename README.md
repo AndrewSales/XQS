@@ -121,6 +121,112 @@ If you do wish to perform this step only, in order to produce a fully resolved a
 Example output for this command is shown in `examples/myResolvedSchema.sch`.
     
 The output from `include-expand.bxs` is the schema with inclusions resolved and abstract patterns and rules instantiated. (Note that this command script can be used on **any** valid Schematron schema, regardless of the target query language; it does not depend on the query language binding the schema declares.)  
+
+# CREPDL validation
+The XQS distribution includes **experimental** support for performing validation against a Character Repertoire Definition Language (CREPDL) schema using XQuery.
+
+This in turn enables this feature to also be used within a Schematron schema.
+
+## Dependencies
+The XQS module `crepdl.xqm` uses BaseX's convenient [Java bindings](https://docs.basex.org/main/Java_Bindings) to access Philip Helger's [jcrepdl](https://github.com/phax/jcrepdl).
+
+The jcrepdl and supporting libraries are supplied here in the `lib/` directory of this repository. 
+
+### Installation
+Place the JAR files included in `lib/` in the `lib/` directory of your BaseX installation.
+
+## Usage
+### In XQuery code
+In XQuery, import the `crepdl` module and invoke one of the two functions, `crepdl:validate-string()` or `crepdl:validate-file()`:
+
+    import module namespace crepdl = 'http://www.andrewsales.com/ns/crepdl' at 'path/to/crepdl.xqm';
+    
+    crepdl:validate-string('Hello, world!', 'path/to/my-schema.crepdl')
+    (: OR :)
+    crepdl:validate-file('path/to/my-file.txt', 'path/to/my-schema.crepdl')
+    
+where the first argument is a string or file path, respectively.
+The second argument is the CREPDL schema and can be any one of:
+- a string
+- a URI
+- a document node
+- an element.
+
+The result is a `result` element in the CREPDL (version 2) namespace, containing an element containing any unknown characters and one for any not included characters. These child elements will only be present if they have content, e.g. this query:
+
+    crepdl:validate-string(
+      'Hello, world!',
+      <char xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">
+      [\p{{Alpha}}]
+      </char>
+    )
+
+will produce this result:
+
+    <result xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">
+      <notIncluded>, !</notIncluded>
+    </result>
+    
+while the query:
+
+    crepdl:validate-string(
+      'Hello, world!',
+      <char xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">
+        <kernel>[A-Z]</kernel>
+        <hull>[A-Za-z]</hull>
+      </char>
+    )
+    
+will produce:
+
+    <result xmlns="http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0">
+      <notIncluded>, !</notIncluded>
+      <unknown>elloworld</unknown>
+    </result>
+
+### Within a Schematron schema
+The two CREPDL functions can equally be invoked within a Schematron schema, e.g.
+
+```
+<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+xmlns:xqy = 'http://www.w3.org/2012/xquery'
+schematronEdition='2025' queryBinding='xquery31'>
+
+  <!-- import the crepdl library module -->  
+  <xqy:prolog>
+  import module namespace xqs-crepdl =  
+     'http://www.andrewsales.com/ns/crepdl' at
+     'path/to/crepdl.xqm';
+ </xqy:prolog>
+  
+  <!-- the CREPDL namespace --> 
+  <sch:ns prefix='c' uri='http://purl.oclc.org/dsdl/crepdl/ns/structure/2.0'/>
+
+  <!-- the XQuery library namespace -->
+  <sch:ns prefix='crepdl' uri='http://www.andrewsales.com/ns/crepdl'/>
+  
+  <sch:pattern>
+    <sch:rule context='*'>
+      <sch:let name='crepdl-schema'
+               value='resolve-uri("basic-latin.crepdl", base-uri())'/>
+      <sch:let name='crepdl-result' 
+               value='crepdl:validate-string(., $crepdl-schema)'
+               as='element(c:result)'/>
+      <sch:report test='$crepdl-result/c:*'>
+      unknown='<sch:value-of select='$crepdl-result/c:unknown'/>';
+      not included='<sch:value-of select='$crepdl-result/c:notIncluded'/>'
+      </sch:report>
+    </sch:rule>
+  </sch:pattern>
+</sch:schema>
+```
+The schema above and some basic CREPDL sample files are included in `examples/crepdl/`.
+
+
+### Limitations
+This works for both evaluated and compiled schemas, but only when using BaseX as the XQuery engine.
+
+The CREPDL XQuery functions bundled with XQS simply invoke jcrepdl code, so refer to [that project's README](https://github.com/phax/jcrepdl/blob/main/README.md) for its documentation and limitations.
     
 # Running the test suite
 The test suite is found in the `test/ `sub-directory.
