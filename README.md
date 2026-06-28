@@ -125,7 +125,7 @@ The output from `include-expand.bxs` is the schema with inclusions resolved and 
 # CREPDL validation
 The XQS distribution includes **experimental** support for performing validation against a Character Repertoire Definition Language (CREPDL) schema using XQuery.
 
-This in turn enables this feature to also be used within a Schematron schema.
+This in turn enables this feature to also be used [within a Schematron schema](#within-a-schematron-schema).
 
 ## Dependencies
 The XQS module `crepdl.xqm` uses BaseX's convenient [Java bindings](https://docs.basex.org/main/Java_Bindings) to access Philip Helger's [jcrepdl](https://github.com/phax/jcrepdl).
@@ -207,11 +207,16 @@ schematronEdition='2025' queryBinding='xquery31'>
   
   <sch:pattern>
     <sch:rule context='*'>
+      <!-- load the CREPDL schema -->      
       <sch:let name='crepdl-schema'
                value='resolve-uri("basic-latin.crepdl", base-uri())'/>
+
+      <!-- invoke CREPDL validation on the string of the matched context --> 
       <sch:let name='crepdl-result' 
                value='crepdl:validate-string(., $crepdl-schema)'
                as='element(c:result)'/>
+      
+      <!-- report any unknown or not-included chars -->
       <sch:report test='$crepdl-result/c:*'>
       unknown='<sch:value-of select='$crepdl-result/c:unknown'/>';
       not included='<sch:value-of select='$crepdl-result/c:notIncluded'/>'
